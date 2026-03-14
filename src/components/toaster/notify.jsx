@@ -12,16 +12,16 @@ const DEFAULT_MESSAGES = {
 const STYLES = {
   warning: {
     style: {
-      background: "oklch(var(--wa))",
-      color: "oklch(var(--wac))",
+      background: "#e6921e",
+      color: "#ffffff",
       border: "1px solid oklch(var(--wa) / 0.5)",
     },
     icon: <AlertTriangle size={16} />,
   },
   info: {
     style: {
-      background: "oklch(var(--in))",
-      color: "oklch(var(--inc))",
+      background: "#2664eb",
+      color: "#ffffff",
       border: "1px solid oklch(var(--in) / 0.5)",
     },
     icon: <Info size={16} />,

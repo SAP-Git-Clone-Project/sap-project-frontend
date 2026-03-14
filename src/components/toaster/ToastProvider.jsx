@@ -10,7 +10,7 @@ const ToastProvider = () => (
       // ── Default ────────────────────────────────────────────────────────
       style: {
         background:   "var(--color-base-200)",
-        color:        "var(--color-base-content)",
+        color:        "#ffffff",
         border:       "1px solid var(--color-base-300)",
         borderRadius: "12px",
         fontSize:     "13px",
