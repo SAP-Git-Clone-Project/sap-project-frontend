@@ -2,3 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.badge {
+  @apply items-center py-3;
+}
+
+.indicator-item {
+  @apply py-1;
+}

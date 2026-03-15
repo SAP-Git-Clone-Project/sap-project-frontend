@@ -2,9 +2,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import HomePage     from "@/pages/HomePage";
-import ReposPage    from "@/pages/ReposPage";
-import TeamsPage    from "@/pages/TeamsPage";
+import HomePage from "@/pages/homepage/HomePage";
+import ReposPage from "@/pages/ReposPage";
+import TeamsPage from "@/pages/TeamsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 
@@ -15,10 +15,10 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div data-theme={theme} className="min-h-screen bg-base-100 flex flex-col">
+      <div data-theme={theme} className="min-h-[100vh] bg-base-100 overflow-x-hidden">
         <Navbar theme={theme} toggleTheme={toggleTheme} />
 
-        <main className="flex-1 min-h-[100vh] px-4 sm:px-6 py-8 overflow-hidden">
+        <main className="min-h-[100vh] px-4 sm:px-6 py-8">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/repos" element={<ReposPage />} />
