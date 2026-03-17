@@ -4,7 +4,7 @@ const THEME_KEY = "app-theme";
 
 export default function useTheme() {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem(THEME_KEY) || "light";
+    return localStorage.getItem(THEME_KEY) || "dark";
   });
 
   useEffect(() => {
