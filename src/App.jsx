@@ -6,6 +6,7 @@ import HomePage from "@/pages/homepage/HomePage";
 import ReposPage from "@/pages/ReposPage";
 import TeamsPage from "@/pages/TeamsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
+import ProfilePage from "./pages/ProfilePage"; 
 import NotFoundPage from "@/pages/NotFoundPage";
 
 import useTheme from "@/hooks/useTheme";
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/repos" element={<ReposPage />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>

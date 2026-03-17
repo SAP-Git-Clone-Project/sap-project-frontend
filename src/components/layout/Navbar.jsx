@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Sun, Moon, Bell, Search, Home, BarChart2, Users, GitBranch, Zap } from "lucide-react";
+import { Sun, Moon, Bell, Search, Home, BarChart2, Users, GitBranch, Zap, User } from "lucide-react";
 
 const NAV_LINKS = [
   { icon: Home,      label: "Home",      to: "/"          },
@@ -71,11 +71,11 @@ export default function Navbar({ theme, toggleTheme }) {
           {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
         </button>
 
-        <div className="avatar placeholder">
-          <div className="w-8 rounded-full bg-primary text-primary-content">
-            <span className="text-xs font-bold">MP</span>
-          </div>
-        </div>
+        <NavLink to="/profile" className="avatar placeholder">
+    <div className="w-8 rounded-full bg-primary text-primary-content">
+      <span className="text-xs font-bold">MP</span>
+    </div>
+      </NavLink>
       </div>
     </div>
   );
