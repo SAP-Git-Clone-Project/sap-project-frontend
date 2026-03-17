@@ -19,6 +19,9 @@ export default {
           dark: "#0F172A33", // dark overlay utility
         },
       },
+      duration: {
+        normal: "300ms",
+      },
     },
   },
 

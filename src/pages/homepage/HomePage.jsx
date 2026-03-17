@@ -7,6 +7,7 @@ import {
   Info, Plus, Download, Trash2, Edit, Eye, Zap, Lock, Clock,
   TrendingUp, MoreHorizontal, Shield, Upload, GitMerge, Filter,
   Check, X, Users, BarChart2, ArrowRight,
+  AppleIcon,
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
@@ -70,7 +71,7 @@ const HomePage = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8  px-4 sm:px-6 py-8">
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <Animate variant="fade-down" delay={0}>
@@ -91,7 +92,8 @@ const HomePage = () => {
         <Alerts />
       </Animate>
 
-      {/* ── Commit Table ───────────────────────────────────────────────────── */}
+      {/* ── Commit Table 
+      ──────────────────────────────────────────────────── */}
       <Animate variant="scale-up">
         <CommitTable commits={COMMITS} statusMap={STATUS_MAP} />
       </Animate>
