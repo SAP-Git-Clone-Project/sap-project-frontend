@@ -10,6 +10,8 @@ import NotFoundPage from "@/pages/NotFoundPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import DocumentsPage from "@/pages/documents/DocumentsPage";
+import DocumentDetailsPage from "@/pages/documents/DocumentDetailsPage";
+import CreateDocumentPage from "@/pages/documents/CreateDocumentPage";
 
 import useTheme from "@/hooks/useTheme";
 
@@ -30,6 +32,8 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/documents/create" element={<CreateDocumentPage />} />
+            <Route path="/documents/:id" element={<DocumentDetailsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
