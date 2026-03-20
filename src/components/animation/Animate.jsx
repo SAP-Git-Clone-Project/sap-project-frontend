@@ -42,7 +42,7 @@ const Animate = ({
   as = "div",
 }) => {
 
-  const { ref, inView } = useInView({ triggerOnce: false, threshold });
+  const { ref, inView } = useInView({ triggerOnce: false, threshold, rootMargin: '30px 0px -10px 0px' });
   const { hidden, visible } = VARIANTS[variant] || VARIANTS["fade-up"];
   const Tag = as;
 
