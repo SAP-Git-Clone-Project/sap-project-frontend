@@ -19,9 +19,6 @@ export default {
           dark: "#0F172A33", // dark overlay utility
         },
       },
-      duration: {
-        normal: "300ms",
-      },
     },
   },
 
@@ -33,20 +30,20 @@ export default {
         light: {
           primary: "#2563EB",
           "primary-content": "#ffffff",
-          secondary: "#475569",
+          secondary: "#64748b",
           "secondary-content": "#ffffff",
           accent: "#F59E0B",
-          "accent-content": "#1a1100",
-          neutral: "#1F2937",
+          "accent-content": "#ffffff",
+          neutral: "#0f172a",
           "neutral-content": "#ffffff",
-          "base-100": "#ffffff",
-          "base-200": "#F8FAFC",
+          "base-100": "#F1F5F9",
+          "base-200": "#ffffff",
           "base-300": "#E2E8F0",
-          "base-content": "#1F2937",
-          info: "#60A5FA",
-          success: "#22C55E",
-          warning: "#FBBF24",
-          error: "#EF4444",
+          "base-content": "#1e293b",
+          info: "#0ea5e9",
+          success: "#10b981",
+          warning: "#f59e0b",
+          error: "#ef4444",
         },
 
         dark: {
