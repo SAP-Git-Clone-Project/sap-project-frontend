@@ -26,7 +26,8 @@ import Team from "./components/Team.jsx";
 import Rating from "./components/Rating.jsx";
 import TooltipKBD from "./components/TooltipKBD.jsx";
 import Modals from "./components/Modals.jsx";
-import UploadAndChat from "./components/UploadAndChat.jsx";
+import UploadFile from "./components/UploadFile.jsx";
+import Chat from "./components/Chat.jsx";
 import DangerZone from "./components/DangerZone.jsx";
 import Navigate from "./components/Navigate.jsx";
 
@@ -164,7 +165,8 @@ const HomePage = () => {
       </Animate>
 
       {/* ── Upload + Chat ──────────────────────────────────────────────────── */}
-      <UploadAndChat />
+      <UploadFile />
+      <Chat />
 
       {/* ── Danger Zone ────────────────────────────────────────────────────── */}
       <Animate>

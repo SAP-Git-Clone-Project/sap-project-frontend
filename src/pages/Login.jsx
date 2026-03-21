@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Loader2, ArrowRight, Shield } from "lucide-react";
 import Animate from "@/components/animation/Animate";
+import { Link, NavLink } from "react-router-dom";
 
 const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
@@ -96,12 +97,11 @@ const LoginFooter = ({ onNavigate }) => {
     <div className="mt-8 pt-6 border-t border-base-content/5">
       <p className="text-center text-sm text-base-content">
         Don't have an account?{" "}
-        <button
-          onClick={onNavigate}
+        <NavLink to="/register"
           className="text-primary font-bold hover:underline underline-offset-4"
         >
           Join us today
-        </button>
+        </NavLink>
       </p>
     </div>
   );

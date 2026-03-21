@@ -12,7 +12,7 @@ export default function Footer() {
             <Zap size={10} className="text-primary-content" />
           </div>
           <span className="text-base-content/60">
-            SAP VersionHub · <span className="text-primary font-semibold">v2.5.0</span>
+            SAP VersionHub · <span className="text-primary font-semibold">v1.0.0</span>
           </span>
         </div>
 
@@ -22,7 +22,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <span>© 2025 SAP SE. All rights reserved.</span>
+        <span>© 2026 SAP SE. All rights reserved.</span>
       </div>
     </footer>
   );

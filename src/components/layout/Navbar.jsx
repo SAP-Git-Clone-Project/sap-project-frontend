@@ -1,9 +1,9 @@
 import { NavLink } from "react-router-dom";
-import { Sun, Moon, Bell, Search, Home, BarChart2, Users, GitBranch, Zap } from "lucide-react";
+import { Sun, Moon, Bell, Search, Home, BarChart2, Users, GitBranch, Zap, User, File } from "lucide-react";
 
 const NAV_LINKS = [
-  { icon: Home,      label: "Home",      to: "/"          },
-  { icon: GitBranch, label: "Repos",     to: "/repos"     },
+  { icon: Home,      label: "Dashboard",      to: "/"          },
+  { icon: File,      label: "Documents", to: "/documents" },
   { icon: Users,     label: "Teams",     to: "/teams"     },
   { icon: BarChart2, label: "Analytics", to: "/analytics" },
 ];
@@ -46,7 +46,7 @@ export default function Navbar({ theme, toggleTheme }) {
 
       {/* ── Right Side ────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2">
-        <div className="relative hidden sm:block">
+        {/* <div className="relative hidden sm:block">
           <Search
             size={12}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"
@@ -55,7 +55,7 @@ export default function Navbar({ theme, toggleTheme }) {
             className="input input-sm input-bordered bg-base-300 pl-8 w-44 text-sm text-base-content placeholder:text-base-content/40"
             placeholder="Search…"
           />
-        </div>
+        </div> */}
 
         <div className="indicator">
           <span className="indicator-item badge badge-error badge-xs" />
@@ -71,11 +71,11 @@ export default function Navbar({ theme, toggleTheme }) {
           {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
         </button>
 
-        <div className="avatar placeholder">
-          <div className="w-8 rounded-full bg-primary text-primary-content">
-            <span className="text-xs font-bold">MP</span>
-          </div>
-        </div>
+        <NavLink to="/profile" className="avatar placeholder">
+    <div className="w-8 rounded-full bg-primary text-primary-content">
+      <span className="text-xs font-bold">MP</span>
+    </div>
+      </NavLink>
       </div>
     </div>
   );

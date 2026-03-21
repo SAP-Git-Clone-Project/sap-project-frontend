@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Loader2, ArrowRight, User, CheckCircle2 } from "lucide-react";
 import Animate from "@/components/animation/Animate";
+import { Link, NavLink } from "react-router-dom";
 
 const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
@@ -173,9 +174,9 @@ function RegisterFooter({ onNavigate }) {
     <div className="mt-8 pt-6 border-t border-base-content/5 text-center">
       <p className="text-sm text-base-content font-medium">
         Already have an account?{" "}
-        <button onClick={onNavigate} className="text-primary font-bold hover:underline underline-offset-4">
+        <NavLink to="/login" className="text-primary font-bold hover:underline underline-offset-4">
           Sign In
-        </button>
+        </NavLink>
       </p>
     </div>
   );

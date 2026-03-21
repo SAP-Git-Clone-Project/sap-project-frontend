@@ -6,9 +6,11 @@ import HomePage from "@/pages/homepage/HomePage";
 import ReposPage from "@/pages/ReposPage";
 import TeamsPage from "@/pages/TeamsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
+import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+
 import DocumentsPage from "@/pages/documents/DocumentsPage";
 import DocumentDetailsPage from "@/pages/documents/DocumentDetailsPage";
 import CreateDocumentPage from "@/pages/documents/CreateDocumentPage";
@@ -21,7 +23,10 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div data-theme={theme} className="min-h-[100vh] bg-base-100 overflow-x-hidden">
+      <div
+        data-theme={theme}
+        className="min-h-[100vh] bg-base-100 overflow-x-hidden"
+      >
         <Navbar theme={theme} toggleTheme={toggleTheme} />
 
         <main className="min-h-[100vh]">
@@ -30,12 +35,15 @@ export default function App() {
             <Route path="/repos" element={<ReposPage />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/documents/:id/create-version" element={<CreateVersionPage />} />
             <Route path="/documents/create" element={<CreateDocumentPage />} />
             <Route path="/documents/:id" element={<DocumentDetailsPage />} />
+
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
