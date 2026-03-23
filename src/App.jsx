@@ -12,7 +12,9 @@ import Login from "@/pages/Login";
 import GettingStarted from "@/pages/GettingStarted";
 import Register from "@/pages/Register";
 import DocumentsPage from "@/pages/DocumentsPage";
-import Demo from "@/pages/homepage/demo.jsx"; 
+import Demo from "@/pages/homepage/demo.jsx";
+import VersionReviewPage from "@/pages/VersionReviewPage.jsx";
+import ReviewPage from "@/pages/ReviewPage.jsx";
 
 import useTheme from "@/hooks/useTheme";
 
@@ -36,6 +38,8 @@ export default function App() {
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/getting-started" element={<GettingStarted />} />
               <Route path="/demo" element={<Demo />} />
+              <Route path="/version-review/:id" element={<VersionReviewPage />} />
+              <Route path="/reviews" element={<ReviewPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
