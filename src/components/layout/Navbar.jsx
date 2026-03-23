@@ -1,10 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { Sun, Moon, Bell, Search, Home, BarChart2, Users, GitBranch, Zap, User, File } from "lucide-react";
+import { Sun, Moon, Bell, Search, Home, BarChart2, Users, GitBranch, Zap, User, File, ClipboardCheck } from "lucide-react";
 
 const NAV_LINKS = [
-  { icon: Home,      label: "Dashboard",      to: "/"          },
-  { icon: File,      label: "Documents", to: "/documents" },
-  // { icon: Users,     label: "Teams",     to: "/teams"     },
+  { icon: File,      label: "Documents",      to: "/"          },
+  // { icon: File,      label: "Documents", to: "/documents" },
+  { icon: ClipboardCheck,     label: "Reviews",     to: "/reviews"     },
   // { icon: BarChart2, label: "Analytics", to: "/analytics" },
 ];
 

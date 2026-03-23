@@ -38,7 +38,7 @@ export default function App() {
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/getting-started" element={<GettingStarted />} />
               <Route path="/demo" element={<Demo />} />
-              <Route path="/version-review" element={<VersionReviewPage />} />
+              <Route path="/version-review/:id" element={<VersionReviewPage />} />
               <Route path="/reviews" element={<ReviewPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
