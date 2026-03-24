@@ -4,11 +4,22 @@ import { FileText, ShieldCheck, Users, Zap} from "lucide-react";
 import GlassCard from "./homepage/components/GlassCard.jsx";
 // if (user) navigate("/")
 
+const BackgroundEffects = () => {
+  return (
+    <div className="absolute inset-0 z-0">
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-secondary/20 rounded-full blur-[120px] animate-pulse delay-700" />
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+    </div>
+  );
+}
+
 const GettingStarted = () => {
   return (
+    
    <div className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center space-y-16 overflow-hidden">
     <div className="absolute w-[600px] h-[600px] bg-primary/10 blur-3xl rounded-full top-[-200px] left-[50%] translate-x-[-50%] -z-10" />
-
+<BackgroundEffects />
       {/* HERO */}
       <Animate variant="fade-down">
         <div className="space-y-6 max-w-2xl">
