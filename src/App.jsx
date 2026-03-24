@@ -6,7 +6,7 @@ import HomePage from "@/pages/homepage/HomePage";
 import ReposPage from "@/pages/ReposPage";
 import TeamsPage from "@/pages/TeamsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
-import ProfilePage from "@/pages/ProfilePage"; 
+import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import Login from "@/pages/Login";
 import GettingStarted from "@/pages/GettingStarted";
@@ -15,6 +15,8 @@ import DocumentsPage from "@/pages/DocumentsPage";
 import Demo from "@/pages/homepage/demo.jsx";
 import VersionReviewPage from "@/pages/VersionReviewPage.jsx";
 import ReviewPage from "@/pages/ReviewPage.jsx";
+import ForbiddenPage from "@/pages/ForbiddenPage";
+
 
 import useTheme from "@/hooks/useTheme";
 
@@ -37,9 +39,10 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/getting-started" element={<GettingStarted />} />
-              <Route path="/demo" element={<Demo />} />
-              <Route path="/version-review/:id" element={<VersionReviewPage />} />
-              <Route path="/reviews" element={<ReviewPage />} />
+            <Route path="/demo" element={<Demo />} />
+            <Route path="/version-review/:id" element={<VersionReviewPage />} />
+            <Route path="/reviews" element={<ReviewPage />} />
+            <Route path="/forbidden" element={<ForbiddenPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
