@@ -151,7 +151,7 @@ const BackgroundEffects = ({ length = 12 }) => {
         ref={canvasRef}
         className="block w-full h-full contrast-[1.1] brightness-[1.02]"
       />
-      <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none" />
     </div>
   );
 };

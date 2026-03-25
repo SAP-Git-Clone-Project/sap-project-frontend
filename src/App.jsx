@@ -1,16 +1,22 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+// Components like Navbar, Footer, Scroll
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import ScrollUp from "@/components/layout/ScrollUp";
 
+// Login and Register
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+
+// Pages
 import HomePage from "@/pages/homepage/HomePage";
 import ReposPage from "@/pages/ReposPage";
 import TeamsPage from "@/pages/TeamsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
-import Login from "@/pages/Login";
 import GettingStarted from "@/pages/GettingStarted";
-import Register from "@/pages/Register";
 import DocumentsPage from "@/pages/DocumentsPage";
 import Demo from "@/pages/homepage/demo.jsx";
 import VersionReviewPage from "@/pages/VersionReviewPage.jsx";
@@ -51,6 +57,7 @@ export default function App() {
           </Routes>
         </main>
 
+        <ScrollUp />
         <Footer />
       </div>
     </BrowserRouter>
