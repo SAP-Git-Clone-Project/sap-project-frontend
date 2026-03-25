@@ -45,7 +45,7 @@ export default function ReviewPage() {
 
 
   return (
-    <div className="space-y-12 px-6 pb-12 pt-16">
+    <div className="space-y-12 px-6 pb-12 pt-16 overflow-x-hidden">
 
 
       {/* Header */}

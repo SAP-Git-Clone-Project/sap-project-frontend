@@ -22,8 +22,8 @@ const GettingStarted = () => {
       <Animate variant="fade-down">
         <div className="space-y-6 max-w-2xl relative z-10 mb-20">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Zap size={22} className="text-primary" />
+            <div className="w-12 h-12 rounded-2xl bg-primary border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/20 bg-prima">
+              <Zap size={22} fill="white" className="text-white" />
             </div>
             <span className="text-3xl font-extrabold tracking-tight">
               SAP <span className="text-primary">Hub</span>
