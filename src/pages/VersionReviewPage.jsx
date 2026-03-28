@@ -12,9 +12,12 @@ import {
 import { Link } from "react-router-dom";
 import Animate from "@/components/animation/Animate.jsx";
 import FileStatus from "./homepage/components/FileStatus.jsx";
+import notify from "@/components/toaster/notify";
 
 export default function VersionReviewPage() {
   const [comment, setComment] = useState("");
+
+  const [status, setStatus] = useState("pending");
 
   const version = {
     title: "UserAuth Spec v1.2",
@@ -47,7 +50,7 @@ export default function VersionReviewPage() {
                 {version.title}
               </h1>
 
-              <FileStatus status={version.status} />
+              <FileStatus status={status} />
             </div>
 
             <div className="flex gap-6 text-sm text-base-content/60">
@@ -112,16 +115,58 @@ export default function VersionReviewPage() {
               </div>
 
               {/* Approve / Reject */}
-              <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-7 flex gap-4">
-                <button className="btn btn-success flex-1 shadow-md shadow-success/30">
-                  <CheckCircle size={18} />
-                  Approve
-                </button>
+              <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-7 flex flex-col gap-3">
+                {status === "pending" ? (
+                  <div className="flex gap-4">
+                    <button
+                      className="btn btn-success flex-1 shadow-md shadow-success/30"
+                      onClick={() => {
+                        setStatus("approved");
+                        notify.success("Version approved successfully");
+                      }}
+                    >
+                      <CheckCircle size={18} />
+                      Approve
+                    </button>
 
-                <button className="btn btn-error flex-1 shadow-md shadow-error/30">
-                  <XCircle size={18} />
-                  Reject
-                </button>
+                    <button
+                      className="btn btn-error flex-1 shadow-md shadow-error/30"
+                      onClick={() => {
+                        setStatus("rejected");
+                        notify.error("Version rejected");
+                      }}
+                    >
+                      <XCircle size={18} />
+                      Reject
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Current status label */}
+                    <div className="text-sm text-center">
+                      Current status:
+                      <span
+                        className={`ml-2 font-semibold capitalize px-2 py-1 rounded-md ${
+                          status === "approved"
+                            ? "text-success bg-success/10 shadow-md shadow-success/30"
+                            : "text-error bg-error/10 shadow-md shadow-error/30"
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    </div>
+
+                    <button
+                      className="btn btn-warning w-full shadow-md shadow-warning/30"
+                      onClick={() => {
+                        setStatus("pending");
+                        notify.success("Decision reset — choose again");
+                      }}
+                    >
+                      Edit Decision
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </Animate>

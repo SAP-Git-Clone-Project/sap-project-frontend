@@ -212,11 +212,46 @@ const ProfilePage = () => {
                 </p>
               </div>
 
-              <button className="btn btn-error btn-sm">Delete Account</button>
+              <button
+                className="btn btn-error btn-sm"
+                onClick={() =>
+                  document.getElementById("delete_account_modal").showModal()
+                }
+              >
+                Delete Account
+              </button>
             </div>
           </div>
         </div>
       </Animate>
+      {/* Delete Account Modal */}
+      <dialog id="delete_account_modal" className="modal">
+        <div className="modal-box bg-base-200 border border-error/40 shadow-xl">
+          <h3 className="font-bold text-lg text-error mb-3">Delete Account</h3>
+
+          <p className="text-sm text-base-content/60 mb-6">
+            This action is permanent and cannot be undone. All your data will be
+            permanently deleted.
+          </p>
+
+          <div className="modal-action flex justify-end gap-2">
+            <form method="dialog">
+              <button className="btn btn-ghost">Cancel</button>
+            </form>
+
+            <button
+              className="btn btn-error shadow-md shadow-error/30"
+              onClick={() => {
+                notify.success("Account deleted");
+                document.getElementById("delete_account_modal").close();
+                navigate("/getting-started");
+              }}
+            >
+              Yes, Delete
+            </button>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 };

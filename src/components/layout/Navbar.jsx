@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { Sun, Moon, Zap, File, ClipboardCheck, NotepadText, Menu, X } from "lucide-react";
+import { Sun, Moon, Zap, File, ClipboardCheck, NotepadText, Menu, X, MonitorCog } from "lucide-react";
 
 const NAV_LINKS = [
   { icon: NotepadText, label: "About", to: "/getting-started" },
   { icon: File, label: "Documents", to: "/" },
   { icon: ClipboardCheck, label: "Reviews", to: "/reviews" },
+  { icon: MonitorCog, label: "Admin", to: "/admin" },
 ];
 
 const BREAKPOINT = 768;

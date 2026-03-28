@@ -18,11 +18,13 @@ import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import GettingStarted from "@/pages/GettingStarted";
 import DocumentsPage from "@/pages/DocumentsPage";
+import DocumentDetailsPage from "./pages/DocumentsDetailsPage";
 import Demo from "@/pages/homepage/demo.jsx";
 import VersionReviewPage from "@/pages/VersionReviewPage.jsx";
 import ReviewPage from "@/pages/ReviewPage.jsx";
 import ForbiddenPage from "@/pages/ForbiddenPage";
 import ServerErrorPage from "@/pages/ServerErrorPage";
+import AdminPage from "@/pages/AdminPage.jsx";
 
 import useTheme from "@/hooks/useTheme";
 
@@ -40,19 +42,18 @@ export default function App() {
         <main className="min-h-[100vh] overflow-x-hidden">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/repos" element={<ReposPage />} />
-            <Route path="/teams" element={<TeamsPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/documents/:id" element={<DocumentDetailsPage />} />
             <Route path="/getting-started" element={<GettingStarted />} />
             <Route path="/demo" element={<Demo />} />
             <Route path="/version-review/:id" element={<VersionReviewPage />} />
             <Route path="/reviews" element={<ReviewPage />} />
             <Route path="/forbidden" element={<ForbiddenPage />} />
             <Route path="/server-error" element={<ServerErrorPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
