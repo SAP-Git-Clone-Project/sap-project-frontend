@@ -11,8 +11,23 @@ const NAV_LINKS = [
 
 const BREAKPOINT = 768;
 
-export default function Navbar({ theme, toggleTheme }) {
+/**
+ * Navbar
+ *
+ * Props:
+ *  - theme        : "dark" | "light"
+ *  - toggleTheme  : () => void
+ *  - user         : null  (logged out)
+ *                 | { name: string, avatar?: string }  (logged in)
+ *
+ * When logged in, the user's avatar is loaded from `user.avatar`.
+ * Falls back to "/avatar.png" if the field is absent.
+ * Clicking the avatar navigates to /me (the user's own profile page).
+ */
+export default function Navbar({ theme, toggleTheme, user }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const isLoggedIn = Boolean(user);
+  const avatarSrc = user?.avatar ?? "/avatar.png";
 
   // Auto-close when viewport grows past breakpoint
   useEffect(() => {
@@ -73,6 +88,7 @@ export default function Navbar({ theme, toggleTheme }) {
 
           {/* ── Right Side ─────────────────────────────────────────────────── */}
           <div className="flex items-center gap-3 shrink-0">
+            {/* Theme toggle — always visible on desktop */}
             <button
               className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/[0.02] border border-white/5 text-base-content/40 hover:text-primary hover:bg-white/[0.08] hover:border-white/10 transition-all duration-500 active:scale-90"
               onClick={toggleTheme}
@@ -81,18 +97,44 @@ export default function Navbar({ theme, toggleTheme }) {
               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
+            {/* ── Desktop: logged in → avatar; logged out → Login + Register ── */}
             <div className="hidden md:flex items-center gap-3">
               <div className="w-[1px] h-8 bg-white/5" />
-              <NavLink to="/profile" className="group relative">
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative w-11 h-11 rounded-full p-[2px] bg-gradient-to-b from-white/20 to-transparent">
-                  <div className="w-full h-full rounded-full overflow-hidden border border-black/20">
-                    <img src="/avatar.png" alt="Profile" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125" />
+
+              {isLoggedIn ? (
+                /* Avatar → /me */
+                <NavLink to="/me" className="group relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="relative w-11 h-11 rounded-full p-[2px] bg-gradient-to-b from-white/20 to-transparent">
+                    <div className="w-full h-full rounded-full overflow-hidden border border-black/20">
+                      <img
+                        src={avatarSrc}
+                        alt={user.name ?? "Profile"}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125"
+                      />
+                    </div>
                   </div>
-                </div>
-              </NavLink>
+                </NavLink>
+              ) : (
+                /* Auth buttons */
+                <>
+                  <NavLink
+                    to="/login"
+                    className="px-4 py-2 rounded-xl text-sm font-bold bg-base-100 text-base-content/60 hover:text-base-content hover:bg-white/[0.05] transition-all duration-300"
+                  >
+                    Login
+                  </NavLink>
+                  <NavLink
+                    to="/register"
+                    className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-primary-content shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all duration-300"
+                  >
+                    Register
+                  </NavLink>
+                </>
+              )}
             </div>
 
+            {/* ── Mobile hamburger ───────────────────────────────────────────── */}
             <button
               className="md:hidden w-11 h-11 flex items-center justify-center rounded-2xl bg-white/[0.02] border border-white/5 text-base-content/50 hover:text-primary hover:bg-white/[0.08] hover:border-white/10 transition-all duration-300 active:scale-90"
               onClick={() => setMenuOpen((o) => !o)}
@@ -123,17 +165,15 @@ export default function Navbar({ theme, toggleTheme }) {
           WebkitBackdropFilter: theme === "dark"
             ? "blur(24px) brightness(0.6) contrast(1.2)"
             : "blur(20px) brightness(1.1) saturate(1.5)",
-
-          /* HERE: Configure the mobile menu background glassmorphisum below */
           background: theme === "dark"
-            ? "rgba(var(--b3), 0.8)"  // Deeper alpha for dark mode
-            : "rgba(255, 255, 255, 0.4)" // Light, airy tint for light mode
+            ? "rgba(var(--b3), 0.8)"
+            : "rgba(255, 255, 255, 0.4)",
         }}
       >
         <div
-          className={`flex flex-col h-full transition-all duration-500 ease-out ${menuOpen ? "translate-y-0" : "translate-y-6"
-            }`}
+          className={`flex flex-col h-full transition-all duration-500 ease-out ${menuOpen ? "translate-y-0" : "translate-y-6"}`}
         >
+          {/* Mobile header */}
           <div className="h-20 flex items-center justify-between px-8 border-b border-white/10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
@@ -153,6 +193,7 @@ export default function Navbar({ theme, toggleTheme }) {
             </button>
           </div>
 
+          {/* Mobile nav links */}
           <div className="flex-1 flex flex-col justify-center px-8 gap-2">
             {NAV_LINKS.map(({ icon: Icon, label, to }, i) => (
               <NavLink
@@ -170,10 +211,7 @@ export default function Navbar({ theme, toggleTheme }) {
               >
                 {({ isActive }) => (
                   <>
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? "bg-primary/20" : "bg-white/[0.04] group-hover:bg-white/[0.08]"
-                        }`}
-                    >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? "bg-primary/20" : "bg-white/[0.04] group-hover:bg-white/[0.08]"}`}>
                       <Icon size={18} className={isActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--p),0.6)]" : ""} />
                     </div>
                     <span>{label}</span>
@@ -186,26 +224,63 @@ export default function Navbar({ theme, toggleTheme }) {
             ))}
           </div>
 
-          <div className="px-8 pb-10 pt-4 border-t border-white/[0.06] flex items-center gap-4">
-            <NavLink to="/profile" onClick={closeMenu} className="group flex items-center gap-3 flex-1">
-              <div className="relative w-11 h-11 rounded-full p-[2px] bg-gradient-to-b from-white/20 to-transparent shrink-0">
-                <div className="w-full h-full rounded-full overflow-hidden border border-black/20">
-                  <img src="/avatar.png" alt="Profile" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-bold text-base-content group-hover:text-primary transition-colors duration-200">My Profile</span>
-                <span className="text-xs text-base-content/40">View account</span>
-              </div>
-            </NavLink>
+          {/* ── Mobile footer: logged in vs logged out ──────────────────────── */}
+          <div className="px-8 pb-10 pt-4 border-t border-white/[0.06]">
+            {isLoggedIn ? (
+              /* Logged in: avatar + name + theme toggle */
+              <div className="flex items-center gap-4">
+                <NavLink to="/me" onClick={closeMenu} className="group flex items-center gap-3 flex-1">
+                  <div className="relative w-11 h-11 rounded-full p-[2px] bg-gradient-to-b from-white/20 to-transparent shrink-0">
+                    <div className="w-full h-full rounded-full overflow-hidden border border-black/20">
+                      <img
+                        src={avatarSrc}
+                        alt={user.name ?? "Profile"}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-base-content group-hover:text-primary transition-colors duration-200">
+                      {user.name ?? "My Profile"}
+                    </span>
+                    <span className="text-xs text-base-content/40">View account</span>
+                  </div>
+                </NavLink>
 
-            <button
-              className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/[0.04] border border-white/10 text-base-content/50 hover:text-primary hover:bg-white/[0.08] transition-all duration-300 active:scale-90"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+                <button
+                  className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/[0.04] border border-white/10 text-base-content/50 hover:text-primary hover:bg-white/[0.08] transition-all duration-300 active:scale-90"
+                  onClick={toggleTheme}
+                  aria-label="Toggle theme"
+                >
+                  {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
+              </div>
+            ) : (
+              /* Logged out: Login + Register + theme toggle */
+              <div className="flex items-center gap-3">
+                <NavLink
+                  to="/login"
+                  onClick={closeMenu}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-base font-bold border bg-base-100 text-base-content/60 hover:text-base-content hover:bg-white/[0.05] transition-all duration-300"
+                >
+                  Login
+                </NavLink>
+                <NavLink
+                  to="/register"
+                  onClick={closeMenu}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-base font-bold bg-primary text-primary-content shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all duration-300"
+                >
+                  Register
+                </NavLink>
+                <button
+                  className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/[0.04] border border-white/10 text-base-content/50 hover:text-primary hover:bg-white/[0.08] transition-all duration-300 active:scale-90 shrink-0"
+                  onClick={toggleTheme}
+                  aria-label="Toggle theme"
+                >
+                  {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
