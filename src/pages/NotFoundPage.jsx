@@ -140,7 +140,7 @@ const NotFoundPage = () => {
       <style>{KEYFRAMES}</style>
 
       <div
-        className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-base-100"
+        className="relative flex min-h-[105vh] flex-col items-center justify-center overflow-hidden bg-base-100"
         style={{ fontFamily: "'JetBrains Mono', monospace" }}
       >
         {/* ── dot-grid (red tint) ── */}
@@ -330,22 +330,6 @@ const NotFoundPage = () => {
             </p>
           </Animate>
 
-          {/* ── single home button ── */}
-          <Animate variant="fade-up" duration={380} delay={450}>
-            <div className="mt-6">
-              <Link
-                to="/"
-                className="btn btn-error btn-sm gap-2 font-bold tracking-widest uppercase"
-                style={{ animation: "btnGlow 2s ease-in-out infinite 2s" }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                </svg>
-                return to root
-              </Link>
-            </div>
-          </Animate>
-
           {/* ── terminal stderr block ── */}
           <Animate variant="fade-up" duration={380} delay={550}>
             <div
@@ -365,6 +349,22 @@ const NotFoundPage = () => {
                 error: refs/heads/current → [dangling]<br />
                 error: ref resolution failed [exit 128]
               </code>
+            </div>
+          </Animate>
+
+          {/* ── single home button ── */}
+          <Animate variant="fade-up" duration={380} delay={300}>
+            <div className="mt-6">
+              <Link
+                to="/"
+                className="btn btn-error btn-sm gap-2 font-bold tracking-widest uppercase"
+                style={{ animation: "btnGlow 2s ease-in-out infinite 2s" }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                return to root
+              </Link>
             </div>
           </Animate>
 
