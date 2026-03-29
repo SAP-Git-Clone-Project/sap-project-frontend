@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -12,6 +13,8 @@ import {
   History,
   Eye,
 } from "lucide-react";
+import { fetchDocumentById, fetchVersionsByDocumentId } from "@/api/documents";
+import { mapDocumentToUi, mapVersionToUi } from "@/api/mappers";
 import {
   getDocumentById,
   getVersionsByDocumentId,
@@ -52,11 +55,97 @@ function getStatusIcon(status) {
 export default function DocumentDetailsPage() {
   const { id } = useParams();
 
-  const numericId = Number(id);
-  const document = getDocumentById(numericId);
-  const versions = getVersionsByDocumentId(numericId);
-  const activeVersion = getActiveVersionByDocumentId(numericId);
-  const author = document ? getUserById(document.createdBy) : null;
+  const [document, setDocument] = useState(null);
+  const [versions, setVersions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [usingMockData, setUsingMockData] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+
+      try {
+        const [documentResponse, versionsResponse] = await Promise.all([
+          fetchDocumentById(id),
+          fetchVersionsByDocumentId(id),
+        ]);
+
+        setDocument(mapDocumentToUi(documentResponse));
+        setVersions(versionsResponse.map(mapVersionToUi));
+        setUsingMockData(false);
+      } catch (error) {
+        console.warn("Falling back to mock data:", error);
+
+        const mockDocument = getDocumentById(Number(id));
+        const mockVersions = getVersionsByDocumentId(Number(id));
+
+        if (mockDocument) {
+          const author = getUserById(mockDocument.createdBy);
+
+          setDocument({
+            id: mockDocument.id,
+            title: mockDocument.title,
+            description: mockDocument.description,
+            createdBy: mockDocument.createdBy,
+            createdByUsername: author?.username || "Unknown user",
+            createdAt: mockDocument.createdAt,
+            updatedAt: mockDocument.updatedAt,
+          });
+
+          setVersions(
+            mockVersions.map((version) => {
+              const versionAuthor = getUserById(version.authorId);
+
+              return {
+                id: version.id,
+                documentId: version.documentId,
+                versionNumber: version.versionNumber,
+                content: version.content,
+                status: version.status,
+                parentVersionId: version.parentVersionId,
+                createdAt: version.createdAt,
+                isActive: version.isActive,
+                filePath: version.filePath,
+                fileSize: version.fileSize,
+                checksum: version.checksum,
+                summary: version.summary,
+                authorName: versionAuthor?.username || "Unknown user",
+              };
+            })
+          );
+
+          setUsingMockData(true);
+        } else {
+          setDocument(null);
+          setVersions([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [id]);
+
+  const activeVersion = useMemo(
+    () => versions.find((version) => version.isActive),
+    [versions]
+  );
+
+  if (loading) {
+    return (
+      <section className="px-4 py-8 md:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="card border border-base-300 bg-base-200 shadow-sm">
+            <div className="card-body items-center text-center">
+              <span className="loading loading-spinner loading-md" />
+              <p className="text-base-content/70">Loading document details...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!document) {
     return (
@@ -66,7 +155,7 @@ export default function DocumentDetailsPage() {
             <div className="card-body items-center text-center">
               <h1 className="text-2xl font-bold">Document not found</h1>
               <p className="text-base-content/70">
-                The requested document does not exist in the current mock data.
+                The requested document could not be loaded.
               </p>
               <Link to="/documents" className="btn btn-primary mt-2">
                 Back to Documents
@@ -95,6 +184,14 @@ export default function DocumentDetailsPage() {
             Create Version
           </Link>
         </div>
+
+        {usingMockData && (
+          <div className="alert border border-base-300 bg-base-100">
+            <span className="text-sm text-base-content/70">
+              Backend data is not fully available yet. Showing mock fallback data.
+            </span>
+          </div>
+        )}
 
         <div className="hero rounded-3xl border border-base-300 bg-base-200">
           <div className="hero-content w-full flex-col items-start justify-between gap-6 py-8 lg:flex-row lg:items-center">
@@ -138,9 +235,7 @@ export default function DocumentDetailsPage() {
                 <User size={16} />
                 <span>Author</span>
               </div>
-              <h2 className="text-xl font-semibold">
-                {author?.username || "Unknown user"}
-              </h2>
+              <h2 className="text-xl font-semibold">{document.createdByUsername}</h2>
             </div>
           </div>
 
@@ -204,9 +299,7 @@ export default function DocumentDetailsPage() {
 
                 <div>
                   <p className="text-base-content/60">Created By</p>
-                  <p className="font-medium">
-                    {author?.username || "Unknown user"}
-                  </p>
+                  <p className="font-medium">{document.createdByUsername}</p>
                 </div>
 
                 <div>
@@ -245,54 +338,50 @@ export default function DocumentDetailsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {versions.map((version) => {
-                      const versionAuthor = getUserById(version.authorId);
-
-                      return (
-                        <tr key={version.id} className="hover">
-                          <td>
-                            <div className="flex flex-col gap-1">
-                              <span className="font-semibold">
-                                {`v${version.versionNumber}`}
+                    {versions.map((version) => (
+                      <tr key={version.id} className="hover">
+                        <td>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold">
+                              {`v${version.versionNumber}`}
+                            </span>
+                            {version.isActive && (
+                              <span className="badge badge-outline badge-sm w-fit">
+                                Active
                               </span>
-                              {version.isActive && (
-                                <span className="badge badge-outline badge-sm w-fit">
-                                  Active
-                                </span>
-                              )}
-                            </div>
-                          </td>
+                            )}
+                          </div>
+                        </td>
 
-                          <td>
-                            <span
-                              className={`badge gap-1 ${getStatusClasses(
-                                version.status
-                              )}`}
-                            >
-                              {getStatusIcon(version.status)}
-                              {version.status}
-                            </span>
-                          </td>
+                        <td>
+                          <span
+                            className={`badge gap-1 ${getStatusClasses(
+                              version.status
+                            )}`}
+                          >
+                            {getStatusIcon(version.status)}
+                            {version.status}
+                          </span>
+                        </td>
 
-                          <td>{versionAuthor?.username || "Unknown user"}</td>
-                          <td>{version.createdAt}</td>
-                          <td className="max-w-xs">
-                            <span className="line-clamp-2 text-sm text-base-content/75">
-                              {version.summary}
-                            </span>
-                          </td>
+                        <td>{version.authorName}</td>
+                        <td>{version.createdAt}</td>
+                        <td className="max-w-xs">
+                          <span className="line-clamp-2 text-sm text-base-content/75">
+                            {version.summary}
+                          </span>
+                        </td>
 
-                          <td>
-                            <div className="flex justify-end">
-                              <button className="btn btn-sm btn-outline min-w-[90px] gap-2">
-                                <Eye size={14} className="shrink-0" />
-                                <span className="whitespace-nowrap">View</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        <td>
+                          <div className="flex justify-end">
+                            <button className="btn btn-sm btn-outline min-w-[90px] gap-2">
+                              <Eye size={14} className="shrink-0" />
+                              <span className="whitespace-nowrap">View</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

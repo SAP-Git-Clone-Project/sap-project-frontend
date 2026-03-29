@@ -17,24 +17,18 @@ import AnalyticsPage from "@/pages/AnalyticsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import GettingStarted from "@/pages/GettingStarted";
-<<<<<<< HEAD
-import Register from "@/pages/Register";
 import Demo from "@/pages/homepage/demo.jsx";
 
 import DocumentsPage from "@/pages/documents/DocumentsPage";
 import DocumentDetailsPage from "@/pages/documents/DocumentDetailsPage";
 import CreateDocumentPage from "@/pages/documents/CreateDocumentPage";
 import CreateVersionPage from "@/pages/documents/CreateVersionPage";
-=======
-import DocumentsPage from "@/pages/DocumentsPage";
-import DocumentDetailsPage from "./pages/DocumentsDetailsPage";
-import Demo from "@/pages/homepage/demo.jsx";
+
 import VersionReviewPage from "@/pages/VersionReviewPage.jsx";
 import ReviewPage from "@/pages/ReviewPage.jsx";
 import ForbiddenPage from "@/pages/ForbiddenPage";
 import ServerErrorPage from "@/pages/ServerErrorPage";
 import AdminPage from "@/pages/AdminPage.jsx";
->>>>>>> main
 
 import useTheme from "@/hooks/useTheme";
 
@@ -45,35 +39,28 @@ export default function App() {
     <BrowserRouter>
       <div
         data-theme={theme}
-<<<<<<< HEAD
         className="min-h-[100vh] bg-base-100 overflow-x-hidden"
-=======
-        className="min-h-[100vh] bg-base-100"
->>>>>>> main
       >
         <Navbar theme={theme} toggleTheme={toggleTheme} />
 
         <main className="min-h-[100vh] overflow-x-hidden">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/repos" element={<ReposPage />} />
+            <Route path="/teams" element={<TeamsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
             <Route path="/documents" element={<DocumentsPage />} />
-<<<<<<< HEAD
+            <Route path="/documents/create" element={<CreateDocumentPage />} />
             <Route
               path="/documents/:id/create-version"
               element={<CreateVersionPage />}
             />
-            <Route path="/documents/create" element={<CreateDocumentPage />} />
             <Route path="/documents/:id" element={<DocumentDetailsPage />} />
 
-            <Route path="/getting-started" element={<GettingStarted />} />
-            <Route path="/demo" element={<Demo />} />
-
-=======
-            <Route path="/documents/:id" element={<DocumentDetailsPage />} />
             <Route path="/getting-started" element={<GettingStarted />} />
             <Route path="/demo" element={<Demo />} />
             <Route path="/version-review/:id" element={<VersionReviewPage />} />
@@ -81,7 +68,7 @@ export default function App() {
             <Route path="/forbidden" element={<ForbiddenPage />} />
             <Route path="/server-error" element={<ServerErrorPage />} />
             <Route path="/admin" element={<AdminPage />} />
->>>>>>> main
+
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
