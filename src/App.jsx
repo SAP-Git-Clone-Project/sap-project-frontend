@@ -31,6 +31,7 @@ import ServerErrorPage from "@/pages/ServerErrorPage";
 import ProtectedRoute from "@/components/protected-route/ProtectedRoute";
 import AdminPage from "@/pages/AdminPage.jsx";
 import AuditLogPage from "@/pages/AuditLogPage.jsx";
+import DemoBg from "@/pages/DemoBg.jsx";
 
 import useTheme from "@/hooks/useTheme";
 
@@ -41,7 +42,7 @@ export default function App() {
     <BrowserRouter>
       <div
         data-theme={theme}
-        className="min-h-[100vh] bg-base-100 overflow-x-hidden"
+        className="min-h-[100vh] bg-base-100"
       >
         <Navbar theme={theme} toggleTheme={toggleTheme} />
 
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="/audit-log" element={<AuditLogPage />} />
 
             <Route path="*" element={<NotFoundPage />} />
+            <Route path="/404" element={<DemoBg />} />
           </Routes>
         </main>
 

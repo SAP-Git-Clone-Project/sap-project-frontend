@@ -125,9 +125,9 @@ export default function Navbar({ theme, toggleTheme }) {
                   </NavLink>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-content/40 hover:text-error transition-colors whitespace-nowrap"
+                    className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-error/20 text-base-content hover:text-base-content transition-all duration-200 ease-in-out hover:scale-105 hover:bg-error active:scale-95 "
                   >
-                    <LogOut size={14} /> Logout
+                    <LogOut size={16} className="text-base-content" />
                   </button>
                 </div>
               ) : (
@@ -214,6 +214,6 @@ export default function Navbar({ theme, toggleTheme }) {
           </div>
         </div>
       </div>
-    </nav>
+    </nav >
   );
 }
