@@ -23,7 +23,7 @@ const Login = () => {
   // This automatically kicks the user out of the login page if they are authed
   useEffect(() => {
     if (ready && isAuthenticated) {
-      const from = location.state?.from?.pathname || "/getting-started";
+      const from = location.state?.from?.pathname || "/";
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, ready, navigate, location]);
