@@ -148,7 +148,7 @@ const Login = () => {
 
   useEffect(() => {
     if (ready && isAuthenticated) {
-      const from = location.state?.from?.pathname || "/getting-started";
+      const from = location.state?.from?.pathname || "/";
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, ready, navigate, location]);

@@ -64,14 +64,15 @@ export default function ReviewPage() {
       </Animate>
 
       {/* Stats row */}
+      {/* Stats row */}
       <Animate>
-        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-3 gap-5">
           <Animate variant="fade-right">
             <GlassCard bg="bg-warning/10" border="border-warning/20">
-              <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-6 text-center">
-                <Clock className="mx-auto mb-2 text-warning" />
+              <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
+                <Clock size={18} className="mx-auto mb-1 text-warning" />
 
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-bold">
                   {REVIEWS.filter((r) => r.status === "pending").length}
                 </p>
 
@@ -81,10 +82,10 @@ export default function ReviewPage() {
           </Animate>
 
           <GlassCard bg="bg-success/10" border="border-success/20">
-            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-6 text-center">
-              <FileText className="mx-auto mb-2 text-success" />
+            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
+              <FileText size={18} className="mx-auto mb-1 text-success" />
 
-              <p className="text-2xl font-bold">
+              <p className="text-xl font-bold">
                 {REVIEWS.filter((r) => r.status === "approved").length}
               </p>
 
@@ -94,10 +95,10 @@ export default function ReviewPage() {
 
           <Animate variant="fade-left">
             <GlassCard bg="bg-error/10" border="border-error/20">
-              <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-6 text-center">
-                <XCircle className="mx-auto mb-2 text-error" />
+              <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
+                <XCircle size={18} className="mx-auto mb-1 text-error" />
 
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-bold">
                   {REVIEWS.filter((r) => r.status === "rejected").length}
                 </p>
 
@@ -128,20 +129,19 @@ export default function ReviewPage() {
             ))}
           </div>
 
- {/* Search */}
-<div className="relative w-full sm:w-64">
+          {/* Search */}
+          <div className="relative w-full sm:w-64">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none z-10"
+            />
 
-  <Search
-    size={16}
-    className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none z-10"
-  />
-
-  <input
-    type="text"
-    placeholder="Search reviews..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    className="
+            <input
+              type="text"
+              placeholder="Search reviews..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="
       input input-sm
       w-full
       pl-10
@@ -154,42 +154,70 @@ export default function ReviewPage() {
       relative
       z-0
     "
-  />
-
-</div>
+            />
+          </div>
         </div>
       </Animate>
 
-      {/* Review list */}
+      {/* Review List Table */}
       <Animate>
-        <div className="max-w-6xl mx-auto space-y-4">
-          {filteredReviews.map((review) => (
-            <div
-              key={review.id}
-              className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:scale-[1.01] transition"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-lg">{review.title}</span>
+        <div className="max-w-7xl mx-auto overflow-x-auto rounded-2xl border border-base-300 shadow-sm bg-base-200/70 backdrop-blur">
+          <table className="table text-base w-full">
+            <thead className="bg-base-300/40 text-base-content/80">
+              <tr className="h-12">
+                <th className="text-left">Title</th>
+                <th className="text-center">Status</th>
+                <th className="text-left">Summary</th>
+                <th className="text-left">Author</th>
+                <th className="text-left">Date</th>
+                <th className="text-right">Action</th>
+              </tr>
+            </thead>
 
-                  <FileStatus status={review.status} />
-                </div>
+            <tbody>
+              {filteredReviews.map((review) => (
+                <tr
+                  key={review.id}
+                  className="hover:bg-base-300/30 transition h-[76px]"
+                >
+                  {/* Title */}
+                  <td className="font-semibold text-base">{review.title}</td>
 
-                <p className="text-sm text-base-content/60">{review.summary}</p>
+                  {/* Status */}
+                  <td className="text-center">
+                    <div className="flex justify-center">
+                      <FileStatus status={review.status.toLowerCase()} />
+                    </div>
+                  </td>
 
-                <p className="text-xs text-base-content/40">
-                  Author: {review.author} · {review.date}
-                </p>
-              </div>
+                  {/* Summary */}
+                  <td className="max-w-xs">
+                    <span className="line-clamp-2 text-sm text-base-content/60">
+                      {review.summary}
+                    </span>
+                  </td>
 
-              <Link
-                to={`/version-review/${review.id}`}
-                className="btn btn-sm btn-primary shadow-md shadow-primary/30"
-              >
-                Open Review →
-              </Link>
-            </div>
-          ))}
+                  {/* Author */}
+                  <td className="text-base-content/90">{review.author}</td>
+
+                  {/* Date */}
+                  <td className="text-base-content/70 whitespace-nowrap">
+                    {review.date}
+                  </td>
+
+                  {/* Action */}
+                  <td className="text-right">
+                    <Link
+                      to={`/version-review/${review.id}`}
+                      className="btn btn-sm btn-primary gap-2 min-w-[90px] shadow-md shadow-primary/30"
+                    >
+                      Open Review →
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </Animate>
     </div>
