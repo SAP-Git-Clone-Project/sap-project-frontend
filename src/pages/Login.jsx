@@ -1,56 +1,86 @@
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, AlertCircle, Loader2, ArrowRight, Shield } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  AlertCircle,
+  Loader2,
+  ArrowRight,
+  Shield,
+} from "lucide-react";
 import Animate from "@/components/animation/Animate";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import BackgroundEffects from "@/components/background/BackgroundEffects";
+import { loginUser } from "@/api/auth";
 
 const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 const LoginHeader = () => {
   return (
     <Animate variant="fade-up" delay={0} duration={600}>
-      <div className="text-center mb-10">
-        <span className="px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-[0.2em] border border-primary/20">
+      <div className="mb-10 text-center">
+        <span className="rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
           Secure Access
         </span>
-        <h1 className="text-5xl font-black tracking-tight text-base-content mt-6">Welcome back</h1>
-        <p className="text-base-content/60 mt-3 font-medium italic">Enter your credentials to continue</p>
+        <h1 className="mt-6 text-5xl font-black tracking-tight text-base-content">
+          Welcome back
+        </h1>
+        <p className="mt-3 font-medium italic text-base-content/60">
+          Enter your credentials to continue
+        </p>
       </div>
     </Animate>
   );
-}
+};
 
-const InputField = ({ label, icon, error, isPassword, showPass, togglePass, hasForgot, ...props }) => {
+const InputField = ({
+  label,
+  icon,
+  error,
+  isPassword,
+  showPass,
+  togglePass,
+  hasForgot,
+  ...props
+}) => {
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between ml-1">
+      <div className="ml-1 flex items-center justify-between">
         <label className="text-[10px] font-bold uppercase tracking-[0.25em] text-base-content/50">
           {label}
         </label>
         {hasForgot && (
-          <button type="button" className="text-[10px] font-bold text-primary hover:text-primary-focus uppercase tracking-tighter transition-colors">
+          <button
+            type="button"
+            className="text-[10px] font-bold uppercase tracking-tighter text-primary transition-colors hover:text-primary-focus"
+          >
             Forgot Password?
           </button>
         )}
       </div>
 
-      <div className={`group flex items-center gap-3 px-5 py-4 rounded-2xl bg-base-200/30 border-2 transition-all duration-300 
-        ${error ? "border-error/40 bg-error/5" : "border-transparent focus-within:border-primary/50 focus-within:bg-base-100/50"}`}>
-
-        <div className="text-base-content/40 group-focus-within:text-primary transition-colors">
+      <div
+        className={`group flex items-center gap-3 rounded-2xl border-2 px-5 py-4 transition-all duration-300 ${
+          error
+            ? "border-error/40 bg-error/5"
+            : "border-transparent bg-base-200/30 focus-within:border-primary/50 focus-within:bg-base-100/50"
+        }`}
+      >
+        <div className="text-base-content/40 transition-colors group-focus-within:text-primary">
           {icon}
         </div>
 
         <input
           {...props}
-          className="bg-transparent w-full text-sm outline-none placeholder:text-base-content/30"
+          className="w-full bg-transparent text-sm outline-none placeholder:text-base-content/30"
         />
 
         {isPassword && (
           <button
             type="button"
             onClick={togglePass}
-            className="text-base-content/30 hover:text-primary transition-colors"
+            className="text-base-content/30 transition-colors hover:text-primary"
           >
             {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
@@ -59,21 +89,21 @@ const InputField = ({ label, icon, error, isPassword, showPass, togglePass, hasF
 
       {error && (
         <Animate variant="fade-in" duration={300}>
-          <p className="flex items-center gap-1.5 text-error text-[11px] font-semibold ml-1 mt-1">
+          <p className="mt-1 ml-1 flex items-center gap-1.5 text-[11px] font-semibold text-error">
             <AlertCircle size={12} /> {error}
           </p>
         </Animate>
       )}
     </div>
   );
-}
+};
 
 const SubmitButton = ({ submitting }) => {
   return (
     <button
       type="submit"
       disabled={submitting}
-      className="btn btn-primary w-full h-16 rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all border-none normal-case text-lg font-bold"
+      className="btn btn-primary h-16 w-full rounded-2xl border-none text-lg font-bold normal-case shadow-2xl shadow-primary/20 transition-all hover:shadow-primary/40"
     >
       {submitting ? (
         <span className="flex items-center gap-3">
@@ -86,71 +116,102 @@ const SubmitButton = ({ submitting }) => {
       )}
     </button>
   );
-}
+};
 
 const LoginFooter = () => {
   return (
-    <div className="mt-10 pt-8 border-t border-white/5">
-      <p className="text-center text-sm text-base-content/60 font-medium">
+    <div className="mt-10 border-t border-white/5 pt-8">
+      <p className="text-center text-sm font-medium text-base-content/60">
         Don't have an account?{" "}
-        <NavLink to="/register"
-          className="text-primary font-bold hover:text-primary-focus transition-colors"
+        <NavLink
+          to="/register"
+          className="font-bold text-primary transition-colors hover:text-primary-focus"
         >
           Join us today
         </NavLink>
       </p>
     </div>
   );
-}
+};
 
-const Login = ({ onNavigateToRegister }) => {
+const Login = () => {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showPass, setShowPass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState("");
 
-  const set = (key) => (e) => {
-    setForm((f) => ({ ...f, [key]: e.target.value }));
-    if (errors[key]) setErrors((p) => ({ ...p, [key]: "" }));
+  const setField = (key) => (e) => {
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+    if (errors[key] || serverError) {
+      setErrors((prev) => ({ ...prev, [key]: "" }));
+      setServerError("");
+    }
   };
 
   const validate = () => {
-    const e = {};
-    if (!form.email.trim()) e.email = "Email is required";
-    else if (!isValidEmail(form.email)) e.email = "Invalid email address";
-    if (!form.password) e.password = "Password is required";
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    const nextErrors = {};
+
+    if (!form.email.trim()) {
+      nextErrors.email = "Email is required";
+    } else if (!isValidEmail(form.email)) {
+      nextErrors.email = "Invalid email address";
+    }
+
+    if (!form.password) {
+      nextErrors.password = "Password is required";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (ev) => {
+  const handleSubmit = async (ev) => {
     ev.preventDefault();
+
     if (!validate()) return;
+
     setSubmitting(true);
-    setTimeout(() => setSubmitting(false), 1800);
+    setServerError("");
+
+    try {
+      const data = await loginUser({
+        email: form.email.trim(),
+        password: form.password,
+      });
+
+      localStorage.setItem("accessToken", data.access);
+      localStorage.setItem("refreshToken", data.refresh);
+      localStorage.setItem("userEmail", form.email.trim());
+
+      navigate("/documents");
+    } catch (error) {
+      setServerError(error.message || "Login failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="relative min-h-[100vh] w-full flex items-center justify-center overflow-hidden bg-base-100">
-
-      {/* DYNAMIC CANVAS BACKGROUND WITH 12 BLOBS */}
+    <div className="relative flex min-h-[100vh] w-full items-center justify-center overflow-hidden bg-base-100">
       <BackgroundEffects length={12} />
 
       <div className="relative z-10 w-full max-w-[550px] px-4 py-8">
-
         <LoginHeader />
 
         <Animate variant="fade-up" delay={100} duration={600}>
-          <div className="bg-base-100/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] shadow-2xl p-8 md:p-12">
+          <div className="rounded-[2.5rem] border border-white/5 bg-base-100/40 p-8 shadow-2xl backdrop-blur-3xl md:p-12">
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
-
               <InputField
                 label="Email Address"
                 icon={<Mail size={18} />}
                 type="email"
                 placeholder="name@company.com"
                 value={form.email}
-                onChange={set("email")}
+                onChange={setField("email")}
                 error={errors.email}
                 autoComplete="email"
               />
@@ -161,24 +222,33 @@ const Login = ({ onNavigateToRegister }) => {
                 type={showPass ? "text" : "password"}
                 placeholder="••••••••"
                 value={form.password}
-                onChange={set("password")}
+                onChange={setField("password")}
                 error={errors.password}
                 autoComplete="current-password"
                 isPassword
                 showPass={showPass}
-                togglePass={() => setShowPass(!showPass)}
+                togglePass={() => setShowPass((prev) => !prev)}
                 hasForgot
               />
+
+              {serverError && (
+                <Animate variant="fade-in" duration={300}>
+                  <div className="alert alert-error">
+                    <AlertCircle size={16} />
+                    <span>{serverError}</span>
+                  </div>
+                </Animate>
+              )}
 
               <div className="pt-4">
                 <SubmitButton submitting={submitting} />
               </div>
             </form>
 
-            <LoginFooter onNavigate={onNavigateToRegister} />
+            <LoginFooter />
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 mt-8 opacity-40">
+          <div className="mt-8 flex items-center justify-center gap-1.5 opacity-40">
             <Shield size={12} className="text-base-content" />
             <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-base-content">
               Secure Cloud Infrastructure
@@ -188,6 +258,6 @@ const Login = ({ onNavigateToRegister }) => {
       </div>
     </div>
   );
-}
+};
 
 export default Login;

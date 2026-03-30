@@ -1,9 +1,12 @@
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL = "https://sap-project-backend-2acs.onrender.com/api";
 
 export async function apiGet(path) {
+  const token = localStorage.getItem("accessToken");
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
     },
   });
 
