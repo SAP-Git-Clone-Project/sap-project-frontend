@@ -1,290 +1,298 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   FileText,
   Plus,
   Search,
-  Filter,
   Eye,
   Clock3,
   CheckCircle2,
   XCircle,
   PencilLine,
+  FileBadge,
+  FileLock2,
 } from "lucide-react";
+
+import Animate from "@/components/animation/Animate.jsx";
+import GlassCard from "./components/GlassCard.jsx";
+import FileStatus from "./components/FileStatus.jsx";
+
+import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+
+const FILTERS = ["all", "approved", "pending", "draft", "rejected"];
 
 const mockDocuments = [
   {
     id: 1,
     title: "Employee Handbook",
     author: "Ivan Petrov",
-    status: "APPROVED",
+    status: "approved",
     activeVersion: "v3",
     updatedAt: "2026-03-15",
     description: "Internal company handbook with updated onboarding policies.",
+    type: "policy",
   },
   {
     id: 2,
     title: "Security Policy",
     author: "Georgi Ivanov",
-    status: "PENDING",
+    status: "pending",
     activeVersion: "v1",
     updatedAt: "2026-03-14",
     description: "Pending review for revised security and access rules.",
+    type: "security",
   },
   {
     id: 3,
     title: "Quarterly Planning",
     author: "Maria Dimitrova",
-    status: "DRAFT",
+    status: "draft",
     activeVersion: "v2",
     updatedAt: "2026-03-12",
-    description: "Planning draft for the upcoming quarter goals and delivery.",
+    description: "Planning draft for upcoming quarter goals.",
+    type: "planning",
   },
   {
     id: 4,
     title: "Vendor Agreement",
     author: "Nikolay Stoyanov",
-    status: "REJECTED",
+    status: "rejected",
     activeVersion: "v1",
     updatedAt: "2026-03-11",
     description: "Rejected version due to missing approval notes.",
+    type: "contract",
   },
 ];
 
-function getStatusClasses(status) {
-  switch (status) {
-    case "APPROVED":
-      return "badge-success";
-    case "PENDING":
-      return "badge-warning";
-    case "DRAFT":
-      return "badge-info";
-    case "REJECTED":
-      return "badge-error";
+function getDocumentIcon(type) {
+  switch (type) {
+    case "policy":
+      return <FileBadge size={18} />;
+    case "security":
+      return <FileLock2 size={18} />;
+    case "contract":
+      return <FileText size={18} />;
+    case "planning":
+      return <PencilLine size={18} />;
     default:
-      return "badge-ghost";
-  }
-}
-
-function getStatusIcon(status) {
-  switch (status) {
-    case "APPROVED":
-      return <CheckCircle2 size={14} />;
-    case "PENDING":
-      return <Clock3 size={14} />;
-    case "DRAFT":
-      return <PencilLine size={14} />;
-    case "REJECTED":
-      return <XCircle size={14} />;
-    default:
-      return <FileText size={14} />;
+      return <FileText size={18} />;
   }
 }
 
 export default function DocumentsPage() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [filter, setFilter] = useState("all");
 
   const filteredDocuments = useMemo(() => {
     return mockDocuments.filter((doc) => {
+      const matchesFilter = filter === "all" || doc.status === filter;
+
       const matchesSearch =
         doc.title.toLowerCase().includes(search.toLowerCase()) ||
         doc.author.toLowerCase().includes(search.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === "ALL" ? true : doc.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
+      return matchesFilter && matchesSearch;
     });
-  }, [search, statusFilter]);
-
-  const stats = useMemo(() => {
-    return {
-      total: mockDocuments.length,
-      approved: mockDocuments.filter((d) => d.status === "APPROVED").length,
-      pending: mockDocuments.filter((d) => d.status === "PENDING").length,
-      drafts: mockDocuments.filter((d) => d.status === "DRAFT").length,
-    };
-  }, []);
+  }, [search, filter]);
 
   return (
-    <section className="px-4 py-8 md:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="hero rounded-3xl bg-base-200 border border-base-300">
-          <div className="hero-content w-full flex-col items-start justify-between gap-6 py-8 lg:flex-row lg:items-center">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-base-content/70">
-                <FileText size={16} />
-                <span>Document Management</span>
-              </div>
+    <div className="space-y-12 px-6 pb-12 pt-16 overflow-x-hidden">
+      {/* Header */}
+      <Animate variant="fade-down">
+        <div className="max-w-6xl mx-auto space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight">Documents</h1>
 
-              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-                Documents
-              </h1>
+          <p className="text-base-content/60">
+            Browse documents, track status, and manage versions.
+          </p>
+        </div>
+      </Animate>
 
-              <p className="max-w-2xl text-base-content/70">
-                Browse documents, track their current status, and open the full
-                version history for each record.
+      {/* Stats */}
+      <Animate>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-5">
+          <GlassCard bg="bg-primary/10" border="border-primary/20">
+            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
+              <FileText className="mx-auto mb-1 text-primary" size={18} />
+
+              <p className="text-xl font-bold">{mockDocuments.length}</p>
+
+              <p className="text-xs text-base-content/60">Total</p>
+            </div>
+          </GlassCard>
+
+          <GlassCard bg="bg-success/10" border="border-success/20">
+            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
+              <CheckCircle2 className="mx-auto mb-1 text-success" size={18} />
+
+              <p className="text-xl font-bold">
+                {mockDocuments.filter((d) => d.status === "approved").length}
               </p>
-            </div>
 
-            <Link to="/documents/create" className="btn btn-primary gap-2">
-              <Plus size={18} />
-              Create Document
-            </Link>
-          </div>
+              <p className="text-xs text-base-content/60">Approved</p>
+            </div>
+          </GlassCard>
+
+          <GlassCard bg="bg-warning/10" border="border-warning/20">
+            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
+              <Clock3 className="mx-auto mb-1 text-warning" size={18} />
+
+              <p className="text-xl font-bold">
+                {mockDocuments.filter((d) => d.status === "pending").length}
+              </p>
+
+              <p className="text-xs text-base-content/60">Pending</p>
+            </div>
+          </GlassCard>
+
+          <GlassCard bg="bg-info/10" border="border-info/20">
+            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
+              <PencilLine className="mx-auto mb-1 text-info" size={18} />
+
+              <p className="text-xl font-bold">
+                {mockDocuments.filter((d) => d.status === "draft").length}
+              </p>
+
+              <p className="text-xs text-base-content/60">Drafts</p>
+            </div>
+          </GlassCard>
         </div>
+      </Animate>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="card bg-base-200 border border-base-300 shadow-sm">
-            <div className="card-body">
-              <p className="text-sm text-base-content/70">Total Documents</p>
-              <h2 className="text-3xl font-bold">{stats.total}</h2>
-            </div>
+      {/* Filters + Search */}
+      <Animate>
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Filters */}
+          <div className="flex gap-2 flex-wrap">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`btn btn-sm ${
+                  filter === f
+                    ? "btn-primary"
+                    : "btn-ghost border border-base-300"
+                }`}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
           </div>
 
-          <div className="card bg-base-200 border border-base-300 shadow-sm">
-            <div className="card-body">
-              <p className="text-sm text-base-content/70">Approved</p>
-              <h2 className="text-3xl font-bold">{stats.approved}</h2>
-            </div>
+          {/* Search */}
+          <div className="relative w-full sm:w-64">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none z-10"
+            />
+
+            <input
+              type="text"
+              placeholder="Search documents..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input input-sm w-full pl-10 bg-base-200/70 backdrop-blur border border-base-300/40 focus:border-primary transition"
+            />
           </div>
 
-          <div className="card bg-base-200 border border-base-300 shadow-sm">
-            <div className="card-body">
-              <p className="text-sm text-base-content/70">Pending Review</p>
-              <h2 className="text-3xl font-bold">{stats.pending}</h2>
-            </div>
-          </div>
-
-          <div className="card bg-base-200 border border-base-300 shadow-sm">
-            <div className="card-body">
-              <p className="text-sm text-base-content/70">Drafts</p>
-              <h2 className="text-3xl font-bold">{stats.drafts}</h2>
-            </div>
-          </div>
+          <Link
+            to="/create"
+            className="btn btn-sm btn-primary shadow-md shadow-primary/30"
+          >
+            <Plus size={16} />
+            Create Document
+          </Link>
         </div>
+      </Animate>
 
-        <div className="card bg-base-200 border border-base-300 shadow-sm">
-          <div className="card-body gap-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="card-title text-xl">Documents Overview</h2>
-                <p className="text-sm text-base-content/70">
-                  Search and filter documents by title, author, or status.
-                </p>
-              </div>
-            </div>
+      {/* Document table */}
+      <Animate>
+        <div className="max-w-7xl mx-auto">
+          <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur shadow-sm overflow-x-auto">
+            <table className="table text-base">
+              <thead className="bg-base-300/40 text-base-content/80">
+                <tr className="h-[64px]">
+                  <th className="text-sm font-semibold">Document</th>
 
-            <div className="flex flex-col gap-3 lg:flex-row">
-              <label className="input input-bordered flex items-center gap-2 w-full lg:max-w-md">
-                <Search size={16} className="text-base-content/60" />
-                <input
-                  type="text"
-                  className="grow"
-                  placeholder="Search by title or author"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </label>
+                  <th className="text-sm font-semibold">Author</th>
 
-              <label className="select select-bordered flex items-center gap-2 w-full lg:max-w-xs">
-                <Filter size={16} className="text-base-content/60" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-transparent outline-none w-full"
-                >
-                  <option value="ALL">All statuses</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="DRAFT">Draft</option>
-                  <option value="REJECTED">Rejected</option>
-                </select>
-              </label>
-            </div>
+                  <th className="text-sm font-semibold text-center">Status</th>
 
-            <div className="overflow-x-auto rounded-2xl border border-base-300">
-              <table className="table">
-                <thead className="bg-base-300/40">
-                  <tr>
-                    <th>Document</th>
-                    <th>Author</th>
-                    <th>Status</th>
-                    <th>Active Version</th>
-                    <th>Last Updated</th>
-                    <th className="text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDocuments.length > 0 ? (
-                    filteredDocuments.map((doc) => (
-                      <tr key={doc.id} className="hover">
-                        <td>
-                          <div className="flex flex-col">
-                            <span className="font-semibold">{doc.title}</span>
-                            <span className="text-xs text-base-content/60">
-                              {doc.description}
-                            </span>
-                          </div>
-                        </td>
+                  <th className="text-sm font-semibold text-center">Version</th>
 
-                        <td>{doc.author}</td>
+                  <th className="text-sm font-semibold">Updated</th>
 
-                        <td>
-                          <span
-                            className={`badge gap-1 ${getStatusClasses(
-                              doc.status
-                            )}`}
-                          >
-                            {getStatusIcon(doc.status)}
-                            {doc.status}
-                          </span>
-                        </td>
+                  <th className="text-sm font-semibold text-right">Action</th>
+                </tr>
+              </thead>
 
-                        <td>
-                          <span className="badge badge-outline">
-                            {doc.activeVersion}
-                          </span>
-                        </td>
+              <tbody>
+                {filteredDocuments.map((doc) => (
+                  <tr
+                    key={doc.id}
+                    className="hover:bg-base-300/30 transition h-[76px]"
+                  >
+                    {/* Document */}
 
-                        <td>{doc.updatedAt}</td>
-
-                        <td className="text-right">
-                          <Link
-                            to={`/documents/${doc.id}`}
-                            className="btn btn-sm btn-outline gap-2"
-                          >
-                            <Eye size={14} />
-                            View
-                          </Link>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6">
-                        <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-                          <FileText
-                            size={28}
-                            className="text-base-content/40"
-                          />
-                          <div>
-                            <p className="font-medium">No documents found</p>
-                            <p className="text-sm text-base-content/60">
-                              Try adjusting your search or filter.
-                            </p>
-                          </div>
+                    <td>
+                      <div className="flex items-start gap-3">
+                        <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
+                          {getDocumentIcon(doc.type)}
                         </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-base">
+                            {doc.title}
+                          </span>
+
+                          <span className="text-sm text-base-content/60">
+                            {doc.description}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Author */}
+
+                    <td className="text-base-content/90">{doc.author}</td>
+
+                    {/* Status */}
+
+                    <td className="text-center">
+                      <div className="flex justify-center">
+                        <FileStatus status={doc.status} />
+                      </div>
+                    </td>
+
+                    {/* Version */}
+
+                    <td className="text-center">
+                      <span className="badge badge-outline badge-md">
+                        {doc.activeVersion}
+                      </span>
+                    </td>
+
+                    {/* Updated */}
+
+                    <td className="text-base-content/70">{doc.updatedAt}</td>
+
+                    {/* Action */}
+
+                    <td className="text-right">
+                      <Link
+                        to={`/documents/${doc.id}`}
+                        className="btn btn-sm btn-primary shadow-md shadow-primary/30"
+                      >
+                        <Eye size={16} />
+                        Open →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
-    </section>
+      </Animate>
+    </div>
   );
 }

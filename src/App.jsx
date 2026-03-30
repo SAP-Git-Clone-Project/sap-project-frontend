@@ -18,6 +18,7 @@ import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import GettingStarted from "@/pages/GettingStarted";
 import DocumentsDetailsPage from "@/pages/DocumentsDetailsPage";
+import CreateDocumentPage from "./pages/homepage/CreateDocumentPage";
 import Demo from "@/pages/homepage/demo.jsx";
 import VersionReviewPage from "@/pages/VersionReviewPage.jsx";
 import ReviewPage from "@/pages/ReviewPage.jsx";
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/documents/:id" element={<DocumentsDetailsPage />} />
+            <Route path="/create" element={<CreateDocumentPage />} />
             <Route path="/getting-started" element={<GettingStarted />} />
             <Route path="/demo" element={<Demo />} />
             <Route path="/version-review/:id" element={<VersionReviewPage />} />

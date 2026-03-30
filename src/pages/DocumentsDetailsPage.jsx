@@ -13,6 +13,10 @@ import {
   Eye,
 } from "lucide-react";
 
+import Animate from "@/components/animation/Animate.jsx";
+import FileStatus from "./homepage/components/FileStatus.jsx";
+import GlassCard from "./homepage/components/GlassCard.jsx";
+
 const mockDocuments = [
   {
     id: 1,
@@ -190,15 +194,18 @@ export default function DocumentDetailsPage() {
 
   if (!document) {
     return (
-      <section className="px-4 py-8 md:px-6 lg:px-8">
+      <section className="px-6 py-12 overflow-x-hidden">
         <div className="mx-auto max-w-5xl">
-          <div className="card border border-base-300 bg-base-200 shadow-sm">
+          <div className="card border border-base-300 bg-base-200/70 backdrop-blur shadow-sm">
             <div className="card-body items-center text-center">
               <h1 className="text-2xl font-bold">Document not found</h1>
-              <p className="text-base-content/70">
+              <p className="text-base-content/60 mt-1">
                 The requested document does not exist in the current mock data.
               </p>
-              <Link to="/documents" className="btn btn-primary mt-2">
+              <Link
+                to="/documents"
+                className="btn btn-primary mt-4 shadow-md shadow-primary/30"
+              >
                 Back to Documents
               </Link>
             </div>
@@ -209,142 +216,123 @@ export default function DocumentDetailsPage() {
   }
 
   return (
-    <section className="px-4 py-8 md:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex items-center justify-between gap-3">
-          <Link to="/documents" className="btn btn-ghost btn-sm gap-2">
-            <ArrowLeft size={16} />
-            Back to Documents
-          </Link>
+    <section className="px-6 py-12 overflow-x-hidden space-y-12">
+      {/* Header Links */}
+      <Animate variant="fade-down">
+        <div className="flex items-center justify-between gap-3 max-w-7xl mx-auto">
+          {/* Back button */}
+          <Animate>
+            <Link
+              to="/"
+              className="btn btn-sm btn-ghost border border-base-300 hover:border-primary hover:text-primary transition w-fit"
+            >
+              <ArrowLeft size={16} />
+              Back to Documents
+            </Link>
+          </Animate>
 
           <Link
             to={`/documents/${id}/create-version`}
-            className="btn btn-primary gap-2"
+            className="btn btn-primary gap-2 shadow-md shadow-primary/30"
           >
             <GitBranchPlus size={18} />
             Create Version
           </Link>
         </div>
+      </Animate>
 
-        <div className="hero rounded-3xl border border-base-300 bg-base-200">
-          <div className="hero-content w-full flex-col items-start justify-between gap-6 py-8 lg:flex-row lg:items-center">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-base-content/70">
+      {/* Document Hero with Stats */}
+      <Animate>
+        <div className="hero rounded-3xl border border-base-300 bg-base-200/70 backdrop-blur shadow-sm max-w-7xl mx-auto">
+          <div className="hero-content w-full flex-col items-start gap-6 py-8 lg:flex-row lg:items-start">
+            {/* Left-aligned content */}
+            <div className="space-y-4 flex-1">
+              <div className="flex items-center gap-2 text-sm text-base-content/60">
                 <History size={16} />
                 <span>Document Details</span>
               </div>
 
-              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
                 {document.title}
               </h1>
 
-              <p className="max-w-3xl text-base-content/70">
+              <p className="max-w-3xl text-base-content/70 leading-relaxed">
                 {document.description}
               </p>
 
-              <div className="flex flex-wrap items-center gap-2 pt-1">
+              {/* Modern Status & Active Version Badges */}
+              <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`badge gap-1 ${getStatusClasses(document.status)}`}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm shadow-md ${
+                    document.status === "APPROVED"
+                      ? "bg-success text-white shadow-success/30"
+                      : document.status === "PENDING"
+                        ? "bg-warning text-white shadow-warning/30"
+                        : document.status === "DRAFT"
+                          ? "bg-info text-white shadow-info/30"
+                          : document.status === "REJECTED"
+                            ? "bg-error text-white shadow-error/30"
+                            : "bg-base-300 text-base-content shadow-sm"
+                  }`}
                 >
                   {getStatusIcon(document.status)}
                   {document.status}
                 </span>
 
-                <span className="badge badge-outline gap-1">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm text-white bg-primary shadow-md shadow-primary/30 border border-primary">
                   <FileText size={14} />
                   Active {document.activeVersion}
                 </span>
               </div>
+
+              {/* Author & Last Updated */}
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <div className="inline-flex items-center gap-2 text-sm text-base-content/60">
+                  <User size={16} />
+                  <span>Author:</span>
+                  <span className="font-medium text-base text-base-content">
+                    {document.author}
+                  </span>
+                </div>
+
+                <div className="inline-flex items-center gap-2 text-sm text-base-content/60">
+                  <CalendarDays size={16} />
+                  <span>Last Updated:</span>
+                  <span className="font-medium text-base text-base-content">
+                    {document.updatedAt}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </Animate>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="card border border-base-300 bg-base-200 shadow-sm">
-            <div className="card-body">
-              <div className="flex items-center gap-2 text-sm text-base-content/70">
-                <User size={16} />
-                <span>Author</span>
-              </div>
-              <h2 className="text-xl font-semibold">{document.author}</h2>
-            </div>
-          </div>
-
-          <div className="card border border-base-300 bg-base-200 shadow-sm">
-            <div className="card-body">
-              <div className="flex items-center gap-2 text-sm text-base-content/70">
-                <CheckCircle2 size={16} />
-                <span>Current Status</span>
-              </div>
-              <h2 className="text-xl font-semibold">{document.status}</h2>
-            </div>
-          </div>
-
-          <div className="card border border-base-300 bg-base-200 shadow-sm">
-            <div className="card-body">
-              <div className="flex items-center gap-2 text-sm text-base-content/70">
-                <FileText size={16} />
-                <span>Active Version</span>
-              </div>
-              <h2 className="text-xl font-semibold">
-                {document.activeVersion}
-              </h2>
-            </div>
-          </div>
-
-          <div className="card border border-base-300 bg-base-200 shadow-sm">
-            <div className="card-body">
-              <div className="flex items-center gap-2 text-sm text-base-content/70">
-                <CalendarDays size={16} />
-                <span>Last Updated</span>
-              </div>
-              <h2 className="text-xl font-semibold">{document.updatedAt}</h2>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-3">
-          <div className="card border border-base-300 bg-base-200 shadow-sm xl:col-span-1">
-            <div className="card-body">
+      {/* Document Information & Version History */}
+      <Animate>
+        <div className="max-w-7xl mx-auto grid gap-6 xl:grid-cols-3">
+          {/* Document Information */}
+          <div className="card border border-base-300 bg-base-200/70 backdrop-blur shadow-sm xl:col-span-1">
+            <div className="card-body space-y-5">
               <h2 className="card-title text-xl">Document Information</h2>
-
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-base-content/60">Document ID</p>
-                  <p className="font-medium">{document.id}</p>
+              {[
+                ["Document ID", document.id],
+                ["Title", document.title],
+                ["Description", document.description],
+                ["Created By", document.author],
+                ["Created At", document.createdAt],
+                ["Updated At", document.updatedAt],
+              ].map(([label, value]) => (
+                <div key={label} className="space-y-1">
+                  <p className="text-sm text-base-content/60">{label}</p>
+                  <p className="font-medium text-base">{value}</p>
                 </div>
-
-                <div>
-                  <p className="text-base-content/60">Title</p>
-                  <p className="font-medium">{document.title}</p>
-                </div>
-
-                <div>
-                  <p className="text-base-content/60">Description</p>
-                  <p className="leading-6 text-base-content/80">
-                    {document.description}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-base-content/60">Created By</p>
-                  <p className="font-medium">{document.author}</p>
-                </div>
-
-                <div>
-                  <p className="text-base-content/60">Created At</p>
-                  <p className="font-medium">{document.createdAt}</p>
-                </div>
-
-                <div>
-                  <p className="text-base-content/60">Updated At</p>
-                  <p className="font-medium">{document.updatedAt}</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          <div className="card border border-base-300 bg-base-200 shadow-sm xl:col-span-2">
+          {/* Version History Table */}
+          <div className="card border border-base-300 bg-base-200/70 backdrop-blur shadow-sm xl:col-span-2">
             <div className="card-body gap-4">
               <div>
                 <h2 className="card-title text-xl">Version History</h2>
@@ -354,60 +342,68 @@ export default function DocumentDetailsPage() {
                 </p>
               </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-base-300">
-                <table className="table">
-                  <thead className="bg-base-300/40">
-                    <tr>
+              <div className="overflow-x-auto rounded-2xl border border-base-300 shadow-sm">
+                <table className="table text-base">
+                  <thead className="bg-base-300/40 text-base-content/80">
+                    <tr className="h-12">
                       <th>Version</th>
                       <th>Status</th>
                       <th>Author</th>
                       <th>Created At</th>
                       <th>Summary</th>
-                      <th className="text-right">Action</th>
+                      <th className="text-right"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {versions.map((version) => (
-                      <tr key={version.id} className="hover">
+                      <tr
+                        key={version.id}
+                        className="hover:bg-base-300/30 transition h-[76px]"
+                      >
+                        {/* Version */}
                         <td>
                           <div className="flex flex-col gap-1">
-                            <span className="font-semibold">
+                            <span className="font-semibold text-base">
                               {version.versionNumber}
                             </span>
                             {version.isActive && (
-                              <span className="badge badge-outline badge-sm w-fit">
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-white text-sm font-semibold shadow-md shadow-primary/30">
                                 Active
                               </span>
                             )}
                           </div>
                         </td>
 
-                        <td>
-                          <span
-                            className={`badge gap-1 ${getStatusClasses(
-                              version.status
-                            )}`}
-                          >
-                            {getStatusIcon(version.status)}
-                            {version.status}
-                          </span>
+                        {/* Status */}
+                        <td className="text-center">
+                          <div className="flex justify-center">
+                            <FileStatus status={version.status.toLowerCase()} />
+                          </div>
                         </td>
 
-                        <td>{version.author}</td>
-                        <td>{version.createdAt}</td>
+                        {/* Author */}
+                        <td className="text-base-content/90">
+                          {version.author}
+                        </td>
+
+                        {/* Created At */}
+                        <td className="text-base-content/70 whitespace-nowrap">
+                          {version.createdAt}
+                        </td>
+
+                        {/* Summary */}
                         <td className="max-w-xs">
-                          <span className="line-clamp-2 text-sm text-base-content/75">
+                          <span className="line-clamp-2 text-sm text-base-content/60">
                             {version.summary}
                           </span>
                         </td>
 
-                        <td>
-                          <div className="flex justify-end">
-                            <button className="btn btn-sm btn-outline min-w-[90px] gap-2">
-                              <Eye size={14} className="shrink-0" />
-                              <span className="whitespace-nowrap">View</span>
-                            </button>
-                          </div>
+                        {/* Action */}
+                        <td className="text-right">
+                          <button className="btn btn-sm btn-primary gap-2 min-w-[90px]">
+                            <Eye size={16} />
+                            View
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -415,7 +411,7 @@ export default function DocumentDetailsPage() {
                 </table>
               </div>
 
-              <div className="alert border border-base-300 bg-base-100">
+              <div className="alert border border-base-300 bg-base-100 shadow-sm">
                 <span className="text-sm text-base-content/70">
                   Only approved versions should become active. Rejected versions
                   remain visible in history.
@@ -424,7 +420,7 @@ export default function DocumentDetailsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </Animate>
     </section>
   );
 }
