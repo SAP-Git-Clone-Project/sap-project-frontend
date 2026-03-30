@@ -9,7 +9,7 @@ const BackgroundEffects = () => (
   <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
     <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
     <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-secondary/20 rounded-full blur-[120px] animate-pulse delay-700" />
-    <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+    <div className="absolute inset-0 opacity-[0.03] pointer-events-none" />
   </div>
 );
 
@@ -28,13 +28,13 @@ const ProfilePage = () => {
     avatar: "",
   });
 
+  // --- FETCH PROFILE ---
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const response = await api.get("/users/me/");
         const data = response.data;
 
-        // Safely map fields (handles snake_case, camelCase, and nested profile objects)
         const mappedData = {
           username: data.username,
           email: data.email,
@@ -49,7 +49,6 @@ const ProfilePage = () => {
           last_name: data.last_name || data.lastName || data.profile?.last_name || "",
         };
 
-        // Update global state and form
         setUser(mappedData);
         
         setFormData((prev) => ({
@@ -58,15 +57,12 @@ const ProfilePage = () => {
           last_name: mappedData.last_name,
           username: mappedData.username,
           avatar: mappedData.avatar,
-          password: "", 
-          confirmPassword: "",
         }));
 
       } catch (error) {
-        console.error("Profile Fetch Error:", error.response?.data || error.message);
         const msg = error.response?.status === 401 
           ? "Session expired - Please login again" 
-          : "Failed to load profile. Check console (F12).";
+          : "Failed to load profile.";
         setApiError(msg);
         notify.error(msg);
       } finally {
@@ -76,11 +72,18 @@ const ProfilePage = () => {
     fetchProfile();
   }, [setUser]);
 
-  const handleSignOut = () => {
-    notify.success("Logged out successfully");
-    setTimeout(() => {
-      logout("/getting-started");
-    }, 1000);
+  // --- HANDLERS ---
+
+  const handleLogOut = async () => {
+    try {
+      notify.success("Logging out...");
+      await logout();
+      setTimeout(() => {
+        navigate("/getting-started");
+      }, 800);
+    } catch (error) {
+      navigate("/getting-started");
+    }
   };
 
   const handleUpdateProfile = async () => {
@@ -88,57 +91,80 @@ const ProfilePage = () => {
       return notify.error("Passwords do not match");
     }
     try {
+      // NOTE: Using PUT often requires the full object. 
+      // We merge current user data with form updates to be safe.
       const payload = { 
+        ...user,
         first_name: formData.first_name, 
         last_name: formData.last_name, 
         username: formData.username 
       };
       if (formData.password) payload.password = formData.password;
 
-      const response = await api.patch("/users/me/", payload);
-      setUser(response.data);
+      const response = await api.put("/users/me/", payload);
+      
+      setUser(prev => ({ ...prev, ...response.data }));
       setFormData(prev => ({ ...prev, password: "", confirmPassword: "" }));
       
-      notify.success("Profile updated!");
-      document.getElementById("edit_profile_modal").close();
+      notify.success("Profile updated successfully!");
+      
+      setTimeout(() => {
+        document.getElementById("edit_profile_modal").close();
+      }, 500);
     } catch (error) {
       notify.error(error.response?.data?.detail || "Update failed");
     }
   };
 
   const handleAvatarUpdate = async () => {
-    if (!formData.avatar.startsWith("http")) {
+    if (!formData.avatar.trim().startsWith("http")) {
       return notify.error("Please enter a valid image URL");
     }
     try {
-      const response = await api.patch("/users/me/", { avatar: formData.avatar });
-      setUser(response.data);
+      // FIXED: Switched to PUT and included existing user data to satisfy "Full Update" requirements
+      const payload = { 
+        ...user, 
+        avatar: formData.avatar 
+      };
+
+      const response = await api.put("/users/me/", payload);
+      
+      setUser(prev => ({ ...prev, avatar: response.data.avatar }));
       setFormData(prev => ({ ...prev, avatar: response.data.avatar }));
+      
       notify.success("Avatar updated!");
-      document.getElementById("avatar_modal").close();
+      
+      setTimeout(() => {
+        document.getElementById("avatar_modal").close();
+      }, 500);
     } catch (error) {
-      notify.error("Avatar update failed");
+      notify.error("Avatar update failed. Check console.");
+      console.error("PUT Error:", error.response?.data);
     }
   };
 
   const handleDeleteAccount = async () => {
     try {
       await api.delete("/users/me/");
-      notify.success("Account deleted");
-      logout("/getting-started");
+      notify.success("Account deleted. Farewell!");
+      
+      setTimeout(async () => {
+        await logout();
+        navigate("/getting-started");
+      }, 1000);
     } catch (error) {
       notify.error("Action failed");
     }
   };
 
-  // Helper to safely display the user's actual name
   const getDisplayName = () => {
     const first = user?.first_name || "";
     const last = user?.last_name || "";
     return [first, last].filter(Boolean).join(" ") || "User";
   };
 
-  // --- LOADING STATE ---
+  // --- RENDER LOGIC ---
+
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen gap-4">
@@ -148,14 +174,12 @@ const ProfilePage = () => {
     );
   }
 
-  // --- ERROR STATE ---
   if (apiError || !user) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen gap-6 px-4">
         <div className="text-center">
           <p className="text-2xl font-bold text-error mb-2">Could Not Load Profile</p>
           <p className="text-base-content/70 mb-1">{apiError}</p>
-          <p className="text-xs text-base-content/50">Open Browser Console (F12) for technical details.</p>
         </div>
         <button className="btn btn-primary" onClick={() => navigate("/getting-started")}>
           Go Back
@@ -164,7 +188,6 @@ const ProfilePage = () => {
     );
   }
 
-  // --- MAIN PROFILE UI ---
   return (
     <div className="space-y-12 overflow-hidden relative pb-10">
       <BackgroundEffects />
@@ -214,10 +237,10 @@ const ProfilePage = () => {
                   Edit Profile
                 </button>
                 <button 
-                  onClick={handleSignOut} 
+                  onClick={handleLogOut} 
                   className="btn btn-sm btn-ghost border border-base-300 hover:border-error hover:text-error transition"
                 >
-                  Sign Out
+                  Log Out
                 </button>
               </div>
             </div>
@@ -237,16 +260,6 @@ const ProfilePage = () => {
             onChange={(e) => setFormData({ ...formData, avatar: e.target.value })} 
             className="input input-bordered w-full mb-4 bg-base-300" 
           />
-          {formData.avatar.startsWith("http") && (
-            <div className="flex justify-center mb-4">
-              <img 
-                src={formData.avatar} 
-                alt="Preview" 
-                className="w-20 h-20 rounded-full object-cover border" 
-                onError={(e) => { e.target.style.display = "none"; }} 
-              />
-            </div>
-          )}
           <div className="modal-action">
             <form method="dialog"><button className="btn btn-ghost">Cancel</button></form>
             <button className="btn btn-primary" onClick={handleAvatarUpdate}>Save</button>
@@ -308,7 +321,7 @@ const ProfilePage = () => {
             className="input input-bordered w-full mb-4 bg-base-300" 
           />
 
-          <div className="modal-action flex justify-end gap-2">
+          <div className="modal-action">
             <form method="dialog"><button className="btn btn-ghost">Cancel</button></form>
             <button 
               className="btn btn-primary shadow-md shadow-primary/30" 
@@ -356,19 +369,14 @@ const ProfilePage = () => {
         </div>
       </Animate>
 
-      {/* Delete Account Modal */}
+      {/* Delete Modal */}
       <dialog id="delete_account_modal" className="modal">
         <div className="modal-box bg-base-200 border border-error/40 shadow-xl">
           <h3 className="font-bold text-lg text-error mb-3">Delete Account</h3>
           <p className="text-sm text-base-content/60 mb-6">This action is permanent and cannot be undone.</p>
-          <div className="modal-action flex justify-end gap-2">
+          <div className="modal-action">
             <form method="dialog"><button className="btn btn-ghost">Cancel</button></form>
-            <button 
-              className="btn btn-error shadow-md shadow-error/30" 
-              onClick={handleDeleteAccount}
-            >
-              Yes, Delete
-            </button>
+            <button className="btn btn-error" onClick={handleDeleteAccount}>Yes, Delete</button>
           </div>
         </div>
       </dialog>
