@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { Sun, Moon, Zap, File, ClipboardCheck, NotepadText, Menu, X, MonitorCog, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import notify from "@/components/toaster/notify";
@@ -69,14 +69,14 @@ export default function Navbar({ theme, toggleTheme }) {
         <div className="w-full max-w-[1440px] mx-auto px-8 flex items-center justify-between">
 
           {/* ── Brand ── */}
-          <div className="flex items-center gap-3 shrink-0">
+          <Link to="/" className="flex items-center gap-3 shrink-0 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
               <Zap size={18} className="text-primary-content fill-current" />
             </div>
             <span className="font-black text-xl tracking-tight text-base-content hidden sm:block">
               SAP <span className="text-primary">Hub</span>
             </span>
-          </div>
+          </Link>
 
           {/* ── Desktop Nav Links ── */}
           <div className="hidden min-[1000px]:flex flex-1 items-center gap-2 ml-12">

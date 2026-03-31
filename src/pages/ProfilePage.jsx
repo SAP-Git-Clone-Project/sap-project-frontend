@@ -32,17 +32,57 @@ const ProfilePage = () => {
   });
 
   // --- RANDOM GRADIENT FOR THE TOP CARD ---
-  const randomGradient = useMemo(() => {
+  const { gradientClasses, gradientStyle } = useMemo(() => {
     const gradients = [
-      "from-purple-500/40 to-teal-400/40",    // Original Cyber
-      "from-blue-600/40 to-violet-500/40",    // Deep Sea
-      "from-rose-500/40 to-orange-400/40",    // Sunset Glow
-      "from-emerald-500/40 to-cyan-400/40",   // Bio-Tech
-      "from-indigo-500/40 via-purple-500/40 to-pink-500/40", // Aurora
-      "from-amber-400/40 to-red-500/40"       // Volcanic
+      // --- GREEN / CYAN ---
+      "from-[#00F5A0] to-[#00D9F5]",
+      "from-[#00FFA3] to-[#2EC4B6]",
+      "from-[#00C9FF] to-[#92FE9D]",
+      "from-[#11998E] to-[#38EF7D]",
+      "from-[#43E97B] to-[#38F9D7]",
+
+      // --- BLUE / CYAN ---
+      "from-[#3A86FF] to-[#00BBF9]",
+      "from-[#4361EE] to-[#4CC9F0]",
+      "from-[#007CF0] to-[#00DFD8]",
+      "from-[#0575E6] to-[#00F260]",
+      "from-[#00DBDE] to-[#0083B0]",
+
+      // --- GREEN / BLUE ---
+      "from-[#00C853] to-[#0091EA]",
+      "from-[#1FA2FF] to-[#12D8FA]",
+      "from-[#00B09B] to-[#96C93D]",
+      "from-[#134E5E] to-[#71B280]",
+
+      // --- ORANGE / YELLOW ---
+      "from-[#F7971E] to-[#FFD200]",
+      "from-[#FCE38A] to-[#F38181]",
+      "from-[#F6D365] to-[#FDA085]",
+      "from-[#FFB75E] to-[#ED8F03]",
+      "from-[#F2994A] to-[#F2C94C]",
+
+      // --- RED / ORANGE ---
+      "from-[#F83600] to-[#F9D423]",
+      "from-[#FF4E50] to-[#F9D423]",
+      "from-[#FF6A00] to-[#FFB347]",
+      "from-[#E65100] to-[#FF8F00]",
+
+      // --- CROSS ---
+      "from-[#56AB2F] to-[#F09819]",
+      "from-[#A8E063] to-[#F76B1C]",
+      "from-[#00C853] to-[#FF6D00]"
     ];
-    return gradients[Math.floor(Math.random() * gradients.length)];
-  }, []); // Only picks once per page load
+
+    const picked = gradients[Math.floor(Math.random() * gradients.length)];
+    const degree = Math.floor(Math.random() * 61);
+
+    return {
+      gradientClasses: picked,
+      gradientStyle: {
+        backgroundImage: `linear-gradient(${degree}deg, var(--tw-gradient-stops))`
+      }
+    };
+  }, []);
 
   // --- FETCH PROFILE DATA ON MOUNT ---
   useEffect(() => {
@@ -185,7 +225,10 @@ const ProfilePage = () => {
           <div className="lg:col-span-4 space-y-6">
             <Animate variant="fade-right">
               <div className="card bg-base-200/40 backdrop-blur-xl border border-white/10 shadow-2xl overflow-hidden">
-                <div className={`h-24 bg-gradient-to-r ${randomGradient} border-b border-white/10 backdrop-blur-sm`} />
+                <div
+                  className={`h-24 w-full border-b border-white/10 backdrop-blur-md bg-white/5 saturate-150 bg-gradient-to-r ${gradientClasses}`}
+                  style={gradientStyle}
+                />
                 <div className="px-6 pb-8 text-center -mt-12">
                   <div className="relative inline-block group">
                     <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-base-200 shadow-xl mx-auto transition-transform group-hover:scale-105 duration-300 relative z-0">
@@ -317,14 +360,16 @@ const ProfilePage = () => {
                   <span className="label-text text-xs font-bold text-secondary uppercase tracking-widest">Preview</span>
                 </label>
 
-                <div className="w-full aspect-video rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden relative group">
+
+                <div className="size-48 aspect-square rounded-full border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden relative group">
+
                   {formData.avatar ? (
                     <img
                       src={formData.avatar}
                       alt="Avatar Preview"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       onError={(e) => {
-                        e.target.src = "https://placehold.co/600x400/000000/FFF?text=Invalid+Image+URL";
+                        e.target.src = "https://placehold.co/400x400/000000/FFF?text=Error";
                       }}
                     />
                   ) : (
@@ -332,10 +377,15 @@ const ProfilePage = () => {
                       <div className="p-3 rounded-full bg-white/5 border border-white/5">
                         <Camera size={24} />
                       </div>
-                      <span className="text-xs font-medium italic text-center px-4">No image source provided</span>
+                      {/* Reduced text size for better fit in a smaller circle */}
+                      <span className="text-[10px] font-medium italic text-center px-4">
+                        No image source provided
+                      </span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+
+                  {/* Overlay (optional, may need softening for a circle) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                 </div>
               </div>
 
