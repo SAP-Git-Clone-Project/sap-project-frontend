@@ -1,23 +1,31 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  GitBranchPlus,
   FileText,
-  Type,
   AlignLeft,
   Upload,
   Save,
   X,
+  History,
 } from "lucide-react";
+import { getDocumentById, getActiveVersionByDocumentId } from "@/data/mockData";
 
-export default function CreateDocumentPage() {
+import Animate from "@/components/animation/Animate.jsx";
+
+export default function CreateVersionPage() {
+  const { id } = useParams();
   const navigate = useNavigate();
 
+  const numericId = Number(id);
+  const document = getDocumentById(numericId);
+  const activeVersion = getActiveVersionByDocumentId(numericId);
+
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
+    versionLabel: "",
+    summary: "",
     content: "",
-    category: "",
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -51,24 +59,26 @@ export default function CreateDocumentPage() {
 
   function validateForm() {
     const newErrors = {};
-    const trimmedTitle = formData.title.trim();
-    const trimmedDescription = formData.description.trim();
+    const trimmedVersionLabel = formData.versionLabel.trim();
+    const trimmedSummary = formData.summary.trim();
     const trimmedContent = formData.content.trim();
 
-    if (!trimmedTitle) {
-      newErrors.title = "Title is required.";
-    } else if (trimmedTitle.length < 3) {
-      newErrors.title = "Title must be at least 3 characters.";
+    if (!trimmedVersionLabel) {
+      newErrors.versionLabel = "Version label is required.";
+    } else if (!/^v\d+$/i.test(trimmedVersionLabel)) {
+      newErrors.versionLabel =
+        "Version label must be in format like v1, v2, v10.";
     }
 
-    if (!trimmedDescription) {
-      newErrors.description = "Description is required.";
-    } else if (trimmedDescription.length < 10) {
-      newErrors.description = "Description must be at least 10 characters.";
+    if (!trimmedSummary) {
+      newErrors.summary = "Change summary is required.";
+    } else if (trimmedSummary.length < 10) {
+      newErrors.summary = "Change summary must be at least 10 characters.";
     }
 
     if (!trimmedContent && !selectedFile) {
-      newErrors.form = "Please provide either document content or an attachment.";
+      newErrors.form =
+        "Please provide either version content or an attachment.";
     }
 
     return newErrors;
@@ -84,54 +94,94 @@ export default function CreateDocumentPage() {
       return;
     }
 
-    console.log("Create document payload:", {
-      title: formData.title.trim(),
-      category: formData.category.trim(),
-      description: formData.description.trim(),
+    console.log("Create version payload:", {
+      documentId: numericId,
+      parentVersionId: activeVersion?.id || null,
+      versionLabel: formData.versionLabel.trim(),
+      summary: formData.summary.trim(),
       content: formData.content.trim(),
       file: selectedFile,
     });
 
-    navigate("/documents");
+    navigate(`/documents/${numericId}`);
+  }
+
+  if (!document) {
+    return (
+      <section className="px-4 py-8 md:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="card border border-base-300 bg-base-200 shadow-sm">
+            <div className="card-body items-center text-center">
+              <h1 className="text-2xl font-bold">Document not found</h1>
+              <p className="text-base-content/70">
+                Cannot create a version because this document does not exist in
+                the current mock data.
+              </p>
+              <Link to="/documents" className="btn btn-primary mt-2">
+                Back to Documents
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
     <section className="px-4 py-8 md:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between gap-3">
-          <Link to="/documents" className="btn btn-ghost btn-sm gap-2">
+          <Link
+            to={`/documents/${numericId}`}
+            className="btn btn-ghost btn-sm gap-2"
+          >
             <ArrowLeft size={16} />
-            Back to Documents
+            Back to Details
           </Link>
         </div>
 
+
+{/* Create Version */}
+<Animate variant="fade-down">
         <div className="hero rounded-3xl border border-base-300 bg-base-200">
           <div className="hero-content w-full flex-col items-start justify-between gap-6 py-8 lg:flex-row lg:items-center">
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-base-content/70">
-                <FileText size={16} />
-                <span>Document Management</span>
+                <GitBranchPlus size={16} />
+                <span>Version Management</span>
               </div>
 
               <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-                Create Document
+                Create Version
               </h1>
 
-              <p className="max-w-2xl text-base-content/70">
-                Create a new document record and prepare its initial content for
-                future version tracking and review.
+              <p className="max-w-3xl text-base-content/70">
+                Create a new version for{" "}
+                <span className="font-medium">{document.title}</span> based on
+                the current active version.
               </p>
+
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm text-white bg-primary shadow-md shadow-primary/30 border border-primary">
+                  <FileText size={14} />
+                  Active{" "}
+                  {activeVersion ? `v${activeVersion.versionNumber}` : "N/A"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
+</Animate>
 
+<Animate>
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
           <div className="card border border-base-300 bg-base-200 shadow-sm">
             <div className="card-body gap-5">
               <div>
-                <h2 className="card-title text-xl">Document Information</h2>
+                <h2 className="card-title text-xl">Version Information</h2>
                 <p className="text-sm text-base-content/70">
-                  Fill in the main details for the new document.
+                  Define the new version label and add a short summary of the
+                  changes.
                 </p>
               </div>
 
@@ -139,44 +189,44 @@ export default function CreateDocumentPage() {
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text flex items-center gap-2 font-medium">
-                      <Type size={16} />
-                      Title
+                      <History size={16} />
+                      Based On
                     </span>
                   </label>
                   <input
                     type="text"
-                    name="title"
-                    placeholder="Enter document title"
-                    className={`input input-bordered w-full ${
-                      errors.title ? "input-error" : ""
-                    }`}
-                    value={formData.title}
-                    onChange={handleChange}
+                    className="input input-bordered w-full"
+                    value={
+                      activeVersion ? `v${activeVersion.versionNumber}` : ""
+                    }
+                    disabled
                   />
-                  {errors.title && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">
-                        {errors.title}
-                      </span>
-                    </label>
-                  )}
                 </div>
 
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text flex items-center gap-2 font-medium">
-                      <FileText size={16} />
-                      Category
+                      <GitBranchPlus size={16} />
+                      New Version Label
                     </span>
                   </label>
                   <input
                     type="text"
-                    name="category"
-                    placeholder="e.g. Policy, Handbook, Agreement"
-                    className="input input-bordered w-full"
-                    value={formData.category}
+                    name="versionLabel"
+                    placeholder="e.g. v4"
+                    className={`input input-bordered w-full ${
+                      errors.versionLabel ? "input-error" : ""
+                    }`}
+                    value={formData.versionLabel}
                     onChange={handleChange}
                   />
+                  {errors.versionLabel && (
+                    <label className="label">
+                      <span className="label-text-alt text-error">
+                        {errors.versionLabel}
+                      </span>
+                    </label>
+                  )}
                 </div>
               </div>
 
@@ -184,22 +234,22 @@ export default function CreateDocumentPage() {
                 <label className="label">
                   <span className="label-text flex items-center gap-2 font-medium">
                     <AlignLeft size={16} />
-                    Description
+                    Change Summary
                   </span>
                 </label>
                 <textarea
-                  name="description"
-                  placeholder="Write a short description for the document"
+                  name="summary"
+                  placeholder="Describe what changed in this version"
                   className={`textarea textarea-bordered min-h-28 w-full ${
-                    errors.description ? "textarea-error" : ""
+                    errors.summary ? "textarea-error" : ""
                   }`}
-                  value={formData.description}
+                  value={formData.summary}
                   onChange={handleChange}
                 />
-                {errors.description && (
+                {errors.summary && (
                   <label className="label">
                     <span className="label-text-alt text-error">
-                      {errors.description}
+                      {errors.summary}
                     </span>
                   </label>
                 )}
@@ -210,10 +260,10 @@ export default function CreateDocumentPage() {
           <div className="card border border-base-300 bg-base-200 shadow-sm">
             <div className="card-body gap-5">
               <div>
-                <h2 className="card-title text-xl">Initial Content</h2>
+                <h2 className="card-title text-xl">Version Content</h2>
                 <p className="text-sm text-base-content/70">
-                  Add the initial document content or attach a file for the
-                  first version.
+                  Update the content for the new version or attach a revised
+                  file.
                 </p>
               </div>
 
@@ -223,7 +273,7 @@ export default function CreateDocumentPage() {
                 </label>
                 <textarea
                   name="content"
-                  placeholder="Write the initial document content here..."
+                  placeholder="Write the updated content for this version..."
                   className="textarea textarea-bordered min-h-40 w-full"
                   value={formData.content}
                   onChange={handleChange}
@@ -261,24 +311,28 @@ export default function CreateDocumentPage() {
               <div className="alert border border-base-300 bg-base-100">
                 <span className="text-sm text-base-content/70">
                   For now this page uses mock behavior. On submit it returns to
-                  the documents list until backend integration is ready.
+                  the document details page until backend integration is ready.
                 </span>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Link to="/documents" className="btn btn-ghost gap-2">
+            <Link
+              to={`/documents/${numericId}`}
+              className="btn btn-ghost gap-2"
+            >
               <X size={16} />
               Cancel
             </Link>
 
             <button type="submit" className="btn btn-primary gap-2">
               <Save size={16} />
-              Create Document
+              Create Version
             </button>
           </div>
         </form>
+        </Animate>
       </div>
     </section>
   );

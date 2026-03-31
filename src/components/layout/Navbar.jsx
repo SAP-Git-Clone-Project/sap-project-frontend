@@ -6,9 +6,10 @@ import notify from "@/components/toaster/notify";
 
 const NAV_LINKS = [
   { icon: NotepadText, label: "About", to: "/getting-started" },
-  { icon: File, label: "Documents", to: "/documents" },
+  { icon: File, label: "Documents", to: "/" },
   { icon: ClipboardCheck, label: "Reviews", to: "/reviews" },
-  { icon: MonitorCog, label: "Admin", to: "/admin" },
+  { icon: MonitorCog, label: "Users", to: "/admin" },
+   { icon: MonitorCog, label: "Audit", to: "/audit-log" },
 ];
 
 const BREAKPOINT = 1000;

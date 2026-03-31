@@ -20,9 +20,9 @@ import GettingStarted from "@/pages/GettingStarted";
 import Demo from "@/pages/homepage/Demo.jsx";
 
 import DocumentsPage from "@/pages/documents/DocumentsPage";
-import DocumentDetailsPage from "@/pages/documents/DocumentDetailsPage";
-import CreateDocumentPage from "@/pages/documents/CreateDocumentPage";
-import CreateVersionPage from "@/pages/documents/CreateVersionPage";
+import DocumentDetailsPage from "@/pages/DocumentDetailsPage";
+import CreateDocumentPage from "@/pages/CreateDocumentPage";
+import CreateVersionPage from "@/pages/CreateVersionPage";
 
 import VersionReviewPage from "@/pages/VersionReviewPage.jsx";
 import ReviewPage from "@/pages/ReviewPage.jsx";
@@ -49,9 +49,6 @@ export default function App() {
         <main className="min-h-[100vh] overflow-x-hidden">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/repos" element={<ReposPage />} />
-            <Route path="/teams" element={<TeamsPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route
               path="/profile"
               element={
@@ -63,8 +60,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            <Route path="/documents" element={<DocumentsPage />} />
-            <Route path="/documents/create" element={<CreateDocumentPage />} />
+            <Route path="/create" element={<CreateDocumentPage />} />
             <Route
               path="/documents/:id/create-version"
               element={<CreateVersionPage />}

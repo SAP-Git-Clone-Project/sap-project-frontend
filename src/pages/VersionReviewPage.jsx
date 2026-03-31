@@ -35,7 +35,7 @@ export default function VersionReviewPage() {
         <Animate>
           <Link
             to="/reviews"
-            className="btn btn-sm btn-ghost border border-base-300 hover:border-primary hover:text-primary transition w-fit"
+            className="btn btn-sm btn-ghost border border-base-300 hover:white hover:text-white transition w-fit"
           >
             <ArrowLeft size={16} />
             Back to Reviews
