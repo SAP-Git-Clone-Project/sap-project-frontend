@@ -67,7 +67,6 @@ const ProfilePage = () => {
         if (isOwnProfile) {
           // Own profile: /users/me/
           const { data } = await api.get("/users/me/");
-          console.log("Fetched own profile data:", data);
           const mapped = mapUser(data);
           setUser(mapped);
           setProfileData(mapped);
