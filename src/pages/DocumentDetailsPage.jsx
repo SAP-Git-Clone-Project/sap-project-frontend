@@ -223,7 +223,7 @@ export default function DocumentDetailsPage() {
           {/* Back button */}
           <Animate>
             <Link
-              to="/"
+              to="/documents"
               className="btn btn-sm btn-ghost border border-base-300 hover:white hover:text-white transition w-fit"
             >
               <ArrowLeft size={16} />

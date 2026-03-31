@@ -133,7 +133,7 @@ export default function CreateVersionPage() {
         <div className="flex items-center justify-between gap-3">
           <Link
             to={`/documents/${numericId}`}
-            className="btn btn-ghost btn-sm gap-2"
+            className="btn btn-sm btn-ghost border border-base-300 hover:white hover:text-white transition w-fit"
           >
             <ArrowLeft size={16} />
             Back to Details
