@@ -88,7 +88,6 @@ export const AuthProvider = ({ children }) => {
       async (err) => {
         const originalRequest = err.config;
 
-        // If 401 and we haven't retried yet
         if (err.response?.status === 401 && !originalRequest?._retry) {
           originalRequest._retry = true;
           const newToken = await refreshAccessToken();
@@ -97,8 +96,12 @@ export const AuthProvider = ({ children }) => {
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return api(originalRequest);
           } else {
-            // Refresh failed, force logout
-            clearLocalAuth();
+            // Stop the loop here!
+            console.error("Auth Refresh Failed");
+            // clearLocalAuth();
+            setIsAuthenticated(false);
+            setUserState(null);
+            return Promise.reject(err); // This tells the app Stop trying to refresh and fail the request
           }
         }
         return Promise.reject(err);
@@ -161,7 +164,7 @@ export const AuthProvider = ({ children }) => {
           { refresh },
           {
             headers: { Authorization: `Bearer ${access}` },
-            _retry: true, 
+            _retry: true,
           }
         );
       }
