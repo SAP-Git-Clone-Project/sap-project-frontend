@@ -75,7 +75,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="min-h-[250vh] md:min-h-[200vh] bg-base-100 px-6 pb-12 pt-20 overflow-x-hidden">
+    <div className="min-h-[230vh] md:min-h-[200vh] bg-base-100 px-6 pb-12 pt-20 overflow-x-hidden">
 
       {/* Header Section */}
       <Animate variant="fade-down" className="overflow-hidden">
@@ -134,8 +134,8 @@ export default function DocumentsPage() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`btn btn-sm rounded-xl px-6 border-none transition-all ${filter === f
-                    ? "btn-primary shadow-lg shadow-primary/30"
-                    : "btn-ghost text-secondary hover:bg-base-300"
+                  ? "btn-primary shadow-lg shadow-primary/30"
+                  : "btn-ghost text-secondary hover:bg-base-300"
                   }`}
               >
                 {f.replace("_", " ").toUpperCase()}
@@ -193,14 +193,14 @@ export default function DocumentsPage() {
 
                       <td>
                         <div className="flex items-center gap-2">
-                          <div className="avatar placeholder">
-                            <div className="bg-neutral text-neutral-content rounded-full w-8 h-8 ">
-                              {/* <span className="text-xs font-bold uppercase">
-                                {(doc.active_version?.creator_name || doc.created_by_username || "?").charAt(0)}
-                              </span> */}
-                              <img src={doc.created_by_avatar_url} alt={doc.created_by_username} />
+                          <Link to={`/profile/${doc.created_by}`}>
+                            <div className="avatar placeholder">
+                              <div className="bg-neutral text-neutral-content rounded-full w-8 h-8 ">
+
+                                <img src={doc.created_by_avatar_url} alt={doc.created_by_username} />
+                              </div>
                             </div>
-                          </div>
+                          </Link>
                           <span className="text-xs font-bold text-secondary">
                             {doc.active_version?.creator_name || doc.created_by_username}
                           </span>
