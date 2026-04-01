@@ -37,6 +37,7 @@ export default function DocumentsPage() {
       try {
         const res = await api.get("/documents/");
         setDocuments(res.data);
+        console.log("Fetched documents:", res.data);
       } catch (err) {
         // This catches the "Network Error" you saw in console
         notify.error("Backend Server is Offline (Port 5000)");
@@ -74,7 +75,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="min-h-[200vh] bg-base-100 px-6 pb-12 pt-20 overflow-x-hidden">
+    <div className="min-h-[250vh] md:min-h-[200vh] bg-base-100 px-6 pb-12 pt-20 overflow-x-hidden">
 
       {/* Header Section */}
       <Animate variant="fade-down" className="overflow-hidden">
@@ -193,10 +194,11 @@ export default function DocumentsPage() {
                       <td>
                         <div className="flex items-center gap-2">
                           <div className="avatar placeholder">
-                            <div className="bg-neutral text-neutral-content rounded-xl w-8">
-                              <span className="text-xs font-bold uppercase">
+                            <div className="bg-neutral text-neutral-content rounded-full w-8 h-8 ">
+                              {/* <span className="text-xs font-bold uppercase">
                                 {(doc.active_version?.creator_name || doc.created_by_username || "?").charAt(0)}
-                              </span>
+                              </span> */}
+                              <img src={doc.created_by_avatar_url} alt={doc.created_by_username} />
                             </div>
                           </div>
                           <span className="text-xs font-bold text-secondary">
@@ -224,7 +226,7 @@ export default function DocumentsPage() {
                       <td className="text-right px-10">
                         <Link
                           to={`/documents/${doc.id}`}
-                          className="btn btn-ghost btn-sm rounded-xl hover:bg-primary hover:text-primary-content transition-all"
+                          className="btn btn-primary btn-sm rounded-xl hover:bg-primary/10 hover:text-primary-content transition-all "
                         >
                           <Eye size={18} />
                           <span className="hidden lg:inline ml-2 font-black uppercase text-[10px] tracking-widest">Inspect</span>

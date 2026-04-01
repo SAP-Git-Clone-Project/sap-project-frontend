@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Sun, Moon, Zap, File, ClipboardCheck, NotepadText, Menu, X, MonitorCog, LogOut } from "lucide-react";
+import { Sun, Moon, Zap, File, ClipboardCheck, NotepadText, UserRound, Menu, X, MonitorCog, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import notify from "@/components/toaster/notify";
 
@@ -8,8 +8,8 @@ const NAV_LINKS = [
   { icon: NotepadText, label: "About", to: "/" },
   { icon: File, label: "Documents", to: "/documents" },
   { icon: ClipboardCheck, label: "Reviews", to: "/reviews" },
-  { icon: MonitorCog, label: "Users", to: "/admin" },
-   { icon: MonitorCog, label: "Audit", to: "/audit-log" },
+  { icon: UserRound, label: "Users", to: "/admin" },
+  { icon: MonitorCog, label: "Audit", to: "/audit-log" },
 ];
 
 const BREAKPOINT = 1000;
