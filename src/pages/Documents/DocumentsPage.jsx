@@ -75,7 +75,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="min-h-[230vh] md:min-h-[200vh] bg-base-100 px-6 pb-12 pt-20 overflow-x-hidden">
+    <div className="min-h-[230vh] md:min-h-[200vh] bg-base-100 px-6 pb-12 pt-20 overflow-hidden">
 
       {/* Header Section */}
       <Animate variant="fade-down" className="overflow-hidden">
@@ -126,42 +126,64 @@ export default function DocumentsPage() {
       </div>
 
       {/* Toolbar */}
-      <Animate className="overflow-hidden">
-        <div className="max-w-7xl mx-auto mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between p-3 rounded-[2rem] bg-base-200/40 border border-base-300/30 backdrop-blur-md">
-          <div className="flex gap-1 overflow-x-auto p-1 w-full lg:w-auto no-scrollbar">
-            {FILTERS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`btn btn-sm rounded-xl px-6 border-none transition-all ${filter === f
-                  ? "btn-primary shadow-lg shadow-primary/30"
-                  : "btn-ghost text-secondary hover:bg-base-300"
-                  }`}
-              >
-                {f.replace("_", " ").toUpperCase()}
-              </button>
-            ))}
-          </div>
+      <Animate>
+        <div className="max-w-7xl mx-auto mb-8 rounded-[1rem] border border-base-300/30 bg-base-200/40 backdrop-blur-md overflow-hidden">
 
-          <div className="relative w-full lg:w-80 px-2 lg:px-0">
-            <Search size={18} className="absolute left-6 lg:left-4 top-1/2 -translate-y-1/2 opacity-20" />
-            <input
-              type="text"
-              placeholder="Search assets..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input w-full pl-12 bg-base-100/50 border-base-300/30 focus:border-primary backdrop-blur-sm rounded-2xl"
-            />
+          <div className="flex flex-col gap-4 p-3">
+
+            {/* ✅ FILTERS */}
+            <div
+              className="
+          grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2
+          lg:flex lg:flex-nowrap lg:gap-1
+        "
+            >
+              {FILTERS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`btn btn-sm rounded-xl px-4 lg:px-6 border-none transition-all w-full lg:w-auto ${filter === f
+                      ? "btn-primary shadow-lg shadow-primary/30"
+                      : "btn-ghost text-secondary hover:bg-base-300"
+                    }`}
+                >
+                  {f.replace("_", " ").toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            {/* ✅ SEARCH */}
+            <div className="relative w-full lg:w-80">
+              <Search
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20"
+              />
+              <input
+                type="text"
+                placeholder="Search assets..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="input w-full pl-12 bg-base-100/50 border-base-300/30 focus:border-primary backdrop-blur-sm rounded-2xl"
+              />
+            </div>
+
           </div>
         </div>
       </Animate>
 
       {/* Main Table Container */}
-      <Animate className="overflow-y-hidden">
-        <div className="max-w-7xl mx-auto min-h-[400px]"> {/* min-h prevents the vertical jump */}
-          <div className="relative rounded-[2.5rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
-            <div className="overflow-x-auto no-scrollbar">
-              <table className="table w-full border-separate border-spacing-0">
+      <Animate className="overflow-hidden">
+        <div className="max-w-7xl mx-auto min-h-[400px]">
+
+          {/* Container */}
+          <div className="relative rounded-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
+
+            {/* ✅ SINGLE scroll container */}
+            <div className="w-full overflow-x-auto">
+
+              {/* ✅ FORCE horizontal overflow */}
+              <table className="table min-w-[1100px] border-separate border-spacing-0">
+
                 <thead>
                   <tr className="bg-base-300/50 text-secondary uppercase text-[11px] tracking-widest font-black">
                     <th className="py-6 px-10">Asset</th>
@@ -172,14 +194,18 @@ export default function DocumentsPage() {
                     <th className="text-right px-10">Action</th>
                   </tr>
                 </thead>
+
                 <tbody className="divide-y divide-base-300/10">
                   {filteredDocuments.map((doc) => (
                     <tr key={doc.id} className="group hover:bg-primary/5 transition-all">
+
+                      {/* Asset */}
                       <td className="py-6 px-10">
                         <div className="flex items-center gap-5">
                           <div className="h-14 w-14 flex items-center justify-center rounded-[1.25rem] bg-base-100 text-primary border border-base-300 shadow-sm group-hover:scale-110 transition-transform">
                             {getDocumentIcon(doc.type)}
                           </div>
+
                           <div className="flex flex-col">
                             <span className="font-bold text-lg text-base-content group-hover:text-primary transition-colors">
                               {doc.title}
@@ -191,59 +217,77 @@ export default function DocumentsPage() {
                         </div>
                       </td>
 
+                      {/* Owner */}
                       <td>
                         <div className="flex items-center gap-2">
                           <Link to={`/profile/${doc.created_by}`}>
-                            <div className="avatar placeholder">
-                              <div className="bg-neutral text-neutral-content rounded-full w-8 h-8 ">
-
-                                <img src={doc.created_by_avatar_url} alt={doc.created_by_username} />
+                            <div className="avatar">
+                              <div className="rounded-full w-8 h-8">
+                                <img
+                                  src={doc.created_by_avatar_url}
+                                  alt={doc.created_by_username}
+                                />
                               </div>
                             </div>
                           </Link>
+
                           <span className="text-xs font-bold text-secondary">
                             {doc.active_version?.creator_name || doc.created_by_username}
                           </span>
                         </div>
                       </td>
 
+                      {/* Status */}
                       <td className="text-center">
                         <div className="flex justify-center scale-90">
                           <FileStatus status={doc.active_version?.status || "no_active"} />
                         </div>
                       </td>
 
+                      {/* Version */}
                       <td className="text-center">
                         <span className="badge badge-ghost bg-base-300/20 border-none font-mono text-[10px] font-bold text-secondary">
                           v{doc.active_version?.version_number || "1.0"}
                         </span>
                       </td>
 
+                      {/* Date */}
                       <td className="text-[11px] font-bold text-secondary opacity-60">
-                        {new Date(doc.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        {new Date(doc.updated_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </td>
 
+                      {/* Action */}
                       <td className="text-right px-10">
                         <Link
                           to={`/documents/${doc.id}`}
-                          className="btn btn-primary btn-sm rounded-xl hover:bg-primary/10 hover:text-primary-content transition-all "
+                          className="btn btn-primary btn-sm rounded-xl hover:bg-primary/10 hover:text-primary-content transition-all"
                         >
                           <Eye size={18} />
-                          <span className="hidden lg:inline ml-2 font-black uppercase text-[10px] tracking-widest">Inspect</span>
+                          <span className="hidden lg:inline ml-2 font-black uppercase text-[10px] tracking-widest">
+                            Inspect
+                          </span>
                         </Link>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
+            {/* EMPTY STATE */}
             {filteredDocuments.length === 0 && (
               <div className="flex flex-col items-center justify-center py-32 opacity-20 gap-4">
                 <AlertCircle size={80} strokeWidth={1} />
-                <p className="text-xl font-black uppercase tracking-[0.3em]">Accessing Empty Index</p>
+                <p className="text-xl font-black text-center uppercase tracking-[0.3em]">
+                  Accessing Empty Index
+                </p>
               </div>
             )}
+
           </div>
         </div>
       </Animate>

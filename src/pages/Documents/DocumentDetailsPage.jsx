@@ -61,11 +61,14 @@ export default function DocumentDetailsPage() {
   const statusInfo = getStatusDetails(activeVersion?.status);
   const isOwner = document?.created_by_username === user?.username || user?.is_superuser;
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-base-100">
-      <span className="loading loading-spinner loading-lg text-primary"></span>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-base-100 space-y-4">
+        <span className="loading loading-ring loading-lg text-primary"></span>
+        <p className="text-[10px] font-black tracking-[0.4em] uppercase text-secondary">Loading documents...</p>
+      </div>
+    );
+  }
 
   if (error || !document) return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6">
