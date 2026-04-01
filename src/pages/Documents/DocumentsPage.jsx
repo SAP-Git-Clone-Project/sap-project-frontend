@@ -1,45 +1,35 @@
+import React, { useMemo, useState, useEffect } from "react";
 import {
-  FileText,
-  Plus,
-  Search,
-  Eye,
-  Clock3,
-  CheckCircle2,
-  PencilLine,
-  FileBadge,
-  FileLock2,
+  FileText, Plus, Search, Eye, Clock3, CheckCircle2,
+  PencilLine, FileBadge, FileLock2, AlertCircle, ShieldCheck
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
+// Internal Components/Hooks
 import Animate from "@/components/animation/Animate.jsx";
 import GlassCard from "../homepage/components/GlassCard.jsx";
 import FileStatus from "../homepage/components/FileStatus.jsx";
-
-import { Link } from "react-router-dom";
-import { useMemo, useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import api from "@/components/api/api";
 import notify from "@/components/toaster/notify";
 
+// --- Configuration & Mappers ---
 const FILTERS = ["all", "approved", "pending_approval", "draft", "rejected"];
 
-function getDocumentIcon(type) {
-  switch (type) {
-    case "policy":
-      return <FileBadge size={18} />;
-    case "security":
-      return <FileLock2 size={18} />;
-    case "contract":
-      return <FileText size={18} />;
-    case "planning":
-      return <PencilLine size={18} />;
-    default:
-      return <FileText size={18} />;
-  }
-}
+const ICON_MAP = {
+  policy: <FileBadge size={20} />,
+  security: <FileLock2 size={20} />,
+  contract: <FileText size={20} />,
+  planning: <PencilLine size={20} />,
+  default: <FileText size={20} />,
+};
+
+const getDocumentIcon = (type) => ICON_MAP[type] || ICON_MAP.default;
 
 export default function DocumentsPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,208 +49,205 @@ export default function DocumentsPage() {
     fetchDocuments();
   }, []);
 
-  // Filtered documents
+  // Filtered documents logic
   const filteredDocuments = useMemo(() => {
     return documents.filter((doc) => {
-      const versionStatus = doc.active_version?.status; // undefined if no active version
-
-      const matchesFilter =
-        filter === "all" || (versionStatus && versionStatus === filter);
-
+      const status = doc.active_version?.status;
+      const matchesFilter = filter === "all" || status === filter;
       const matchesSearch = doc.title.toLowerCase().includes(search.toLowerCase());
-
       return matchesFilter && matchesSearch;
     });
   }, [documents, filter, search]);
 
-  // Stats
-  const stats = useMemo(() => {
-    const approved = documents.filter((d) => d.active_version?.status === "approved")
-      .length;
-    const pending = documents.filter(
-      (d) => d.active_version?.status === "pending_approval"
-    ).length;
-    const draft = documents.filter((d) => d.active_version?.status === "draft").length;
-    const total = documents.length;
-    return { total, approved, pending, draft };
-  }, [documents]);
+  // Stats Logic - Utilizing semantic colors and glassy overlays
+  const statsData = useMemo(() => [
+    { label: "Total Assets", val: documents.length, icon: FileText, color: "primary", glass: "bg-primary/10" },
+    { label: "Approved", val: documents.filter(d => d.active_version?.status === "approved").length, icon: CheckCircle2, color: "success", glass: "bg-success/10" },
+    { label: "Pending", val: documents.filter(d => d.active_version?.status === "pending_approval").length, icon: Clock3, color: "warning", glass: "bg-warning/10" },
+    { label: "In Review", val: documents.filter(d => d.active_version?.status === "draft").length, icon: PencilLine, color: "purple", glass: "bg-purple/10" },
+  ], [documents]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-lg font-semibold text-base-content/60">Loading documents...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <span className="loading loading-ring loading-lg text-primary"></span>
+        <p className="text-xs font-bold tracking-[0.2em] uppercase animate-pulse text-secondary">Decrypting Vault...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-12 px-6 pb-12 pt-16 overflow-x-hidden">
-      {/* Header */}
-      <Animate variant="fade-down">
-        <div className="max-w-6xl mx-auto space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Documents</h1>
-          <p className="text-base-content/60">
-            Browse documents, track status, and manage versions.
-          </p>
-        </div>
-      </Animate>
+    <div className="min-h-[130vh] bg-base-100 px-6 pb-12 pt-20">
 
-      {/* Stats */}
-      <Animate>
-        <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-5">
-          <GlassCard bg="bg-primary/10" border="border-primary/20">
-            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
-              <FileText className="mx-auto mb-1 text-primary" size={18} />
-              <p className="text-xl font-bold">{stats.total}</p>
-              <p className="text-xs text-base-content/60">Total</p>
+      {/* Header Section */}
+      <Animate variant="fade-down" className="overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-primary mb-2">
+              <ShieldCheck size={18} />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Governance Portal</span>
             </div>
-          </GlassCard>
-
-          <GlassCard bg="bg-success/10" border="border-success/20">
-            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
-              <CheckCircle2 className="mx-auto mb-1 text-success" size={18} />
-              <p className="text-xl font-bold">{stats.approved}</p>
-              <p className="text-xs text-base-content/60">Approved</p>
-            </div>
-          </GlassCard>
-
-          <GlassCard bg="bg-warning/10" border="border-warning/20">
-            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
-              <Clock3 className="mx-auto mb-1 text-warning" size={18} />
-              <p className="text-xl font-bold">{stats.pending}</p>
-              <p className="text-xs text-base-content/60">Pending</p>
-            </div>
-          </GlassCard>
-
-          <GlassCard bg="bg-info/10" border="border-info/20">
-            <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur p-4 text-center">
-              <PencilLine className="mx-auto mb-1 text-info" size={18} />
-              <p className="text-xl font-bold">{stats.draft}</p>
-              <p className="text-xs text-base-content/60">Drafts</p>
-            </div>
-          </GlassCard>
-        </div>
-      </Animate>
-
-      {/* Filters + Search */}
-      <Animate>
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* Filters */}
-          <div className="flex gap-2 flex-wrap">
-            {FILTERS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`btn btn-sm ${
-                  filter === f ? "btn-primary" : "btn-ghost border border-base-300"
-                }`}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {/* Search */}
-          <div className="relative w-full sm:w-64">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none z-10"
-            />
-            <input
-              type="text"
-              placeholder="Search documents..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input input-sm w-full pl-10 bg-base-200/70 backdrop-blur border border-base-300/40 focus:border-primary transition"
-            />
+            <h1 className="text-5xl font-black tracking-tighter text-base-content">
+              Hello, <span className="text-primary">{user?.first_name || "User"}</span>
+            </h1>
+            <p className="text-secondary font-medium max-w-md">
+              Securely manage policies, versioned documentation, and organizational protocols.
+            </p>
           </div>
 
           <Link
             to="/documents/create"
-            className="btn btn-sm btn-primary shadow-md shadow-primary/30"
+            className="btn btn-primary rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-all border-none px-8"
           >
-            <Plus size={16} /> Create Document
+            <Plus size={20} /> Create New Document
           </Link>
         </div>
       </Animate>
 
-      {/* Document table */}
-      <Animate>
+      {/* Stats Grid - Glassmorphism using your custom glassy logic */}
+      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {statsData.map((stat) => (
+          <Animate key={stat.label} className="overflow-hidden">
+            <GlassCard
+              bg={stat.glass}
+              border={`border-${stat.color}/20`}
+              className="hover:translate-y-[-4px] transition-all duration-300"
+            >
+              <div className="p-8 flex flex-col items-center text-center">
+                <div className={`p-4 rounded-[1.5rem] bg-base-200 text-${stat.color} mb-4 shadow-inner`}>
+                  <stat.icon size={28} />
+                </div>
+                <span className="text-4xl font-black tracking-tighter text-base-content">{stat.val}</span>
+                <span className="text-[10px] font-bold uppercase opacity-40 tracking-widest mt-1">
+                  {stat.label}
+                </span>
+              </div>
+            </GlassCard>
+          </Animate>
+        ))}
+      </div>
+
+      {/* Toolbar - Glassy effect using base-200/40 */}
+      <Animate className="overflow-hidden">
+        <div className="max-w-7xl mx-auto mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between p-3 rounded-[2rem] bg-base-200/40 border border-base-300/30 backdrop-blur-md">
+          <div className="flex gap-1 overflow-x-auto p-1 w-full lg:w-auto no-scrollbar">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`btn btn-sm rounded-xl px-6 border-none transition-all ${filter === f
+                    ? "btn-primary shadow-lg shadow-primary/30"
+                    : "btn-ghost text-secondary hover:bg-base-300"
+                  }`}
+              >
+                {f.replace("_", " ").toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full lg:w-80 px-2 lg:px-0">
+            <Search size={18} className="absolute left-6 lg:left-4 top-1/2 -translate-y-1/2 opacity-20" />
+            <input
+              type="text"
+              placeholder="Search assets..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input w-full pl-12 bg-base-100/50 border-base-300/30 focus:border-primary backdrop-blur-sm rounded-2xl transition-all"
+            />
+          </div>
+        </div>
+      </Animate>
+
+      {/* Main Table Container - overflow-hidden on Animate prevents scrollbars during entry */}
+      <Animate className="overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="card bg-base-200/70 border border-base-300/40 backdrop-blur shadow-sm overflow-x-auto">
-            <table className="table text-base">
-              <thead className="bg-base-300/40 text-base-content/80">
-                <tr className="h-[64px]">
-                  <th className="text-sm font-semibold">Document</th>
-                  <th className="text-sm font-semibold">Author</th>
-                  <th className="text-sm font-semibold text-center">Status</th>
-                  <th className="text-sm font-semibold text-center">Version</th>
-                  <th className="text-sm font-semibold">Updated</th>
-                  <th className="text-sm font-semibold text-right">Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredDocuments.map((doc) => (
-                  <tr
-                    key={doc.id}
-                    className="hover:bg-base-300/30 transition h-[76px]"
-                  >
-                    {/* Document */}
-                    <td>
-                      <div className="flex items-start gap-3">
-                        <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
-                          {getDocumentIcon(doc.type)}
+          <div className="relative rounded-[2.5rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="table w-full border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-base-300/40 text-secondary uppercase text-[11px] tracking-widest font-black">
+                    <th className="py-6 px-10">Document Details</th>
+                    <th>Ownership</th>
+                    <th className="text-center">Status</th>
+                    <th className="text-center">Revision</th>
+                    <th>Last Modified</th>
+                    <th className="text-right px-10">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-base-300/10">
+                  {filteredDocuments.map((doc) => (
+                    <tr key={doc.id} className="group hover:bg-primary/5 transition-all duration-300">
+                      <td className="py-6 px-10">
+                        <div className="flex items-center gap-5">
+                          <div className="h-14 w-14 flex items-center justify-center rounded-[1.25rem] bg-base-100 text-primary border border-base-300 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform">
+                            {getDocumentIcon(doc.type)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-lg leading-tight text-base-content group-hover:text-primary transition-colors">
+                              {doc.title}
+                            </span>
+                            <span className="text-[11px] font-medium opacity-40 truncate max-w-[200px]">
+                              {doc.active_version?.content || "System Managed Resource"}
+                            </span>
+                          </div>
                         </div>
+                      </td>
 
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-base">{doc.title}</span>
-                          <span className="text-sm text-base-content/60">
-                            {doc.active_version?.content || "No active version"}
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="avatar placeholder">
+                            <div className="bg-neutral text-neutral-content rounded-xl w-8">
+                              <span className="text-xs font-bold">
+                                {(doc.active_version?.creator_name || doc.created_by_username || "?").charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-secondary">
+                            {doc.active_version?.creator_name || doc.created_by_username}
                           </span>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Author */}
-                    <td className="text-base-content/90">
-                      {doc.active_version?.creator_name || doc.created_by_username}
-                    </td>
+                      <td className="text-center">
+                        <div className="flex justify-center scale-90">
+                          <FileStatus status={doc.active_version?.status || "no_active"} />
+                        </div>
+                      </td>
 
-                    {/* Status */}
-                    <td className="text-center">
-                      <div className="flex justify-center">
-                        <FileStatus status={doc.active_version?.status || "no_active"} />
-                      </div>
-                    </td>
+                      <td className="text-center">
+                        <span className="badge badge-ghost bg-base-300/20 border-none font-mono text-[10px] font-bold px-3 py-3 text-secondary">
+                          v{doc.active_version?.version_number || "1.0"}
+                        </span>
+                      </td>
 
-                    {/* Version */}
-                    <td className="text-center">
-                      <span className="badge badge-outline badge-md">
-                        {doc.active_version ? `v${doc.active_version.version_number}` : "N/A"}
-                      </span>
-                    </td>
+                      <td className="text-[11px] font-bold text-secondary opacity-60">
+                        {new Date(doc.updated_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric"
+                        })}
+                      </td>
 
-                    {/* Updated */}
-                    <td>{new Date(doc.updated_at).toLocaleDateString()}</td>
+                      <td className="text-right px-10">
+                        <Link
+                          to={`/documents/${doc.id}`}
+                          className="btn btn-ghost btn-sm rounded-xl hover:bg-primary hover:text-primary-content transition-all group-hover:shadow-lg"
+                        >
+                          <Eye size={18} />
+                          <span className="hidden lg:inline ml-2 font-black uppercase text-[10px] tracking-widest">Inspect</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                    {/* Action */}
-                    <td className="text-right">
-                      <Link
-                        to={`/documents/${doc.id}`}
-                        className="btn btn-sm btn-primary shadow-md shadow-primary/30"
-                      >
-                        <Eye size={16} /> Open →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
             {filteredDocuments.length === 0 && (
-              <p className="p-4 text-center text-base-content/60">
-                No documents match your search or filter.
-              </p>
+              <div className="flex flex-col items-center justify-center py-32 opacity-20 gap-4">
+                <AlertCircle size={80} strokeWidth={1} />
+                <p className="text-xl font-black uppercase tracking-[0.3em] italic">No Records Found</p>
+              </div>
             )}
           </div>
         </div>
