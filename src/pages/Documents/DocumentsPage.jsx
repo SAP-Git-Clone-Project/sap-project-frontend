@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import {
-  FileText, Plus, Search, Eye, Clock3, CheckCircle2,
-  PencilLine, FileBadge, FileLock2, AlertCircle, ShieldCheck
+  FileText, Plus, Search, FileStack, Clock3, CheckCircle2,
+  PencilLine, FileBadge, FileLock2, AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -81,9 +81,9 @@ export default function DocumentsPage() {
       <Animate variant="fade-down" className="overflow-hidden">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary mb-2">
-              <ShieldCheck size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Secure Data Node</span>
+            <div className="flex items-center gap-3 text-primary mb-3 group">
+              <FileStack size={16} strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em]">Central Archive</span>
             </div>
             <h1 className="text-5xl font-black tracking-tighter text-base-content">
               Hello, <span className="text-primary">{user?.first_name || "Agent"}</span>
@@ -103,22 +103,34 @@ export default function DocumentsPage() {
       </Animate>
 
       {/* Stats Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12 items-stretch">
         {statsData.map((stat) => (
-          <Animate key={stat.label} className="overflow-hidden">
+          <Animate key={stat.label} className="h-full">
             <GlassCard
               bg={stat.glass}
               border={`border-${stat.color}/20`}
-              className="hover:translate-y-[-4px] transition-all duration-300"
+              className="h-full hover:translate-y-[-6px] transition-all duration-500 group"
             >
-              <div className="p-8 flex flex-col items-center text-center">
-                <div className={`p-4 rounded-3xl bg-base-200 text-${stat.color} mb-4 shadow-sm`}>
-                  <stat.icon size={28} />
+              {/* MOBILE: py-6 (smaller) 
+            DESKTOP: lg:py-12 (tall & premium) 
+        */}
+              <div className="py-6 lg:py-12 px-4 flex flex-col items-center justify-center text-center relative overflow-hidden h-full">
+
+                {/* Smaller Icon for Mobile */}
+                <div className={`p-3 lg:p-5 rounded-2xl lg:rounded-[2rem] bg-base-100/50 text-${stat.color} mb-3 lg:mb-6 shadow-xl border border-base-300/50 group-hover:scale-110 transition-transform duration-500`}>
+                  <stat.icon size={22} className="lg:w-8 lg:h-8" strokeWidth={2} />
                 </div>
-                <span className="text-4xl font-black tracking-tighter text-base-content">{stat.val}</span>
-                <span className="text-[10px] font-bold uppercase opacity-30 tracking-widest mt-1">
+
+                {/* Scale Text: 3xl on mobile, 5xl on desktop */}
+                <span className="text-3xl lg:text-5xl font-black tracking-tighter text-base-content">
+                  {stat.val}
+                </span>
+
+                {/* Subtitle: Smaller tracking on mobile to prevent overflow */}
+                <span className="text-[9px] lg:text-[10px] font-black uppercase opacity-40 tracking-[0.2em] lg:tracking-[0.4em] mt-1 lg:mt-2">
                   {stat.label}
                 </span>
+
               </div>
             </GlassCard>
           </Animate>
@@ -127,43 +139,35 @@ export default function DocumentsPage() {
 
       {/* Toolbar */}
       <Animate>
-        <div className="max-w-7xl mx-auto mb-8 rounded-[1rem] border border-base-300/30 bg-base-200/40 backdrop-blur-md overflow-hidden">
+        <div className="max-w-7xl mx-auto mb-8 rounded-2xl border border-base-300/30 bg-base-200/40 backdrop-blur-md overflow-hidden">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-3 p-2 lg:p-3">
 
-          <div className="flex flex-col gap-4 p-3">
-
-            {/* ✅ FILTERS */}
-            <div
-              className="
-          grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2
-          lg:flex lg:flex-nowrap lg:gap-1
-        "
-            >
+            <div className="grid grid-cols-3 sm:grid-cols-5 lg:flex lg:flex-nowrap gap-1 w-full lg:w-auto">
               {FILTERS.map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`btn btn-sm rounded-xl px-4 lg:px-6 border-none transition-all w-full lg:w-auto ${filter === f
-                      ? "btn-primary shadow-lg shadow-primary/30"
-                      : "btn-ghost text-secondary hover:bg-base-300"
+                  className={`btn btn-xs sm:btn-sm rounded-xl px-2 lg:px-5 border-none transition-all uppercase text-[9px] lg:text-[10px] font-black tracking-tighter lg:tracking-widest ${filter === f
+                    ? "btn-primary shadow-lg shadow-primary/30"
+                    : "btn-ghost text-secondary hover:bg-base-300"
                     }`}
                 >
-                  {f.replace("_", " ").toUpperCase()}
+                  {f.replace("_", " ")}
                 </button>
               ))}
             </div>
 
-            {/* ✅ SEARCH */}
-            <div className="relative w-full lg:w-80">
+            <div className="relative w-full lg:max-w-[280px]">
               <Search
-                size={18}
+                size={16}
                 className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20"
               />
               <input
                 type="text"
-                placeholder="Search assets..."
+                placeholder="Search by title..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="input w-full pl-12 bg-base-100/50 border-base-300/30 focus:border-primary backdrop-blur-sm rounded-2xl"
+                className="input w-full pl-12 bg-base-100/50 border-base-300/30 focus:border-primary rounded-2xl"
               />
             </div>
 
@@ -178,104 +182,112 @@ export default function DocumentsPage() {
           {/* Container */}
           <div className="relative rounded-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
 
-            {/* ✅ SINGLE scroll container */}
             <div className="w-full overflow-x-auto">
 
-              {/* ✅ FORCE horizontal overflow */}
-              <table className="table min-w-[1100px] border-separate border-spacing-0">
+              {/* Main Table Container - Audit Log High-Integrity Style */}
+              <Animate className="overflow-hidden">
+                <div className="max-w-7xl mx-auto">
+                  <div className="relative rounded-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
 
-                <thead>
-                  <tr className="bg-base-300/50 text-secondary uppercase text-[11px] tracking-widest font-black">
-                    <th className="py-6 px-10">Asset</th>
-                    <th>Owner</th>
-                    <th className="text-center">Status</th>
-                    <th className="text-center">Ver.</th>
-                    <th>Modified</th>
-                    <th className="text-right px-10">Action</th>
-                  </tr>
-                </thead>
+                    {/* Scrollable Container with Custom Scrollbar */}
+                    <div className="overflow-x-auto overflow-y-auto max-h-[65vh] scrollbar-custom">
 
-                <tbody className="divide-y divide-base-300/10">
-                  {filteredDocuments.map((doc) => (
-                    <tr key={doc.id} className="group hover:bg-primary/5 transition-all">
+                      <table className="table w-full border-separate border-spacing-0">
+                        <thead className="sticky top-0 z-20">
+                          <tr className="bg-base-300/90 backdrop-blur-md text-secondary uppercase text-[11px] font-black">
+                            <th className="py-6 px-10">Asset Name & Description</th>
+                            <th>Owner</th>
+                            <th className="text-center">Status</th>
+                            <th className="text-center">Ver.</th>
+                            <th className="text-right px-10">Modified</th>
+                          </tr>
+                        </thead>
 
-                      {/* Asset */}
-                      <td className="py-6 px-10">
-                        <div className="flex items-center gap-5">
-                          <div className="h-14 w-14 flex items-center justify-center rounded-[1.25rem] bg-base-100 text-primary border border-base-300 shadow-sm group-hover:scale-110 transition-transform">
-                            {getDocumentIcon(doc.type)}
-                          </div>
+                        <tbody className="divide-y divide-base-300/5">
+                          {filteredDocuments.map((doc) => (
+                            <tr key={doc.id} className="hover:bg-primary/5 transition-colors group">
 
-                          <div className="flex flex-col">
-                            <span className="font-bold text-lg text-base-content group-hover:text-primary transition-colors">
-                              {doc.title}
-                            </span>
-                            <span className="text-[11px] font-medium opacity-30 truncate max-w-[150px]">
-                              {doc.active_version?.content || "No description"}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
+                              {/* Asset Column - Now the primary link */}
+                              <td className="py-6 px-10">
+                                <Link to={`/documents/${doc.id}`} className="flex items-center gap-4 outline-none">
+                                  <div className="p-3 bg-base-300/30 rounded-xl group-hover:text-primary group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
+                                    {getDocumentIcon(doc.type)}
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="font-bold text-base-content leading-tight group-hover:text-primary transition-colors text-base">
+                                      {doc.title}
+                                    </span>
+                                    <span className="text-[10px] opacity-40 font-mono italic truncate max-w-[300px] group-hover:opacity-60 transition-opacity">
+                                      {doc.active_version?.content || "No description provided"}
+                                    </span>
+                                  </div>
+                                </Link>
+                              </td>
 
-                      {/* Owner */}
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <Link to={`/profile/${doc.created_by}`}>
-                            <div className="avatar">
-                              <div className="rounded-full w-8 h-8">
-                                <img
-                                  src={doc.created_by_avatar_url}
-                                  alt={doc.created_by_username}
-                                />
-                              </div>
-                            </div>
-                          </Link>
+                              {/* Owner Column */}
+                              <td>
+                                <Link to={`/profile/${doc.created_by}`} className="flex items-center gap-3 hover:text-primary transition-colors">
+                                  <div className="avatar">
+                                    <div className="w-7 h-7 rounded-full ring ring-primary/10 ring-offset-base-100 ring-offset-1">
+                                      <img
+                                        src={doc.created_by_avatar_url}
+                                        alt={doc.created_by_username}
+                                      />
+                                    </div>
+                                  </div>
+                                  <span className="text-[11px] font-bold opacity-70">
+                                    {doc.active_version?.creator_name || doc.created_by_username}
+                                  </span>
+                                </Link>
+                              </td>
 
-                          <span className="text-xs font-bold text-secondary">
-                            {doc.active_version?.creator_name || doc.created_by_username}
-                          </span>
-                        </div>
-                      </td>
+                              {/* Status Column */}
+                              <td className="text-center">
+                                <div className="flex justify-center scale-90">
+                                  <FileStatus status={doc.active_version?.status || "no_active"} />
+                                </div>
+                              </td>
 
-                      {/* Status */}
-                      <td className="text-center">
-                        <div className="flex justify-center scale-90">
-                          <FileStatus status={doc.active_version?.status || "no_active"} />
-                        </div>
-                      </td>
+                              {/* Version Column */}
+                              <td className="text-center">
+                                <span className="badge badge-sm border-none bg-primary/10 text-primary font-mono font-black px-3">
+                                  v{doc.active_version?.version_number || "1.0"}
+                                </span>
+                              </td>
 
-                      {/* Version */}
-                      <td className="text-center">
-                        <span className="badge badge-ghost bg-base-300/20 border-none font-mono text-[10px] font-bold text-secondary">
-                          v{doc.active_version?.version_number || "1.0"}
-                        </span>
-                      </td>
+                              {/* Date Column - Shifted to the right */}
+                              <td className="text-right px-10 text-[11px] opacity-60">
+                                <div className="flex flex-col items-end">
+                                  <span className="font-bold text-base-content/80">
+                                    {new Date(doc.updated_at).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric"
+                                    })}
+                                  </span>
+                                  <span className="text-[9px] opacity-50 font-mono uppercase">
+                                    {new Date(doc.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              </td>
 
-                      {/* Date */}
-                      <td className="text-[11px] font-bold text-secondary opacity-60">
-                        {new Date(doc.updated_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-                      {/* Action */}
-                      <td className="text-right px-10">
-                        <Link
-                          to={`/documents/${doc.id}`}
-                          className="btn btn-primary btn-sm rounded-xl hover:bg-primary/10 hover:text-primary-content transition-all"
-                        >
-                          <Eye size={18} />
-                          <span className="hidden lg:inline ml-2 font-black uppercase text-[10px] tracking-widest">
-                            Inspect
-                          </span>
-                        </Link>
-                      </td>
+                    {/* Empty State UI */}
+                    {filteredDocuments.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-32 opacity-20 gap-4">
+                        <AlertCircle size={70} strokeWidth={1} />
+                        <p className="uppercase tracking-[0.3em] font-black text-sm">Accessing Empty Index</p>
+                      </div>
+                    )}
 
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </div>
+                </div>
+              </Animate>
             </div>
 
             {/* EMPTY STATE */}
