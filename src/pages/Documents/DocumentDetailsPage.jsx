@@ -18,7 +18,6 @@ import Animate from "@/components/animation/Animate.jsx";
 import FileStatus from "../homepage/components/FileStatus.jsx";
 import GlassCard from "../homepage/components/GlassCard.jsx";
 import api from "@/components/api/api.js";
-import { getCurrentUser } from "@/api/auth.js";
 
 function getStatusIcon(status) {
   switch (status?.toLowerCase()) {
@@ -80,7 +79,9 @@ export default function DocumentDetailsPage() {
 
   const versions = document.versions || [];
   const activeVersion = document.active_version || (versions.length ? versions[0] : null);
-  const isOwner = document.created_by_username === getCurrentUser()?.username;
+
+  const { user } = useAuth();
+  const isOwner = document.created_by_username === user?.username;
 
   return (
     <section className="px-6 py-12 overflow-x-hidden space-y-12">
