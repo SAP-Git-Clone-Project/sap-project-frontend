@@ -71,8 +71,17 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            <Route path="/documents" element={<DocumentsPage />} />
-            <Route path="/documents/create" element={<CreateDocumentPage />} />
+            <Route path="/documents" element={
+              <ProtectedRoute>
+                <DocumentsPage />
+              </ProtectedRoute>
+            }
+            />
+            <Route path="/documents/create" element={
+              <ProtectedRoute>
+                <CreateDocumentPage />
+              </ProtectedRoute>
+            } />
             <Route
               path="/documents/:id/create-version"
               element={<CreateVersionPage />}
