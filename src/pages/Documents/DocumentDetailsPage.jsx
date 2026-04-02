@@ -53,7 +53,8 @@ const DocumentDetailsPage = () => {
     fetchData();
   }, [id]);
 
-  console.log("VERSIONS:", versions);
+  console.log("Document:", document);
+  console.log("Current User:", user, "Is Super?:", user?.is_superuser, "Doc ID:", id);
 
   const activeVersion = useMemo(() =>
     document?.active_version || (versions.length ? versions[0] : null),
@@ -144,8 +145,12 @@ const DocumentDetailsPage = () => {
 
                   {/* Originator Section */}
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="h-11 w-11 rounded-2xl bg-base-300/20 flex items-center justify-center text-primary shadow-inner shrink-0">
-                      <User size={18} />
+                    <div className="h-11 w-11 rounded-full bg-base-300/20 flex items-center justify-center text-primary shadow-inner shrink-0 overflow-hidden border border-white/10">
+                      <img
+                        src={document.created_by_avatar_url}
+                        alt={document.created_by_username}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[9px] uppercase font-black opacity-40 tracking-[0.2em] mb-0.5">Originator</span>

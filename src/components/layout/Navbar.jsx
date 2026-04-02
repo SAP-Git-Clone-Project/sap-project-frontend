@@ -70,7 +70,7 @@ const Navbar = ({ theme, toggleTheme }) => {
         <div className="w-full max-w-[1440px] mx-auto px-8 flex items-center justify-between">
 
           {/* ── Brand ── */}
-          <Link to="/" className="flex items-center gap-3 shrink-0 hover:opacity-80 transition-opacity">
+          <Link to="/" className="flex items-center gap-3 shrink-0 hover:opacity-80 transition-opacity focus:outline-none">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
               <Zap size={18} className="text-primary-content fill-current" />
             </div>
