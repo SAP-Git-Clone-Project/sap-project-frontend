@@ -181,14 +181,14 @@ export default function AuditLogPage() {
 
             <div className="join border border-base-300/30 bg-base-200/50 rounded-2xl p-1">
               <button
-                className="join-item btn btn-sm btn-ghost"
+                className="join-item btn btn-sm btn-ghost hover:bg-base-300/70"
                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                 disabled={!paginationInfo.hasPrev || loading}
               >
                 <ChevronLeft size={16} />
               </button>
 
-              <button className="join-item btn btn-sm btn-ghost no-animation cursor-default">
+              <button className="join-item px-2 no-animation cursor-default">
                 <span className="opacity-40 mr-2 uppercase text-[10px] font-black">Page</span>
                 <span className="text-primary font-black">{currentPage}</span>
                 <span className="mx-2 opacity-20">/</span>
@@ -196,7 +196,7 @@ export default function AuditLogPage() {
               </button>
 
               <button
-                className="join-item btn btn-sm btn-ghost"
+                className="join-item btn btn-sm btn-ghost hover:bg-base-300/70"
                 onClick={() => setCurrentPage(p => p + 1)}
                 disabled={!paginationInfo.hasNext || loading}
               >
