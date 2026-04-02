@@ -4,6 +4,7 @@ import Animate from "@/components/animation/Animate.jsx";
 import api from "@/components/api/api";
 import notify from "@/components/toaster/notify";
 import Loader from "@/components/widgets/Loader.jsx"
+import { Link } from "react-router-dom";
 
 const AuditLogPage = () => {
   const [logs, setLogs] = useState([]);
@@ -31,11 +32,14 @@ const AuditLogPage = () => {
           }
         });
 
+        console.log(res.data)
+
         // Map results
         const rawArray = res.data.results || [];
         setLogs(rawArray.map(item => ({
           id: item.id,
           user: item.username || "Unknown User",
+          user_id: item.user || "unknown",
           action: item.action_type || "Unknown",
           description: item.description || "No technical details provided.",
           target: item.document_title || "Root System",
@@ -71,6 +75,7 @@ const AuditLogPage = () => {
     if (a.includes('update') || a.includes('edit')) return 'badge-warning';
     return 'badge-primary';
   };
+
 
   if (loading && logs.length === 0) return <Loader message="Accessing secure logs..." />;
 
@@ -118,22 +123,48 @@ const AuditLogPage = () => {
                   {logs.map((log) => (
                     <tr key={log.id} className="hover:bg-primary/5 transition-colors group">
                       <td className="py-6 px-10">
-                        <div className="flex items-center gap-4">
-                          {/* flex-shrink-0 prevents the circle from turning into an oval if text is long */}
-                          <div className="flex-shrink-0">
-                            <img
-                              src={log.created_by_avatar_url}
-                              alt="avatar"
-                              className="w-10 h-10 rounded-full object-cover ring-2 ring-base-content/5 bg-base-300"
-                            />
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-bold text-sm uppercase tracking-tight truncate">
-                              {log.user}
-                            </span>
-                            <span className="text-[10px] opacity-30 font-mono truncate">
-                              {log.id}
-                            </span>
+                        <div className="flex flex-col gap-3 min-w-0">
+                          {/* TOP ROW: Avatar and Username */}
+
+                          <Link to={`/profile/${log.user_id}`}>
+                            <div className="flex items-center gap-3 justify-center">
+                              <div className="flex-shrink-0">
+                                <img
+                                  src={log.created_by_avatar_url}
+                                  alt="avatar"
+                                  className="w-10 h-10 rounded-full object-cover ring-2 ring-base-content/5 bg-base-300"
+                                />
+                              </div>
+                              <span className="font-bold text-sm uppercase tracking-tight truncate text-slate-800 dark:text-slate-100">
+                                {log.user}
+                              </span>
+                            </div>
+                          </Link>
+                          {/* BOTTOM ROW: Stacked IDs */}
+                          <div className="flex flex-col gap-1.5"> {/* 52px = Avatar width (40px) + Gap (12px) */}
+                            {/* User ID Stack */}
+                            <div className="flex items-center w-fit overflow-hidden rounded border border-blue-500/20 bg-blue-500/5">
+                              <div className="bg-blue-500 px-1.5 py-0.5">
+                                <span className="text-[9px] font-black uppercase tracking-tight text-white">
+                                  User
+                                </span>
+                              </div>
+                              <span className="px-2 text-[10px] font-mono font-medium text-blue-600 dark:text-blue-400">
+                                {log.user_id}
+                              </span>
+                            </div>
+
+                            {/* Log ID Stack */}
+                            <div className="flex items-center w-fit overflow-hidden rounded border border-slate-500/20 bg-slate-500/5">
+                              <div className="bg-slate-500 px-1.5 py-0.5">
+                                <span className="text-[9px] font-black uppercase tracking-tight text-white">
+                                  Log
+                                </span>
+                              </div>
+                              <span className="px-2 text-[10px] font-mono font-medium text-slate-600 dark:text-slate-400">
+                                {log.id}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </td>
