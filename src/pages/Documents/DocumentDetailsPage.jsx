@@ -32,17 +32,65 @@ const DocumentDetailsPage = () => {
   const [error, setError] = useState(null);
   const [versions, setVersions] = useState([]);
 
+  const [showModal, setShowModal] = useState(false);
+  const [permissionType, setPermissionType] = useState("READ");
+  const [search, setSearch] = useState("");
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [members, setMembers] = useState([]);
+
+  useEffect(() => {
+    const delay = setTimeout(async () => {
+      try {
+        const url = search
+          ? `/users/search/?search=${search}`
+          : `/users/search/`;
+
+        const res = await api.get(url);
+        setUsers(res.data.results || res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 300);
+
+    return () => clearTimeout(delay);
+  }, [search]);
+
+  const openModal = (type) => {
+    setPermissionType(type);
+    setShowModal(true);
+  };
+
+  const handleGrant = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await api.post("/permissions/grant/", {
+        user: selectedUser.id,
+        document: id,
+        permission_type: permissionType,
+      });
+
+      setShowModal(false);
+      setSelectedUser(null);
+      setSearch("");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [docRes, versionsRes] = await Promise.all([
+        const [docRes, versionsRes, membersRes] = await Promise.all([
           api.get(`/documents/${id}/`),
-          api.get(`/versions/document/${id}/`)
+          api.get(`/versions/document/${id}/`),
+          api.get(`/permissions/${id}/members/`)
         ]);
 
         setDocument(docRes.data);
         setVersions(versionsRes.data);
-
+        setMembers(membersRes.data);
       } catch (err) {
         setError("Database Linkage Failure.");
       } finally {
@@ -53,22 +101,38 @@ const DocumentDetailsPage = () => {
     fetchData();
   }, [id]);
 
-  console.log("Document:", document);
-  console.log("Current User:", user, "Is Super?:", user?.is_superuser, "Doc ID:", id);
-
   const activeVersion = useMemo(() =>
     document?.active_version || (versions.length ? versions[0] : null),
     [document, versions]);
 
   const statusInfo = getStatusDetails(activeVersion?.status);
   const isSuperUser = user?.is_superuser;
-  const isOwner = (user && document?.created_by_username === user?.username) || isSuperUser;
+  const isOwner = user && document?.created_by_username === user?.username;
+  const isCoAuthor = useMemo(() => {
+    if (!user || !members.length) return false;
+
+    return members.some(
+      (m) =>
+        m.user === user.id && m.permission_type === "WRITE"
+    );
+  }, [members, user]);
+
+  const isReader = useMemo(() => {
+    if (!user || !members.length) return false;
+
+    return members.some(
+      (m) =>
+        m.user === user.id && m.permission_type?.toUpperCase() === "READ"
+    );
+  }, [members, user]);
 
   if (loading) {
     return (
       <Loader message="Loading document detail..." />
     );
   }
+
+  console.log("Ownership/Permission Check:", { isOwner, isSuperUser, isCoAuthor, isReader });
 
   if (error || !document) return (
     <div className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden bg-slate-950">
@@ -121,7 +185,7 @@ const DocumentDetailsPage = () => {
               <span className="text-[10px] uppercase tracking-[0.2em]">Back to Documents</span>
             </Link>
 
-            {isOwner && (
+            {(isOwner || isSuperUser || isCoAuthor) && (
               <Link
                 to={`/documents/${id}/create-version`}
                 className="btn btn-primary btn-sm rounded-xl border-none shadow-lg shadow-primary/20 hover:scale-105 transition-all h-10 px-6"
@@ -129,6 +193,24 @@ const DocumentDetailsPage = () => {
                 <GitBranchPlus size={16} />
                 <span className="font-bold text-[10px] uppercase tracking-widest">New Version</span>
               </Link>
+            )}
+
+            {(isOwner || isSuperUser) && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => openModal("WRITE")}
+                  className="btn btn-secondary btn-sm rounded-xl"
+                >
+                  Add Co-Author
+                </button>
+
+                <button
+                  onClick={() => openModal("READ")}
+                  className="btn btn-outline btn-sm rounded-xl"
+                >
+                  Add Reader
+                </button>
+              </div>
             )}
           </div>
         </Animate>
@@ -222,7 +304,7 @@ const DocumentDetailsPage = () => {
         </div>
 
         {/* Table Section */}
-        {isOwner && (
+        {(isOwner || isSuperUser || isCoAuthor || isReader) && (
           <Animate delay={0.2} className="pt-12 space-y-8">
             {/* Divider Header */}
             <div className="flex items-center gap-4 px-2">
@@ -301,6 +383,65 @@ const DocumentDetailsPage = () => {
           </Animate>
         )}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-base-100 p-6 rounded-2xl w-full max-w-md space-y-4">
+
+            <h2 className="font-bold text-lg">
+              Add {permissionType === "WRITE" ? "Co-author" : "Reader"}
+            </h2>
+
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search users..."
+              className="input input-bordered w-full"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            {/* Dropdown Results */}
+            <div className="max-h-40 overflow-y-auto border rounded-xl">
+              {users.map((u) => (
+                <div
+                  key={u.id}
+                  onClick={() => setSelectedUser(u)}
+                  className={`p-2 cursor-pointer hover:bg-base-200 ${selectedUser?.id === u.id ? "bg-primary text-white" : ""
+                    }`}
+                >
+                  {u.username}
+                </div>
+              ))}
+            </div>
+
+            {/* Selected */}
+            {selectedUser && (
+              <div className="text-sm">
+                Selected: <b>{selectedUser.username}</b>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="btn btn-primary"
+                onClick={handleGrant}
+              >
+                Confirm
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </section>
   );
 }

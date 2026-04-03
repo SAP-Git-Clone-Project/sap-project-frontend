@@ -113,6 +113,7 @@ const Login = () => {
       const { user: apiUser, access, refresh } = res.data;
 
       const userData = {
+        id: apiUser?.id,
         name:
           `${apiUser?.first_name || ""} ${apiUser?.last_name || ""}`.trim() ||
           apiUser?.username,
