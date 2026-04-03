@@ -126,13 +126,23 @@ const DocumentDetailsPage = () => {
     );
   }, [members, user]);
 
+  const coAuthors = useMemo(() => {
+    return members.filter(
+      (m) => m.permission_type?.toUpperCase() === "WRITE"
+    );
+  }, [members]);
+
+  const readers = useMemo(() => {
+    return members.filter(
+      (m) => m.permission_type?.toUpperCase() === "READ"
+    );
+  }, [members]);
+
   if (loading) {
     return (
       <Loader message="Loading document detail..." />
     );
   }
-
-  console.log("Ownership/Permission Check:", { isOwner, isSuperUser, isCoAuthor, isReader });
 
   if (error || !document) return (
     <div className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden bg-slate-950">
@@ -304,6 +314,76 @@ const DocumentDetailsPage = () => {
             </GlassCard>
           </Animate>
         </div>
+
+        <Animate delay={0.15}>
+          <GlassCard className="p-8 space-y-6 border-primary/5 shadow-xl">
+
+            {/* Co-Authors */}
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-4">
+                Co-Authors
+              </h3>
+
+              {coAuthors.length > 0 ? (
+                <div className="space-y-3">
+                  {coAuthors.map((m) => (
+                    <div key={m.id} className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-base-300/20 flex items-center justify-center overflow-hidden">
+                        {m.user_avatar ? (
+                          <img
+                            src={m.user_avatar}
+                            alt={m.username}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <User size={14} />
+                        )}
+                      </div>
+                      <span className="text-sm font-semibold">
+                        {m.full_name || `User #${m.user}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs opacity-40 italic">No co-authors assigned</p>
+              )}
+            </div>
+
+            {/* Readers */}
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-4">
+                Readers
+              </h3>
+
+              {readers.length > 0 ? (
+                <div className="space-y-3">
+                  {readers.map((m) => (
+                    <div key={m.id} className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-base-300/20 flex items-center justify-center overflow-hidden">
+                        {m.user_avatar ? (
+                          <img
+                            src={m.user_avatar}
+                            alt={m.username}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <User size={14} />
+                        )}
+                      </div>
+                      <span className="text-sm font-semibold">
+                        {m.full_name || `User #${m.user}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs opacity-40 italic">No readers assigned</p>
+              )}
+            </div>
+
+          </GlassCard>
+        </Animate>
 
         {/* Table Section */}
         {(isOwner || isSuperUser || isCoAuthor || isReader) && (
