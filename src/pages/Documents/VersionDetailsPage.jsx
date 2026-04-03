@@ -35,6 +35,11 @@ const VersionDetailsPage = () => {
   const [previewContent, setPreviewContent] = useState(null);
   const [fileType, setFileType] = useState(null);
 
+  const [selectedReviewer, setSelectedReviewer] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -47,6 +52,11 @@ const VersionDetailsPage = () => {
         const docRes = await api.get(`/documents/${versionData.document}/`);
         setDocument(docRes.data);
 
+        const membersRes = await api.get(`/permissions/${versionData.document}/members/`);
+        setMembers(membersRes.data);
+
+        const allUsersRes = await api.get("/users/search/");
+        setAllUsers(allUsersRes.data);
       } catch (err) {
         setError("Version retrieval failure.");
       } finally {
@@ -56,6 +66,27 @@ const VersionDetailsPage = () => {
 
     fetchData();
   }, [id]);
+
+  const handleRequestReview = async () => {
+    if (!selectedReviewer) return;
+
+    try {
+      setSubmitting(true);
+
+      await api.post("/reviews/create/", {
+        version: version.id,
+        reviewer: selectedReviewer,
+      });
+
+      // Refresh version to reflect new review assignment
+      const updated = await api.get(`/versions/${version.id}/`);
+      setVersion(updated.data);
+    } catch (err) {
+      console.error("Failed to create review", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const getFileType = (url) => {
     if (!url) return "unknown";
@@ -90,6 +121,15 @@ const VersionDetailsPage = () => {
   const isOwner =
     document?.created_by_username === user?.username ||
     user?.is_superuser;
+
+  const isCoAuthor = useMemo(() => {
+    if (!user || !members.length) return false;
+
+    return members.some(
+      (m) =>
+        m.user === user.id && m.permission_type === "WRITE"
+    );
+  }, [members, user]);
 
   if (loading) {
     return (
@@ -232,6 +272,42 @@ const VersionDetailsPage = () => {
               >
                 View File
               </a>
+            </div>
+          </Animate>
+        )}
+
+        {((isOwner || isCoAuthor) && version.status !== "pending_approval") && (
+          <Animate delay={0.25}>
+            <div className="flex flex-col gap-4 mt-6">
+
+              {/* Reviewer selection */}
+              <div className="flex flex-col gap-1">
+                <label htmlFor="reviewer" className="text-sm font-medium opacity-70">
+                  Select Reviewer
+                </label>
+                <select
+                  id="reviewer"
+                  className="input input-sm w-full border border-base-300/40"
+                  value={selectedReviewer}
+                  onChange={(e) => setSelectedReviewer(e.target.value)}
+                >
+                  <option value="">-- Choose a reviewer --</option>
+                  {allUsers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Request Review Button */}
+              <button
+                className="btn btn-warning"
+                onClick={handleRequestReview}
+                disabled={submitting || !selectedReviewer} // prevent submit if no reviewer
+              >
+                {submitting ? "Requesting..." : "Request Review"}
+              </button>
             </div>
           </Animate>
         )}
