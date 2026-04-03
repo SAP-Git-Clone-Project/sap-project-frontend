@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, Clock3, FileText, CheckCircle2, XCircle,
   PencilLine, GitBranchPlus, User, CalendarDays,
-  History, Eye, ShieldCheck, Info
+  History, Eye, ShieldCheck, Info, FileCog
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
@@ -61,6 +61,8 @@ const DocumentDetailsPage = () => {
     setPermissionType(type);
     setShowModal(true);
   };
+
+  console.log(users)
 
   const handleGrant = async () => {
     if (!selectedUser) return;
@@ -147,10 +149,10 @@ const DocumentDetailsPage = () => {
 
   if (error || !document) return (
     <MissingArtifact
-      title="Vault Empty"
-      message="No digital traces found in this directory. Upload a protocol to begin."
-      linkText="Go to Dashboard"
-      linkTo="/dashboard"
+      title="Document Not Found"
+      message="The requested document is missing from the system registry. It may have been redacted, purged, or moved to a restricted sector."
+      linkText="Return to Documents"
+      linkTo="/documents"
     />
   );
 
@@ -160,18 +162,21 @@ const DocumentDetailsPage = () => {
 
         {/* TOP LEVEL NAVIGATION */}
         <Animate variant="fade-down">
-          <div className="flex items-center justify-between w-full border-b border-base-300/10 pb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full border-b border-base-300/10 pb-8 gap-4">
+
+            {/* LEFT: Back Button (Default size) */}
             <Link
               to="/documents"
-              className="btn btn-ghost btn-sm gap-2 rounded-xl border border-base-300/50 hover:bg-base-300/50 transition-all"
+              className="group btn btn-ghost btn-sm gap-2 rounded-xl border border-base-300/50 hover:bg-base-300/50 transition-all"
             >
               <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
               <span className="text-[10px] uppercase tracking-[0.2em]">Back to Documents</span>
             </Link>
 
-            <div className="flex flex-row gap-4 items-center">
+            {/* RIGHT: Actions (Default sizes, just wraps if no space) */}
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3">
               {(isOwner || isSuperUser) && (
-                <div className="flex gap-2">
+                <>
                   <button
                     onClick={() => openModal("WRITE")}
                     className="btn btn-secondary btn-sm rounded-xl"
@@ -185,13 +190,13 @@ const DocumentDetailsPage = () => {
                   >
                     Add Reader
                   </button>
-                </div>
+                </>
               )}
 
               {(isOwner || isSuperUser || isCoAuthor) && (
                 <Link
                   to={`/documents/${id}/create-version`}
-                  className="btn btn-primary btn-sm rounded-xl border-none shadow-lg shadow-primary/20 hover:scale-105 transition-all h-10 px-6"
+                  className="btn btn-primary btn-sm rounded-xl border-none shadow-lg shadow-primary/20 hover:scale-105 transition-all h-10 px-6 flex items-center gap-2"
                 >
                   <GitBranchPlus size={16} />
                   <span className="font-bold text-[10px] uppercase tracking-widest">New Version</span>
@@ -208,7 +213,7 @@ const DocumentDetailsPage = () => {
           <Animate className="lg:col-span-2 space-y-10 flex">
             <div className="space-y-4 mb-5">
               <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.4em] opacity-60">
-                <ShieldCheck size={12} /> Secure Archive
+                <FileCog size={12} /> Document Detail
               </div>
               <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-base-content leading-[0.9]">
                 {document.title}
@@ -226,7 +231,7 @@ const DocumentDetailsPage = () => {
           </Animate>
 
           {/* Metadata Sidebar */}
-          <Animate delay={0.1}>
+          <Animate >
             <GlassCard className="p-8 space-y-8 border-primary/5 shadow-2xl sticky top-24 ">
               <div className="space-y-6 rounded-[1.5rem]">
                 <div>
@@ -287,93 +292,181 @@ const DocumentDetailsPage = () => {
               </div>
             </GlassCard>
           </Animate>
+
         </div>
 
+        {/* --- Permission Grid Snippet --- */}
         <Animate delay={0.15}>
-          <GlassCard className="p-8 space-y-6 border-primary/5 shadow-xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {/* Co-Authors */}
-            <div>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-4">
-                Co-Authors
-              </h3>
+            {/* 1. CO-AUTHORS TABLE */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-primary/5 blur-2xl rounded-[2rem] opacity-0 group-hover:scale-[1.02] transition-opacity duration-500" />
+              <div className="relative p-6 border border-base-content/10 backdrop-blur-2xl bg-base-100/5 shadow-2xl rounded-[1.5rem] flex flex-col h-[350px]">
 
-              {coAuthors.length > 0 ? (
-                <div className="space-y-3">
-                  {coAuthors.map((m) => (
-                    <div key={m.id} className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-base-300/20 flex items-center justify-center overflow-hidden">
-                        {m.user_avatar ? (
-                          <img
-                            src={m.user_avatar}
-                            alt={m.username}
-                            className="h-full w-full object-cover"
-                          />
+                {/* Header Section */}
+                <div className="flex items-center justify-between mb-4 px-2 shrink-0">
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Co-Author Registry</h3>
+                  </div>
+                  <div className="text-[10px] font-mono opacity-60 bg-primary/10 px-2 py-1 rounded border border-primary/20">
+                    {coAuthors?.length || 0} UNITS
+                  </div>
+                </div>
+
+                {/* TABLE WRAPPER FOR X-AXIS SCROLL */}
+                <div className="flex-1 flex flex-col min-h-0 border border-base-content/5 rounded-xl bg-base-100/10 overflow-hidden">
+                  <div className="overflow-x-auto custom-scrollbar">
+                    {/* Set a min-width here so columns don't collapse on small screens */}
+                    <div className="min-w-[500px] flex flex-col">
+
+                      {/* Table Header Row */}
+                      <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-base-content/10 bg-base-content/5 text-[9px] font-black uppercase tracking-widest opacity-60 shrink-0">
+                        <div className="col-span-8">User Details</div>
+                        <div className="col-span-4 text-right">User ID</div>
+                      </div>
+
+                      {/* Scrollable Rows (Y-Axis) */}
+                      <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
+                        {coAuthors?.length > 0 ? (
+                          coAuthors.map((m) => (
+                            <div key={m.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-base-content/5 items-center hover:bg-primary/5 transition-colors group/row">
+                              <div className="col-span-7">
+                                <Link to={`/profile/${m.user}`} className="flex items-center gap-3 group/link min-w-0 w-fit">
+                                  <div className="h-8 w-8 rounded-full ring-1 ring-primary/30 bg-base-300/20 overflow-hidden shrink-0 group-hover/link:ring-primary/60 transition-all">
+                                    <img src={m.user_avatar || `https://ui-avatars.com/api/?name=${m.username}`} className="h-full w-full object-cover" alt="" />
+                                  </div>
+                                  <div className="flex flex-col min-w-0 leading-tight gap-1">
+                                    <span className="text-xs font-bold truncate opacity-90 group-hover/link:text-primary transition-colors">
+                                      {m.full_name || (m.first_name || m.last_name ? `${m.first_name || ''} ${m.last_name || ''}`.trim() : "Unidentified Subject")}
+                                    </span>
+                                    <span className="text-[10px] font-mono opacity-50 tracking-tighter truncate">
+                                      Username: {m.username || "No ID"}
+                                    </span>
+                                  </div>
+                                </Link>
+                              </div>
+                              <div className="col-span-5 text-right">
+                                <span className="text-[9px] tracking-tighter text-primary font-black px-2 py-0.5">{m.user}</span>
+                              </div>
+                            </div>
+                          ))
                         ) : (
-                          <User size={14} />
+                          <div className="h-32 flex items-center justify-center opacity-20 text-[10px] font-bold uppercase tracking-widest">Registry Empty</div>
                         )}
                       </div>
-                      <span className="text-sm font-semibold">
-                        {m.full_name || `User #${m.user}`}
-                      </span>
+
                     </div>
-                  ))}
+                  </div>
                 </div>
-              ) : (
-                <p className="text-xs opacity-40 italic">No co-authors assigned</p>
-              )}
+              </div>
             </div>
 
-            {/* Readers */}
-            <div>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-4">
-                Readers
-              </h3>
+            {/* 2. READERS TABLE */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-secondary/5 blur-2xl rounded-[2rem] opacity-0 group-hover:scale-[1.02] transition-opacity duration-500" />
+              <div className="relative p-6 border border-base-content/10 backdrop-blur-2xl bg-base-100/5 shadow-2xl rounded-[1.5rem] flex flex-col h-[350px]">
 
-              {readers.length > 0 ? (
-                <div className="space-y-3">
-                  {readers.map((m) => (
-                    <div key={m.id} className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-base-300/20 flex items-center justify-center overflow-hidden">
-                        {m.user_avatar ? (
-                          <img
-                            src={m.user_avatar}
-                            alt={m.username}
-                            className="h-full w-full object-cover"
-                          />
+                <div className="flex items-center justify-between mb-4 px-2 shrink-0">
+                  <div className="space-y-1">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary">Readers — Authorized View Only</h3>
+                  </div>
+                  <div className="text-[10px] font-mono opacity-60 bg-secondary/10 px-2 py-1 rounded border border-secondary/20">
+                    {readers?.length || 0} UNITS
+                  </div>
+                </div>
+
+                {/* TABLE WRAPPER FOR X-AXIS SCROLL */}
+                <div className="flex-1 flex flex-col min-h-0 border border-base-content/5 rounded-xl bg-base-100/10 overflow-hidden">
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <div className="min-w-[500px] flex flex-col">
+
+                      <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-base-content/10 bg-base-content/5 text-[9px] font-black uppercase tracking-widest opacity-60 shrink-0">
+                        <div className="col-span-7">User Details</div>
+                        <div className="col-span-5 text-right">User ID</div>
+                      </div>
+
+                      <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
+                        {readers?.length > 0 ? (
+                          readers.map((m) => (
+                            <div key={m.id} className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-base-content/5 items-center hover:bg-secondary/5 transition-colors">
+                              <div className="col-span-7 flex items-center gap-3 py-3">
+                                <Link to={`/profile/${m.user}`} className="flex items-center gap-3 group/link">
+                                  <div className="h-8 w-8 rounded-full ring-1 ring-secondary/30 bg-base-300/20 overflow-hidden shrink-0 transition-transform duration-200 group-hover/link:scale-110 group-hover/link:ring-primary/60">
+                                    <img src={m.user_avatar || `https://ui-avatars.com/api/?name=${m.username}`} className="h-full w-full object-cover" alt="" />
+                                  </div>
+                                  <div className="flex flex-col min-w-0 gap-1">
+                                    <span className="text-xs font-bold truncate transition-colors group-hover/link:text-primary">
+                                      {m.full_name || (m.first_name ? `${m.first_name} ${m.last_name || ''}` : "No Name")}
+                                    </span>
+                                    <span className="text-[10px] font-mono opacity-50 tracking-tighter truncate">
+                                      Username: {m.username || "No ID"}
+                                    </span>
+                                  </div>
+                                </Link>
+                              </div>
+                              <div className="col-span-5 text-right text-[9px] tracking-tighter text-primary font-black px-2 py-0.5 ">
+                                {m.user || "No ID"}
+                              </div>
+                            </div>
+                          ))
                         ) : (
-                          <User size={14} />
+                          <div className="h-32 flex items-center justify-center opacity-20 text-[10px] font-bold uppercase tracking-widest">No Logs Found</div>
                         )}
                       </div>
-                      <span className="text-sm font-semibold">
-                        {m.full_name || `User #${m.user}`}
-                      </span>
+
                     </div>
-                  ))}
+                  </div>
                 </div>
-              ) : (
-                <p className="text-xs opacity-40 italic">No readers assigned</p>
-              )}
+              </div>
             </div>
 
-          </GlassCard>
+          </div>
         </Animate>
 
         {/* Table Section */}
         {(isOwner || isSuperUser || isCoAuthor || isReader) && (
           <Animate delay={0.2} className="pt-12 space-y-8">
             {/* Divider Header */}
+
             <div className="flex items-center gap-4 px-2">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-base-300/50 to-transparent"></div>
               <div className="flex items-center gap-3 mb-5">
                 <History className="text-primary" size={20} />
-                <h2 className="text-xl font-black tracking-widest uppercase">Audit History</h2>
+                <h2 className="text-xl font-black tracking-widest uppercase">Version History</h2>
               </div>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-base-300/50 to-transparent"></div>
             </div>
 
+            <div className="max-w-7xl mx-auto px-6 py-4 rounded-t-[1.25rem] border border-white/5 border-b-0 bg-base-200/20 backdrop-blur-3xl shadow-xl">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-[2px] bg-primary/40 rounded-full" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-base-content/30">
+                    Index Metadata
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 xs:grid-cols-3 md:flex items-center gap-x-8 gap-y-4 md:gap-x-12">
+                  {[
+                    { label: "Approved", status: "approved", desc: "Verified" },
+                    { label: "Pending", status: "pending", desc: "Awaiting" },
+                    { label: "Rejected", status: "rejected", desc: "Declined" },
+                    { label: "Default", status: "default", desc: "No Status" }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3 transition-opacity hover:opacity-80">
+                      <FileStatus status={item.status} />
+                      <div className="flex flex-col leading-none">
+                        <span className="text-[11px] font-black text-base-content/80 tracking-tight">{item.label}</span>
+                        <span className="text-[7px] font-bold text-base-content/20 uppercase tracking-widest mt-1">{item.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
             {/* Table Container */}
-            <div className="rounded-[1.5rem] border border-base-300/20 bg-base-200/10 backdrop-blur-3xl overflow-hidden shadow-inner">
+            <div className="rounded-b-[1.5rem] border border-base-300/20 bg-base-200/10 backdrop-blur-3xl overflow-hidden shadow-inner">
               <div className="overflow-x-auto">
                 <table className="table w-full border-separate border-spacing-0">
                   <thead className="bg-base-300/30">
@@ -381,47 +474,86 @@ const DocumentDetailsPage = () => {
                       <th className="py-6 px-10">Version</th>
                       <th className="text-center">Status</th>
                       <th>Created By</th>
-                      <th>Remarks</th>
-                      <th className="text-right px-10">Action</th>
+                      <th>Created At</th>
+                      <th className="text-center">Details</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-base-300/5">
                     {versions.length > 0 ? (
                       versions.map((v) => (
                         <tr key={v.id} className="group hover:bg-base-200/50 transition-all">
-                          <td className="py-6 px-10">
-                            <div className="flex items-center gap-3">
-                              <span className="font-mono font-black text-lg text-primary">v{v.version_number}</span>
-                              {v.is_active && (
-                                <span className="bg-primary text-white text-[9px] px-2 py-0.5 rounded-md font-black uppercase shadow-sm shadow-primary/20">Live</span>
-                              )}
+                          {/* Version */}
+                          <td className="py-6 px-10 relative">
+                            <div
+                              className="tooltip tooltip-right tooltip-primary before:z-[10000] after:z-[10000] w-fit ml-3"
+                              data-tip="Click to see this version"
+                            >
+                              <Link
+                                to={`/versions/${v.id}`}
+                                className="group/version flex items-center gap-3"
+                              >
+                                <span className="font-mono font-black text-lg text-primary transition-transform group-hover/version:scale-110">
+                                  v{v.version_number}
+                                </span>
+                                {v.is_active && (
+                                  <span className="bg-primary text-base-300 text-[9px] px-2 py-0.5 rounded-md font-black uppercase shadow-sm shadow-primary/20">
+                                    Live
+                                  </span>
+                                )}
+                              </Link>
                             </div>
                           </td>
+                          {/* Status */}
                           <td className="text-center">
                             <div className="flex justify-center scale-75 opacity-80 group-hover:opacity-100 transition-opacity">
                               <FileStatus status={v.status.toLowerCase()} />
                             </div>
                           </td>
-                          <td className="text-[11px] font-bold opacity-60">
+                          {/* Created By */}
+                          <td className="py-3 px-4">
+                            <Link
+                              to={`/profile/${v.user_id || v.user}`}
+                              className="flex items-center gap-3 group/link w-fit min-w-0"
+                            >
+                              {/* LEFT: The Image Div */}
+                              <div className="h-8 w-8 rounded-full ring-1 ring-primary/30 bg-base-300/20 overflow-hidden shrink-0 transition-transform duration-200 group-hover/link:scale-110 group-hover/link:ring-primary">
+                                <img
+                                  src={v.avatar_url || `https://ui-avatars.com/api/?name=${v.username}`}
+                                  className="h-full w-full object-cover"
+                                  alt=""
+                                />
+                              </div>
+
+                              {/* RIGHT: The Text Div (Stacked) */}
+                              <div className="flex flex-col min-w-0 leading-tight">
+                                <span className="text-[11px] font-bold transition-colors group-hover/link:text-primary">
+                                  {v.creator_name || "Unknown User"}
+                                </span>
+                              </div>
+                            </Link>
+                          </td>
+                          {/* Created At */}
+                          <td>
                             <div className="flex flex-col">
                               <span>{v.created_by_username || v.author}</span>
-                              <span className="text-[9px] font-medium opacity-50 uppercase tracking-tighter">
-                                {v.created_at || 'Pending Date'}
+                              <span className="text-[9px] font-medium opacity-50 tracking-tighter">
+                                {v.created_at ? (
+                                  (() => {
+                                    const d = new Date(v.created_at);
+                                    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                    const yearPart = d.getFullYear();
+                                    const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                                    return `${datePart} ${yearPart}, ${timePart}`;
+                                  })()
+                                ) : 'Pending Date'}
                               </span>
                             </div>
                           </td>
-                          <td className="max-w-xs">
-                            <p className="text-[10px] font-medium opacity-40 italic line-clamp-1 group-hover:opacity-100 group-hover:line-clamp-none transition-all">
+                          {/* Details */}
+                          <td className="max-w-xs text-center">
+                            <p className="text-[10px] font-medium opacity-40 italic group-hover:opacity-100  transition-all">
                               {v.content || "Automated system log entry."}
                             </p>
-                          </td>
-                          <td className="text-right px-10">
-                            <Link
-                              to={`/versions/${v.id}`}
-                              className="btn btn-ghost btn-xs rounded-lg hover:bg-primary hover:text-white transition-all font-black text-[9px] tracking-widest px-4 border border-base-content/5"
-                            >
-                              Audit
-                            </Link>
                           </td>
                         </tr>
                       ))
@@ -440,63 +572,118 @@ const DocumentDetailsPage = () => {
         )}
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-base-100 p-6 rounded-2xl w-full max-w-md space-y-4">
+      {/* Add this ref at the top of your component: const dialogRef = useRef(null); */}
 
-            <h2 className="font-bold text-lg">
-              Add {permissionType === "WRITE" ? "Co-author" : "Reader"}
-            </h2>
+      {showModal && (
+        <dialog
+          ref={(el) => {
+            if (el && !el.open) el.showModal();
+          }}
+          className="modal backdrop-blur-sm"
+          onClose={() => setShowModal(false)}
+        >
+          <div className="modal-box bg-base-100 p-8 rounded-[2rem] max-w-md space-y-6 shadow-2xl border border-white/5 relative overflow-hidden">
+
+            {/* Header Section */}
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Permission Registry</h3>
+              <h2 className="font-bold text-xl">
+                Add {permissionType === "WRITE" ? "Co-author" : "Reader"}
+              </h2>
+            </div>
 
             {/* Search Input */}
             <input
+              autoFocus
               type="text"
               placeholder="Search users..."
-              className="input input-bordered w-full"
+              className="input input-bordered w-full bg-base-200/50 rounded-xl border-none focus:ring-1 focus:ring-primary/50 transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
 
-            {/* Dropdown Results */}
-            <div className="max-h-40 overflow-y-auto border rounded-xl">
-              {users.map((u) => (
-                <div
-                  key={u.id}
-                  onClick={() => setSelectedUser(u)}
-                  className={`p-2 cursor-pointer hover:bg-base-200 ${selectedUser?.id === u.id ? "bg-primary text-white" : ""
-                    }`}
-                >
-                  {u.username}
+            {/* Results List */}
+            <div className="max-h-48 overflow-y-auto border border-base-content/5 rounded-2xl bg-base-200/30 custom-scrollbar">
+              {users.length > 0 ? (
+                users.map((u) => (
+                  <div
+                    key={u.id}
+                    onClick={() => setSelectedUser(u)}
+                    className={`flex items-center gap-3 p-3 cursor-pointer transition-all border-b border-base-content/5 last:border-0
+                ${selectedUser?.id === u.id ? "bg-primary text-primary-content" : "hover:bg-primary/10"}`}
+                  >
+                    <div className={`h-9 w-9 rounded-full overflow-hidden shrink-0 ring-2 ${selectedUser?.id === u.id ? "ring-white/50" : "ring-primary/20"}`}>
+                      <img
+                        src={u.avatar || `https://ui-avatars.com/api/?name=${u.username}&background=random`}
+                        className="h-full w-full object-cover"
+                        alt=""
+                      />
+                    </div>
+
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold truncate">{u.username}</span>
+                      <span className={`text-[9px] font-mono tracking-tighter opacity-50 ${selectedUser?.id === u.id ? "text-white" : ""}`}>
+                        ID: {u.id}
+                      </span>
+                    </div>
+
+                    {selectedUser?.id === u.id && (
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="p-10 text-center opacity-20 text-[10px] font-black uppercase tracking-widest">
+                  No Users Found
                 </div>
-              ))}
+              )}
             </div>
 
-            {/* Selected */}
-            {selectedUser && (
-              <div className="text-sm">
-                Selected: <b>{selectedUser.username}</b>
-              </div>
-            )}
+            {/* Selected Indicator */}
+            <div className="h-4">
+              {selectedUser && (
+                <div className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  Active Selection: <span className="opacity-60 normal-case">{selectedUser.username}</span>
+                </div>
+              )}
+            </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2">
-              <button
-                className="btn btn-ghost"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
+            <div className="flex items-center gap-3 pt-2">
+              <form method="dialog" className="flex-1">
+                <button
+                  className="btn btn-ghost w-full rounded-xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+              </form>
 
               <button
-                className="btn btn-primary"
-                onClick={handleGrant}
+                disabled={!selectedUser}
+                className="btn btn-primary flex-[2] rounded-xl shadow-lg shadow-primary/20 text-[10px] font-black uppercase tracking-widest disabled:opacity-30"
+                onClick={async () => {
+                  // 1. Run your grant logic
+                  await handleGrant();
+
+                  // 2. Close the modal state
+                  setShowModal(false);
+
+                  // 3. Force the page to reload
+                  window.location.reload();
+                }}
               >
-                Confirm
+                Confirm Authorization
               </button>
             </div>
 
           </div>
-        </div>
+          {/* Background Close Logic */}
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={() => setShowModal(false)}>close</button>
+          </form>
+        </dialog>
       )}
     </section>
   );

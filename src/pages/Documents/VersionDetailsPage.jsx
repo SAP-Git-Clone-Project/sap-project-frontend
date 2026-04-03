@@ -9,6 +9,7 @@ import {
 import Animate from "@/components/animation/Animate.jsx";
 import GlassCard from "@/components/widgets/GlassCard.jsx";
 import Loader from "@/components/widgets/Loader.jsx";
+import MissingArtifact from "@/components/widgets/MissingArtifact.jsx";
 import api from "@/components/api/api.js";
 import { useAuth } from "@/context/AuthContext.jsx";
 
@@ -99,13 +100,12 @@ const VersionDetailsPage = () => {
 
   if (error || !version) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <XCircle size={32} className="text-error mb-4" />
-        <h2 className="font-black uppercase">Version Not Found</h2>
-        <Link to="/documents" className="btn btn-primary btn-sm mt-6">
-          Return
-        </Link>
-      </div>
+      <MissingArtifact
+        title="Version Not Found"
+        message="The requested version for this document is missing from the system registry. It may have been redacted, purged, or moved to a restricted sector."
+        linkText="Return to Documents"
+        linkTo={`/documents`}
+      />
     );
   }
 
