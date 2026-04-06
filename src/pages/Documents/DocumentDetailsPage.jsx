@@ -62,8 +62,6 @@ const DocumentDetailsPage = () => {
     setShowModal(true);
   };
 
-  console.log(users)
-
   const handleGrant = async () => {
     if (!selectedUser) return;
 
@@ -141,6 +139,8 @@ const DocumentDetailsPage = () => {
     );
   }, [members]);
 
+  const displayContent = versions[0]?.content || "System Remark: No description data provided for this entry.";
+
   if (loading) {
     return (
       <Loader message="Loading document detail..." />
@@ -155,9 +155,6 @@ const DocumentDetailsPage = () => {
       linkTo="/documents"
     />
   );
-
-  console.log("Is Super User: ", isSuperUser);
-  console.log("Document has been deleted: ", document?.is_deleted);
 
   return (
     <section className="px-6 py-20 min-h-screen bg-base-100 overflow-x-hidden">
@@ -254,7 +251,7 @@ const DocumentDetailsPage = () => {
                 <Info size={14} /> Manifest Description
               </h3>
               <p className="text-base-content/70 text-md leading-relaxed font-medium">
-                {document.description || "System Remark: No description data provided for this entry."}
+                {displayContent}
               </p>
             </div>
           </Animate>

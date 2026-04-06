@@ -53,8 +53,6 @@ const CreateVersionPage = () => {
 
   const [errors, setErrors] = useState({});
 
-  console.log(document, versions);
-
   const activeVersion = useMemo(() =>
     document?.active_version || (versions.length ? versions[0] : null),
     [document, versions]);

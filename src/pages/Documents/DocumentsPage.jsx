@@ -38,9 +38,7 @@ const DocumentsPage = () => {
       try {
         const res = await api.get("/documents/");
         setDocuments(res.data);
-        console.log("Fetched documents:", res.data);
       } catch (err) {
-        // This catches the "Network Error" you saw in console
         notify.error("Backend Server is Offline (Port 5000)");
         console.error(err);
       } finally {

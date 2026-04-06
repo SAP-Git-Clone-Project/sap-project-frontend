@@ -19,7 +19,7 @@ import api from "@/components/api/api.js";
 const CreateDocumentPage = () => {
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
-  const [formData, setFormData] = useState({ title: "" });
+  const [formData, setFormData] = useState({ title: "", content: "" });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,11 +53,13 @@ const CreateDocumentPage = () => {
     try {
       const response = await api.post("/documents/", {
         title: formData.title.trim(),
+        content: formData.content.trim() || null,
       });
 
       const formDataToSend = new FormData();
       formDataToSend.append("file", file);
       formDataToSend.append("document", response.data.id);
+      formDataToSend.append("content", formData.content.trim() || null);
 
       await api.post(
         "/versions/document/" + response.data.id + "/",
@@ -159,6 +161,33 @@ const CreateDocumentPage = () => {
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* 1b. REMARKS INPUT */}
+            <div className="group backdrop-blur-md bg-base-300/[0.02] border border-base-300/20 p-6 rounded-2xl shadow-sm transition-all hover:bg-base-300/[0.04] hover:border-base-300/30">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                    <FilePlus size={14} strokeWidth={2.5} />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity">
+                    Optional Remarks
+                  </span>
+                </div>
+                <span className="text-[9px] font-mono opacity-20 uppercase tracking-tighter">
+                  {formData.content.length} / 256
+                </span>
+              </div>
+              <textarea
+                name="content"
+                placeholder="Add any additional notes (optional)..."
+                className={`w-full bg-base-300/[0.03] border rounded-xl px-4 py-3.5 text-sm font-medium transition-all focus:outline-none 
+      border-base-300/5 focus:border-primary/50 focus:bg-base-300/[0.06] hover:bg-base-300/[0.05]`}
+                value={formData.content}
+                onChange={handleChange}
+                rows={4}
+                maxLength={256}
+              />
             </div>
 
             {/* 2. FILE UPLINK */}
