@@ -156,6 +156,9 @@ const DocumentDetailsPage = () => {
     />
   );
 
+  console.log("Is Super User: ", isSuperUser);
+  console.log("Document has been deleted: ", document?.is_deleted);
+
   return (
     <section className="px-6 py-20 min-h-screen bg-base-100 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-16">
@@ -193,6 +196,25 @@ const DocumentDetailsPage = () => {
                 </>
               )}
 
+              {(isOwner || isSuperUser) && (
+                <button
+                  onClick={async () => {
+                    if (!window.confirm("Are you sure you want to delete this document?")) return;
+
+                    try {
+                      await api.delete(`/documents/${id}/`);
+                      window.location.href = "/documents";
+                    } catch (err) {
+                      console.error(err);
+                      alert("Failed to delete document.");
+                    }
+                  }}
+                  className="btn btn-error btn-sm rounded-xl"
+                >
+                  Delete Document
+                </button>
+              )}
+
               {(isOwner || isSuperUser || isCoAuthor) && (
                 <Link
                   to={`/documents/${id}/create-version`}
@@ -219,6 +241,13 @@ const DocumentDetailsPage = () => {
                 {document.title}
               </h1>
             </div>
+
+            {isSuperUser && document?.is_deleted && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-error/10 border border-error/20 text-error text-[10px] font-black uppercase tracking-widest">
+                <XCircle size={12} />
+                System Notice: This document has been deleted
+              </div>
+            )}
 
             <div className="p-10 rounded-[1.5rem] bg-base-200/20 border border-base-300/40 backdrop-blur-md relative group">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-6 flex items-center gap-2">

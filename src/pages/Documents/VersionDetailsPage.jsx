@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, Clock3, FileText, CheckCircle2, XCircle,
   PencilLine, User, CalendarDays, ShieldCheck,
-  Info, HardDrive, Hash, Eye, FileStack, Download, 
+  Info, HardDrive, Hash, Eye, FileStack, Download,
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
@@ -65,8 +65,6 @@ const VersionDetailsPage = () => {
     fetchData();
   }, [id]);
 
-  console.log(version)
-
   const handleRequestReview = async () => {
     if (!selectedReviewer) return;
     try {
@@ -110,6 +108,9 @@ const VersionDetailsPage = () => {
     if (!user || !members.length) return false;
     return members.some((m) => m.user === user.id && m.permission_type === "WRITE");
   }, [members, user]);
+
+  const isDeleted = document?.is_deleted;
+  const isSuperUser = user?.is_superuser;
 
   if (loading) return <Loader message="Loading version details..." />;
   if (error || !version) return (
@@ -164,6 +165,13 @@ const VersionDetailsPage = () => {
                 {document?.title}
               </p>
             </div>
+
+            {isSuperUser && isDeleted && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-error/10 border border-error/20 text-error text-[10px] font-black uppercase tracking-widest">
+                <XCircle size={12} />
+                Redacted Artifact — Parent Document Deleted
+              </div>
+            )}
 
             <div className="p-10 rounded-[1.5rem] bg-base-200/20 border border-base-300/40 backdrop-blur-md relative group">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 mb-6 flex items-center gap-2">
@@ -311,7 +319,7 @@ const VersionDetailsPage = () => {
                           : 'bg-warning text-warning-content hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.5)] shadow-xl shadow-warning/20 hover:scale-[1.02] active:scale-[0.98]'
                         }`}
                       onClick={handleRequestReview}
-                      disabled={submitting || !selectedReviewer}
+                      disabled={submitting || !selectedReviewer || isDeleted}
                     >
                       {submitting ? (
                         <span className="loading loading-spinner loading-md"></span>
