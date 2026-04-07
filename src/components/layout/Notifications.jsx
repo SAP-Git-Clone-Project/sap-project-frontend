@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell, Files, Clock, X, CheckCheck, Sparkles,
@@ -13,28 +13,24 @@ const Notifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef(null);
 
-  const fetchNotifications = async () => {
+  // Memoized fetch function
+  const fetchNotifications = useCallback(async () => {
     try {
       const res = await api.get("/notifications/");
-      // Get the array from the backend
       const allNotifs = res.data.notifications || [];
-
-      // Show only the 10 most recent notifications
       setNotifications(allNotifs.slice(0, 10));
-
-      // Still show the actual unread count for the badge
       setUnreadCount(res.data.unread_count || 0);
     } catch (err) {
       console.error("Failed to fetch notifications", err);
     }
-  };
+  }, []); 
 
-  // Load notification every 30sec
+  // Initial Load & Live Update Interval
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 1000);
+    const interval = setInterval(fetchNotifications, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNotifications]); 
 
   useEffect(() => {
     const handleClickOutside = (event) => {

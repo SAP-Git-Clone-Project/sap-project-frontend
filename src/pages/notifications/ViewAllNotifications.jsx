@@ -34,11 +34,9 @@ const ViewAllNotifications = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   
-  // Search state split for debouncing
   const [searchInput, setSearchInput] = useState(""); 
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [paginationInfo, setPaginationInfo] = useState({
     count: 0,
@@ -47,18 +45,20 @@ const ViewAllNotifications = () => {
     hasPrev: false
   });
 
-  // Debounce logic: wait 300ms after last keystroke before updating API search param
+  // Handle Search Debouncing
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchInput);
-      setCurrentPage(1); // Reset to page 1 on new search
+      setCurrentPage(1); 
     }, 300);
-
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true);
+  // Fetch Logic (Memoized to prevent unnecessary re-renders)
+  const fetchNotifications = useCallback(async (isSilent = false) => {
+    // isSilent=true means don't show the big loading spinner (used for live updates)
+    if (!isSilent) setLoading(true);
+    
     try {
       const res = await api.get("/notifications/", {
         params: {
@@ -73,14 +73,23 @@ const ViewAllNotifications = () => {
       setUnreadCount(res.data?.unread_count || 0);
       setPaginationInfo(res.data?.pagination || { count: 0, totalPages: 1 });
     } catch (err) {
-      notify.error("Database sync failed");
+      console.error("Fetch failed", err);
+      // We don't notify.error here to avoid spamming the user during live background refreshes
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [currentPage, filter, debouncedSearch]);
 
+  // Initial Load & Live Update Interval
   useEffect(() => {
     fetchNotifications();
+
+    // Set up polling (Live Update every 5 seconds)
+    const interval = setInterval(() => {
+      fetchNotifications(true); 
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [fetchNotifications]);
 
   const markAsRead = async (id) => {
@@ -97,10 +106,10 @@ const ViewAllNotifications = () => {
   const deleteNotification = async (id) => {
     try {
       await api.delete(`/notifications/${id}/delete/`);
-      const target = notifications.find(n => n.id === id);
-      if (target && !target.is_read) setUnreadCount(prev => Math.max(0, prev - 1));
       setNotifications(prev => prev.filter(n => n.id !== id));
-      notify.success("Entry purged from archive");
+      // Refresh count/list after deletion to ensure pagination matches
+      fetchNotifications(true);
+      notify.success("Entry purged");
     } catch (err) {
       notify.error("Deletion failed");
     }
@@ -118,7 +127,7 @@ const ViewAllNotifications = () => {
     }
   };
 
-  if (loading && notifications.length === 0) return <Loader message="Loading notifications..." />;
+  if (loading && notifications.length === 0) return <Loader message="Accessing Registry..." />;
 
   return (
     <div className="min-h-screen bg-base-100 px-6 pb-20 pt-20 overflow-hidden">
@@ -127,19 +136,19 @@ const ViewAllNotifications = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="space-y-1">
             <div className="flex items-center gap-3 text-primary mb-3">
-              <Bell size={18} />
+              <Bell size={18} className={unreadCount > 0 ? "animate-pulse" : ""} />
               <span className="text-[10px] font-black uppercase tracking-[0.4em]">Notification Registry</span>
             </div>
             <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-base-content leading-[0.9]">
-              Hello, <span className="text-primary">{user?.first_name || "Agent"}</span> <span className="text-primary">{user?.last_name || "Agent"}</span>
+              Hello, <span className="text-primary">{user?.first_name || "Agent"}</span>
             </h1>
           </div>
           <button
             onClick={markAllRead}
             disabled={unreadCount === 0}
-            className={`btn rounded-2xl border-none px-8 transition-all ${unreadCount === 0 ? 'btn-disabled opacity-30' : 'btn-primary hover:scale-105'}`}
+            className={`btn rounded-2xl border-none px-8 transition-all shadow-lg ${unreadCount === 0 ? 'btn-disabled opacity-30' : 'btn-primary hover:scale-105 shadow-primary/20'}`}
           >
-            <MailOpen size={20} /> Mark All Read
+            <MailOpen size={20} /> Mark All Read ({unreadCount})
           </button>
         </div>
       </Animate>
@@ -153,7 +162,7 @@ const ViewAllNotifications = () => {
                 <button 
                   key={f} 
                   onClick={() => { setFilter(f); setCurrentPage(1); }} 
-                  className={`btn btn-xs sm:btn-sm rounded-xl px-5 border-none uppercase text-[9px] lg:text-[10px] font-black tracking-widest ${filter === f ? "btn-primary" : "btn-ghost text-secondary hover:bg-base-300"}`}
+                  className={`btn btn-xs sm:btn-sm rounded-xl px-5 border-none uppercase text-[9px] lg:text-[10px] font-black tracking-widest ${filter === f ? "btn-primary shadow-lg shadow-primary/20" : "btn-ghost text-secondary hover:bg-base-300"}`}
                 >
                   {f}
                 </button>
@@ -177,7 +186,7 @@ const ViewAllNotifications = () => {
       <Animate variant="fade-up">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="relative rounded-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
-            <div className="overflow-x-auto overflow-y-auto max-h-[75vh] scrollbar-custom">
+            <div className="overflow-x-auto overflow-y-auto max-h-[75vh]">
               <table className="table w-full border-separate border-spacing-0">
                 <thead className="sticky top-0 z-20">
                   <tr className="bg-base-300/90 backdrop-blur-md text-secondary uppercase text-[11px] font-black">
@@ -196,12 +205,12 @@ const ViewAllNotifications = () => {
                       : "bg-base-100 border-l-4 border-l-primary";
 
                     return (
-                      <tr key={n.id} className={`hover:bg-primary/10 transition-all duration-300 group ${rowClass}`}>
+                      <tr key={n.id} className={`hover:bg-primary/5 transition-all duration-300 group ${rowClass}`}>
                         <td className="py-6 px-10">
                           <div className="flex items-center gap-3">
                             <div className="avatar">
                               <div className={`w-10 h-10 rounded-full ring-2 ring-primary/10 overflow-hidden bg-base-300 transition-all ${n.is_read ? 'grayscale opacity-50' : 'group-hover:scale-110'}`}>
-                                <img src={n.user_avatar} alt="avatar" className="w-full h-full object-cover" />
+                                <img src={n.user_avatar} alt="" className="w-full h-full object-cover" />
                               </div>
                             </div>
                             <span className={`font-bold text-sm ${n.is_read ? 'text-base-content/50' : 'text-primary'}`}>
@@ -212,7 +221,7 @@ const ViewAllNotifications = () => {
                         <td className="py-6">
                           <div className="flex flex-col gap-1">
                             <div className={`text-sm ${n.is_read ? 'font-normal text-base-content/60' : 'font-bold text-base-content'}`}>
-                              {n.verb} <span className={`italic underline decoration-primary/30 ${n.is_read ? '' : 'font-black'}`}>"{n.target_document_title}"</span>
+                              {n.verb} <span className="italic underline decoration-primary/30">"{n.target_document_title}"</span>
                             </div>
                             {n.target_document_id && (
                               <Link to={`/documents/${n.target_document_id}`} className="text-[10px] text-primary font-black uppercase flex items-center gap-1 hover:gap-2 transition-all">
