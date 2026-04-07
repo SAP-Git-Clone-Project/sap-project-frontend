@@ -767,13 +767,8 @@ const DocumentDetailsPage = () => {
                 disabled={!selectedUser}
                 className="btn btn-primary flex-[2] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30"
                 onClick={async () => {
-                  // 1. Run your grant logic
                   await handleGrant();
-
-                  // 2. Close the modal state
                   setShowModal(false);
-
-                  // 3. Force the page to reload
                   window.location.reload();
                 }}
               >
