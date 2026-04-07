@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, Clock3, FileText, CheckCircle2, XCircle,
@@ -39,6 +39,7 @@ const VersionDetailsPage = () => {
 
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [reviewerSearch, setReviewerSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false); // New state for visibility
   const [submitting, setSubmitting] = useState(false);
   const [members, setMembers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -95,7 +96,6 @@ const VersionDetailsPage = () => {
     }
   }, [version]);
 
-  // Filter members to get only users with APPROVE permission
   const documentReviewers = useMemo(() => {
     if (!members.length) return [];
     return members.filter(m => m.permission_type?.toUpperCase() === "APPROVE");
@@ -231,7 +231,6 @@ const VersionDetailsPage = () => {
           <Animate>
             <GlassCard className="p-8 space-y-8 border-primary/5 shadow-2xl sticky top-24">
               <div className="space-y-6 rounded-[1.5rem]">
-                {/* Status Section */}
                 <div>
                   <span className="text-[9px] font-black uppercase opacity-30 tracking-[0.2em] block mb-3">
                     Lifecycle Status
@@ -241,9 +240,7 @@ const VersionDetailsPage = () => {
                   </div>
                 </div>
 
-                {/* Contributor & Timestamp Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-4 border-y border-base-300/10 py-8">
-                  {/* Contributor */}
                   <div className="flex items-center gap-4 flex-1">
                     <div className="h-11 w-11 rounded-full bg-base-300/20 flex items-center justify-center text-primary shadow-inner shrink-0 overflow-hidden border border-base-300/10">
                       <img
@@ -260,10 +257,8 @@ const VersionDetailsPage = () => {
                     </div>
                   </div>
 
-                  {/* Visual Divider */}
                   <div className="hidden md:block w-px h-10 bg-gradient-to-b from-transparent via-base-300/50 to-transparent mx-4" />
 
-                  {/* Timestamp */}
                   <div className="flex items-center gap-4 flex-1 md:justify-end">
                     <div className="flex flex-col md:items-end order-2 md:order-1">
                       <span className="text-[9px] uppercase font-black opacity-40 tracking-[0.2em] mb-0.5">Timestamp</span>
@@ -279,7 +274,6 @@ const VersionDetailsPage = () => {
                   </div>
                 </div>
 
-                {/* Technical Metadata Section */}
                 <div className="p-6 rounded-[1.5rem] bg-primary/5 border border-primary/10 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -300,7 +294,6 @@ const VersionDetailsPage = () => {
                   </div>
                 </div>
 
-                {/* Active Indicator */}
                 {version.is_active && (
                   <div className="p-4 bg-success/10 border border-success/20 rounded-xl text-success font-black text-[10px] tracking-[0.3em] text-center uppercase">
                     Primary Active Version
@@ -315,11 +308,11 @@ const VersionDetailsPage = () => {
         <Animate delay={0.1}>
           <div className="w-full mt-8">
             {((isOwner || isCoAuthor) && version.status !== "pending_approval") ? (
-              <GlassCard className="w-full p-10 border-primary/5 shadow-2xl overflow-hidden relative">
+              <GlassCard className="w-full p-10 border-primary/5 shadow-2xl overflow-visible relative">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-warning/5 rounded-full blur-[120px] -mr-32 -mt-32 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-24 -mb-24 pointer-events-none" />
 
-                <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-10">
+                <div className="relative z-10 flex flex-col xl:flex-row xl:items-start justify-between gap-10">
                   <div className="space-y-4 flex-1">
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center text-warning shadow-inner">
@@ -339,7 +332,7 @@ const VersionDetailsPage = () => {
                   </div>
 
                   {/* Right: Multi-Select Interface */}
-                  <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[550px]">
+                  <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[550px] relative">
 
                     {/* Selected Reviewers Tags */}
                     <div className="min-h-[50px] p-4 rounded-2xl border border-dashed border-base-content/20 bg-base-100/50 flex flex-wrap gap-2 content-start">
@@ -351,7 +344,7 @@ const VersionDetailsPage = () => {
                         selectedReviewers.map(userId => {
                           const reviewer = documentReviewers.find(r => r.user === userId);
                           return (
-                            <div key={userId} className="badge badge-primary gap-2 px-4 py-3 font-bold text-xs uppercase tracking-wider">
+                            <div key={userId} className="badge badge-primary gap-2 px-4 py-3 font-bold text-xs tracking-wider">
                               {reviewer?.username || userId}
                               <button
                                 onClick={() => handleToggleReviewer(userId)}
@@ -366,7 +359,7 @@ const VersionDetailsPage = () => {
                     </div>
 
                     {/* Search / Dropdown Area */}
-                    <div className="relative group z-50">
+                    <div className="relative group">
                       <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" size={18} />
                         <input
@@ -375,20 +368,27 @@ const VersionDetailsPage = () => {
                           placeholder="Search to add reviewer..."
                           value={reviewerSearch}
                           onChange={(e) => setReviewerSearch(e.target.value)}
-                          onFocus={() => setReviewerSearch("")}
+                          onFocus={() => setShowDropdown(true)}
+                          onClick={() => setShowDropdown(true)}
+                          onBlur={() => {
+                            // Delay allows the click event on the dropdown buttons to fire before closing
+                            setTimeout(() => setShowDropdown(false), 200);
+                          }}
                         />
                       </div>
 
-                      {/* Dropdown List */}
-                      {(reviewerSearch || documentReviewers.length > 0) && (
-                        <div className="absolute top-full left-0 w-full mt-2 bg-base-100 border border-base-300/20 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
+                      {/* Dropdown List - Contextual Positioning + State Controlled */}
+                      {showDropdown && (
+                        <div className="absolute bottom-full left-0 w-full mb-2 bg-base-100 border border-base-300/20 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200">
                           {availableReviewers.length > 0 ? (
                             availableReviewers.map(r => (
                               <button
                                 key={r.user}
-                                onClick={() => {
-                                  handleToggleReviewer(r.user);
-                                  setReviewerSearch("");
+                                onMouseDown={(e) => {
+                                    // Use onMouseDown to prevent blur from closing menu before click is registered
+                                    e.preventDefault(); 
+                                    handleToggleReviewer(r.user);
+                                    setReviewerSearch("");
                                 }}
                                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/10 transition-colors border-b border-base-300/5 last:border-0 text-left"
                               >
@@ -398,21 +398,20 @@ const VersionDetailsPage = () => {
                             ))
                           ) : (
                             <div className="p-4 text-center text-xs font-bold opacity-40 uppercase tracking-widest">
-                              {reviewerSearch ? "No matching reviewers" : "All reviewers selected"}
+                              {reviewerSearch ? "No matching reviewers" : "No available reviewers"}
                             </div>
                           )}
                         </div>
                       )}
                     </div>
 
-                    {/* Submit Button */}
                     <button
-                      className={`btn h-14 px-8 rounded-2xl border-none transition-all duration-300 w-full font-black uppercase text-[12px] tracking-widest
+                      className={`btn h-14 px-8 rounded-2xl border-none transition-all duration-300 w-full font-black uppercase text-[12px] tracking-widest relative z-10
                 ${selectedReviewers.length === 0 || submitting || documentReviewers.length === 0
                           ? 'bg-base-300/50 text-base-content/30 cursor-not-allowed'
                           : 'bg-warning text-warning-content hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.5)] shadow-xl shadow-warning/20 hover:scale-[1.01]'
                         }`}
-                      onClick={handleRequestReview}
+                      onClick={async () => { await handleRequestReview(); window.location.reload(); }}
                       disabled={selectedReviewers.length === 0 || submitting || isDeleted}
                     >
                       {submitting ? (
@@ -425,7 +424,6 @@ const VersionDetailsPage = () => {
                 </div>
               </GlassCard>
             ) : (
-              /* Full-width "Locked/Awaiting" State */
               <div className="w-full py-20 flex flex-col items-center justify-center border border-dashed border-primary/20 rounded-[2.5rem] bg-primary/5 transition-all relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-1/2 w-full animate-scan pointer-events-none" />
                 <div className="relative mb-8">
@@ -445,7 +443,7 @@ const VersionDetailsPage = () => {
           </div>
         </Animate>
 
-        {/* --- NEW REVIEW STATUS SECTION --- */}
+        {/* REVIEW STATUS SECTION */}
         {reviews.length > 0 && (
           <Animate delay={0.15}>
             <div className="w-full">
@@ -467,7 +465,6 @@ const VersionDetailsPage = () => {
                     </thead>
                     <tbody className="divide-y divide-base-300/5">
                       {reviews.map((review) => {
-                        // 1. Extract status details into variables
                         const statusDetails = getStatusDetails(review.status);
                         const StatusIcon = statusDetails.icon;
 
@@ -500,7 +497,6 @@ const VersionDetailsPage = () => {
                                 ${statusDetails.color} 
                                 ${statusDetails.border}
                               `}>
-                                {/* 2. Render the icon using the variable */}
                                 <StatusIcon size={12} />
                                 {statusDetails.label}
                               </div>
