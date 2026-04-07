@@ -41,9 +41,8 @@ const VersionDetailsPage = () => {
   const [reviewerSearch, setReviewerSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [members, setMembers] = useState([]);
-  // We keep allUsers in case you need it for other features, 
-  // but we will prioritize 'members' for the dropdown.
   const [allUsers, setAllUsers] = useState([]);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,10 +57,16 @@ const VersionDetailsPage = () => {
         const membersRes = await api.get(`/permissions/${versionData.document}/members/`);
         setMembers(membersRes.data);
 
-        // Optional: Fetch all users if needed elsewhere, otherwise this can be removed to optimize
         const allUsersRes = await api.get("/users/search/");
         setAllUsers(allUsersRes.data);
+
+        const reviewsRes = await api.get("/reviews/inbox/?all=true");
+        const versionReviews = (reviewsRes.data || []).filter(
+          (r) => String(r.version) === String(id)
+        );
+        setReviews(versionReviews);
       } catch (err) {
+        console.error(err);
         setError("Version retrieval failure.");
       } finally {
         setLoading(false);
@@ -98,7 +103,7 @@ const VersionDetailsPage = () => {
 
   const availableReviewers = useMemo(() => {
     return documentReviewers.filter((r) => {
-      const isAlreadySelected = selectedReviewers.include(r.user);
+      const isAlreadySelected = selectedReviewers.includes(r.user);
       const matchesSearch = r.username.toLowerCase().includes(reviewerSearch.toLowerCase());
       return !isAlreadySelected && matchesSearch;
     })
@@ -129,7 +134,10 @@ const VersionDetailsPage = () => {
       const updated = await api.get(`/versions/${version.id}/`);
       setVersion(updated.data);
 
-      setSelecetedReviewers([]);
+      const reviewsRes = await api.get(`/reviews/?version=${id}`);
+      setReviews(reviewsRes.data);
+
+      setSelectedReviewers([]);
       setReviewerSearch("");
     } catch (err) {
       console.error("Failed to create reviews", err);
@@ -303,17 +311,15 @@ const VersionDetailsPage = () => {
           </Animate>
         </div>
 
-        {/* ACTION SECTION (FULL WIDTH PROTOCOL) */}
+        {/* ACTION SECTION */}
         <Animate delay={0.1}>
           <div className="w-full mt-8">
             {((isOwner || isCoAuthor) && version.status !== "pending_approval") ? (
               <GlassCard className="w-full p-10 border-primary/5 shadow-2xl overflow-hidden relative">
-                {/* Decorative background glow for a "Dynamic" full-screen feel */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-warning/5 rounded-full blur-[120px] -mr-32 -mt-32 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-24 -mb-24 pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-10">
-                  {/* Textual Context - Increased max-width for full layout */}
                   <div className="space-y-4 flex-1">
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center text-warning shadow-inner">
@@ -331,106 +337,101 @@ const VersionDetailsPage = () => {
                       Submitting will lock the version for manual editing until the review is concluded.
                     </p>
                   </div>
-                </div>
 
-                {/* KEEP THE TEXTUAL CONTEXT DIV ABOVE, THEN REPLACE EVERYTHING BELOW IT: */}
+                  {/* Right: Multi-Select Interface */}
+                  <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[550px]">
 
-                {/* Right: Multi-Select Interface */}
-                <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[550px]">
-
-                  {/* Selected Reviewers Tags */}
-                  <div className="min-h-[50px] p-4 rounded-2xl border border-dashed border-base-content/20 bg-base-100/50 flex flex-wrap gap-2 content-start">
-                    {selectedReviewers.length === 0 ? (
-                      <span className="text-xs font-bold opacity-30 uppercase tracking-widest w-full text-center py-2">
-                        No Reviewers Selected
-                      </span>
-                    ) : (
-                      selectedReviewers.map(userId => {
-                        const reviewer = documentReviewers.find(r => r.user === userId);
-                        return (
-                          <div key={userId} className="badge badge-primary gap-2 px-4 py-3 font-bold text-xs uppercase tracking-wider">
-                            {reviewer?.username || userId}
-                            <button
-                              onClick={() => handleToggleReviewer(userId)}
-                              className="hover:text-white/80 transition-colors"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Search / Dropdown Area */}
-                  <div className="relative group z-50">
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" size={18} />
-                      <input
-                        type="text"
-                        className="input input-bordered w-full h-14 bg-base-300/20 border-base-300/40 rounded-2xl pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-warning/20 transition-all group-hover:bg-base-300/30"
-                        placeholder="Search to add reviewer..."
-                        value={reviewerSearch}
-                        onChange={(e) => setReviewerSearch(e.target.value)}
-                        onFocus={() => setReviewerSearch("")}
-                      />
+                    {/* Selected Reviewers Tags */}
+                    <div className="min-h-[50px] p-4 rounded-2xl border border-dashed border-base-content/20 bg-base-100/50 flex flex-wrap gap-2 content-start">
+                      {selectedReviewers.length === 0 ? (
+                        <span className="text-xs font-bold opacity-30 uppercase tracking-widest w-full text-center py-2">
+                          No Reviewers Selected
+                        </span>
+                      ) : (
+                        selectedReviewers.map(userId => {
+                          const reviewer = documentReviewers.find(r => r.user === userId);
+                          return (
+                            <div key={userId} className="badge badge-primary gap-2 px-4 py-3 font-bold text-xs uppercase tracking-wider">
+                              {reviewer?.username || userId}
+                              <button
+                                onClick={() => handleToggleReviewer(userId)}
+                                className="hover:text-white/80 transition-colors"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
 
-                    {/* Dropdown List */}
-                    {(reviewerSearch || documentReviewers.length > 0) && (
-                      <div className="absolute top-full left-0 w-full mt-2 bg-base-100 border border-base-300/20 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
-                        {availableReviewers.length > 0 ? (
-                          availableReviewers.map(r => (
-                            <button
-                              key={r.user}
-                              onClick={() => {
-                                handleToggleReviewer(r.user);
-                                setReviewerSearch("");
-                              }}
-                              className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/10 transition-colors border-b border-base-300/5 last:border-0 text-left"
-                            >
-                              <span className="font-bold text-sm">{r.username}</span>
-                              <div className="text-[10px] font-black uppercase opacity-40 bg-base-300/30 px-2 py-1 rounded">Click to Add</div>
-                            </button>
-                          ))
-                        ) : (
-                          <div className="p-4 text-center text-xs font-bold opacity-40 uppercase tracking-widest">
-                            {reviewerSearch ? "No matching reviewers" : "All reviewers selected"}
-                          </div>
-                        )}
+                    {/* Search / Dropdown Area */}
+                    <div className="relative group z-50">
+                      <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" size={18} />
+                        <input
+                          type="text"
+                          className="input input-bordered w-full h-14 bg-base-300/20 border-base-300/40 rounded-2xl pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-warning/20 transition-all group-hover:bg-base-300/30"
+                          placeholder="Search to add reviewer..."
+                          value={reviewerSearch}
+                          onChange={(e) => setReviewerSearch(e.target.value)}
+                          onFocus={() => setReviewerSearch("")}
+                        />
                       </div>
-                    )}
-                  </div>
 
-                  {/* Submit Button */}
-                  <button
-                    className={`btn h-14 px-8 rounded-2xl border-none transition-all duration-300 w-full font-black uppercase text-[12px] tracking-widest
+                      {/* Dropdown List */}
+                      {(reviewerSearch || documentReviewers.length > 0) && (
+                        <div className="absolute top-full left-0 w-full mt-2 bg-base-100 border border-base-300/20 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
+                          {availableReviewers.length > 0 ? (
+                            availableReviewers.map(r => (
+                              <button
+                                key={r.user}
+                                onClick={() => {
+                                  handleToggleReviewer(r.user);
+                                  setReviewerSearch("");
+                                }}
+                                className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/10 transition-colors border-b border-base-300/5 last:border-0 text-left"
+                              >
+                                <span className="font-bold text-sm">{r.username}</span>
+                                <div className="text-[10px] font-black uppercase opacity-40 bg-base-300/30 px-2 py-1 rounded">Click to Add</div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center text-xs font-bold opacity-40 uppercase tracking-widest">
+                              {reviewerSearch ? "No matching reviewers" : "All reviewers selected"}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      className={`btn h-14 px-8 rounded-2xl border-none transition-all duration-300 w-full font-black uppercase text-[12px] tracking-widest
                 ${selectedReviewers.length === 0 || submitting || documentReviewers.length === 0
-                        ? 'bg-base-300/50 text-base-content/30 cursor-not-allowed'
-                        : 'bg-warning text-warning-content hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.5)] shadow-xl shadow-warning/20 hover:scale-[1.01]'
-                      }`}
-                    onClick={handleRequestReview}
-                    disabled={selectedReviewers.length === 0 || submitting || isDeleted}
-                  >
-                    {submitting ? (
-                      <span className="loading loading-spinner loading-sm"></span>
-                    ) : (
-                      <span>Initiate Sequence</span>
-                    )}
-                  </button>
+                          ? 'bg-base-300/50 text-base-content/30 cursor-not-allowed'
+                          : 'bg-warning text-warning-content hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.5)] shadow-xl shadow-warning/20 hover:scale-[1.01]'
+                        }`}
+                      onClick={handleRequestReview}
+                      disabled={selectedReviewers.length === 0 || submitting || isDeleted}
+                    >
+                      {submitting ? (
+                        <span className="loading loading-spinner loading-sm"></span>
+                      ) : (
+                        <span>Initiate Sequence</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </GlassCard>
             ) : (
               /* Full-width "Locked/Awaiting" State */
               <div className="w-full py-20 flex flex-col items-center justify-center border border-dashed border-primary/20 rounded-[2.5rem] bg-primary/5 transition-all relative overflow-hidden">
-                {/* Subtle scanning animation line */}
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-1/2 w-full animate-scan pointer-events-none" />
-
                 <div className="relative mb-8">
                   <ShieldCheck size={80} className="text-primary opacity-20" />
                   <div className="absolute inset-0 animate-pulse bg-primary/20 blur-[40px] rounded-full" />
                 </div>
-
                 <div className="text-center relative z-10 space-y-3">
                   <span className="text-[14px] font-black uppercase tracking-[0.6em] text-primary opacity-60 block">
                     Protocol Active: Awaiting Verification
@@ -443,6 +444,77 @@ const VersionDetailsPage = () => {
             )}
           </div>
         </Animate>
+
+        {/* --- NEW REVIEW STATUS SECTION --- */}
+        {reviews.length > 0 && (
+          <Animate delay={0.15}>
+            <div className="w-full">
+              <div className="flex items-center gap-3 mb-6">
+                <ShieldCheck className="text-warning" size={20} />
+                <h2 className="text-xl font-black uppercase tracking-[0.2em]">
+                  Review Committee Status
+                </h2>
+              </div>
+
+              <GlassCard className="p-8 border-warning/5 shadow-2xl">
+                <div className="overflow-x-auto">
+                  <table className="table w-full">
+                    <thead>
+                      <tr className="text-secondary uppercase text-[10px] tracking-[0.2em] font-black border-b border-base-300/10">
+                        <th className="pb-4 pl-4">Reviewer</th>
+                        <th className="pb-4 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-base-300/5">
+                      {reviews.map((review) => {
+                        // 1. Extract status details into variables
+                        const statusDetails = getStatusDetails(review.status);
+                        const StatusIcon = statusDetails.icon;
+
+                        return (
+                          <tr key={review.id} className="hover:bg-base-200/30 transition-colors">
+                            <td className="py-4 pl-4">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-base-300/20 overflow-hidden ring-1 ring-primary/20">
+                                  <img
+                                    src={review.reviewer_avatar || `https://ui-avatars.com/api/?name=${review.reviewer_name || review.reviewer_username}`}
+                                    alt={review.reviewer_name || "Reviewer"}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold text-base-content">
+                                    {review.reviewer_name || review.reviewer_username || `User ID: ${review.reviewer}`}
+                                  </span>
+                                  {review.reviewer_comment && (
+                                    <span className="text-xs text-base-content/50 italic truncate max-w-[200px]">
+                                      "{review.reviewer_comment}"
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 text-center">
+                              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-black uppercase border
+                                ${statusDetails.bg} 
+                                ${statusDetails.color} 
+                                ${statusDetails.border}
+                              `}>
+                                {/* 2. Render the icon using the variable */}
+                                <StatusIcon size={12} />
+                                {statusDetails.label}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </GlassCard>
+            </div>
+          </Animate>
+        )}
 
         {/* PREVIEW SECTION */}
         <Animate delay={0.2}>
