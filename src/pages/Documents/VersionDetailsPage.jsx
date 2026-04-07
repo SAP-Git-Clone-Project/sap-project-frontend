@@ -4,6 +4,7 @@ import {
   ArrowLeft, Clock3, FileText, CheckCircle2, XCircle,
   PencilLine, User, CalendarDays, ShieldCheck,
   Info, HardDrive, Hash, Eye, FileStack, Download,
+  X, Search
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
@@ -36,7 +37,8 @@ const VersionDetailsPage = () => {
   const [previewContent, setPreviewContent] = useState(null);
   const [fileType, setFileType] = useState(null);
 
-  const [selectedReviewer, setSelectedReviewer] = useState("");
+  const [selectedReviewers, setSelectedReviewers] = useState([]);
+  const [reviewerSearch, setReviewerSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [members, setMembers] = useState([]);
   // We keep allUsers in case you need it for other features, 
@@ -68,23 +70,6 @@ const VersionDetailsPage = () => {
     fetchData();
   }, [id]);
 
-  const handleRequestReview = async () => {
-    if (!selectedReviewer) return;
-    try {
-      setSubmitting(true);
-      await api.post("/reviews/create/", {
-        version: version.id,
-        reviewer: selectedReviewer,
-      });
-      const updated = await api.get(`/versions/${version.id}/`);
-      setVersion(updated.data);
-    } catch (err) {
-      console.error("Failed to create review", err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const getFileType = (url) => {
     if (!url) return "unknown";
     if (url.endsWith(".pdf")) return "pdf";
@@ -110,6 +95,48 @@ const VersionDetailsPage = () => {
     if (!members.length) return [];
     return members.filter(m => m.permission_type?.toUpperCase() === "APPROVE");
   }, [members]);
+
+  const availableReviewers = useMemo(() => {
+    return documentReviewers.filter((r) => {
+      const isAlreadySelected = selectedReviewers.include(r.user);
+      const matchesSearch = r.username.toLowerCase().includes(reviewerSearch.toLowerCase());
+      return !isAlreadySelected && matchesSearch;
+    })
+  }, [documentReviewers, selectedReviewers, reviewerSearch]);
+
+  const handleToggleReviewer = (userId) => {
+    setSelectedReviewers(prev => {
+      if (prev.includes(userId)) {
+        return prev.filter(id => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  };
+
+  const handleRequestReview = async () => {
+    if (selectedReviewers.length === 0) return;
+    try {
+      setSubmitting(true);
+
+      await Promise.all(selectedReviewers.map(reviewerId =>
+        api.post("/reviews/create/", {
+          version: version.id,
+          reviewer: reviewerId,
+        })
+      ));
+
+      const updated = await api.get(`/versions/${version.id}/`);
+      setVersion(updated.data);
+
+      setSelecetedReviewers([]);
+      setReviewerSearch("");
+    } catch (err) {
+      console.error("Failed to create reviews", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const statusInfo = getStatusDetails(version?.status);
   const isOwner = document?.created_by_username === user?.username || user?.is_superuser;
@@ -304,47 +331,93 @@ const VersionDetailsPage = () => {
                       Submitting will lock the version for manual editing until the review is concluded.
                     </p>
                   </div>
+                </div>
 
-                  {/* Action Group - Expanded to fill more space */}
-                  <div className="flex flex-col lg:flex-row items-center gap-4 w-full xl:w-auto xl:min-w-[600px]">
-                    <div className="relative w-full group">
-                      <select
-                        className="select select-bordered w-full h-16 bg-base-300/20 border-base-300/40 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-warning/20 transition-all appearance-none pl-14 group-hover:bg-base-300/30"
-                        value={selectedReviewer}
-                        onChange={(e) => setSelectedReviewer(e.target.value)}
-                        disabled={documentReviewers.length === 0}
-                      >
-                        <option value="" disabled>
-                          {documentReviewers.length === 0 
-                            ? "No Reviewers Assigned to Document" 
-                            : "Select Reviewing Authority..."}
-                        </option>
-                        {/* Iterate over filtered document reviewers */}
-                        {documentReviewers.map((m) => (
-                          <option key={m.user} value={m.user}>{m.username}</option>
-                        ))}
-                      </select>
-                      <User className="absolute left-5 top-1/2 -translate-y-1/2 opacity-30 group-hover:opacity-60 transition-opacity" size={20} />
+                {/* KEEP THE TEXTUAL CONTEXT DIV ABOVE, THEN REPLACE EVERYTHING BELOW IT: */}
+
+                {/* Right: Multi-Select Interface */}
+                <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[550px]">
+
+                  {/* Selected Reviewers Tags */}
+                  <div className="min-h-[50px] p-4 rounded-2xl border border-dashed border-base-content/20 bg-base-100/50 flex flex-wrap gap-2 content-start">
+                    {selectedReviewers.length === 0 ? (
+                      <span className="text-xs font-bold opacity-30 uppercase tracking-widest w-full text-center py-2">
+                        No Reviewers Selected
+                      </span>
+                    ) : (
+                      selectedReviewers.map(userId => {
+                        const reviewer = documentReviewers.find(r => r.user === userId);
+                        return (
+                          <div key={userId} className="badge badge-primary gap-2 px-4 py-3 font-bold text-xs uppercase tracking-wider">
+                            {reviewer?.username || userId}
+                            <button
+                              onClick={() => handleToggleReviewer(userId)}
+                              className="hover:text-white/80 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Search / Dropdown Area */}
+                  <div className="relative group z-50">
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" size={18} />
+                      <input
+                        type="text"
+                        className="input input-bordered w-full h-14 bg-base-300/20 border-base-300/40 rounded-2xl pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-warning/20 transition-all group-hover:bg-base-300/30"
+                        placeholder="Search to add reviewer..."
+                        value={reviewerSearch}
+                        onChange={(e) => setReviewerSearch(e.target.value)}
+                        onFocus={() => setReviewerSearch("")}
+                      />
                     </div>
 
-                    <button
-                      className={`btn h-16 px-10 rounded-2xl border-none transition-all duration-500 w-full lg:w-auto whitespace-nowrap
-                ${!selectedReviewer || submitting || documentReviewers.length === 0
-                          ? 'bg-base-300/50 text-base-content/30'
-                          : 'bg-warning text-warning-content hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.5)] shadow-xl shadow-warning/20 hover:scale-[1.02] active:scale-[0.98]'
-                        }`}
-                      onClick={handleRequestReview}
-                      disabled={submitting || !selectedReviewer || isDeleted || documentReviewers.length === 0}
-                    >
-                      {submitting ? (
-                        <span className="loading loading-spinner loading-md"></span>
-                      ) : (
-                        <div className="flex items-center gap-3 font-black uppercase text-[12px] tracking-widest">
-                          Start Verification <ArrowLeft className="rotate-180" size={16} />
-                        </div>
-                      )}
-                    </button>
+                    {/* Dropdown List */}
+                    {(reviewerSearch || documentReviewers.length > 0) && (
+                      <div className="absolute top-full left-0 w-full mt-2 bg-base-100 border border-base-300/20 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
+                        {availableReviewers.length > 0 ? (
+                          availableReviewers.map(r => (
+                            <button
+                              key={r.user}
+                              onClick={() => {
+                                handleToggleReviewer(r.user);
+                                setReviewerSearch("");
+                              }}
+                              className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/10 transition-colors border-b border-base-300/5 last:border-0 text-left"
+                            >
+                              <span className="font-bold text-sm">{r.username}</span>
+                              <div className="text-[10px] font-black uppercase opacity-40 bg-base-300/30 px-2 py-1 rounded">Click to Add</div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-xs font-bold opacity-40 uppercase tracking-widest">
+                            {reviewerSearch ? "No matching reviewers" : "All reviewers selected"}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
+
+                  {/* Submit Button */}
+                  <button
+                    className={`btn h-14 px-8 rounded-2xl border-none transition-all duration-300 w-full font-black uppercase text-[12px] tracking-widest
+                ${selectedReviewers.length === 0 || submitting || documentReviewers.length === 0
+                        ? 'bg-base-300/50 text-base-content/30 cursor-not-allowed'
+                        : 'bg-warning text-warning-content hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.5)] shadow-xl shadow-warning/20 hover:scale-[1.01]'
+                      }`}
+                    onClick={handleRequestReview}
+                    disabled={selectedReviewers.length === 0 || submitting || isDeleted}
+                  >
+                    {submitting ? (
+                      <span className="loading loading-spinner loading-sm"></span>
+                    ) : (
+                      <span>Initiate Sequence</span>
+                    )}
+                  </button>
                 </div>
               </GlassCard>
             ) : (
