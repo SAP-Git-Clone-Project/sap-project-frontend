@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search, Users, ChevronLeft, ChevronRight, Calendar,
   FilterX, ShieldCheck, UserCheck, UserMinus,
-  Trash2, Lock, ShieldAlert, X, AlertTriangle
+  Trash2, Lock, ShieldAlert, X, AlertTriangle, Shield, UserCog
 } from "lucide-react";
 import Animate from "@/components/animation/Animate.jsx";
 import api from "@/components/api/api";
@@ -28,7 +28,13 @@ const ManageUsers = () => {
   const [userToTerminate, setUserToTerminate] = useState(null);
   const [adminPassword, setAdminPassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const modalRef = useRef(null);
+  const deleteModalRef = useRef(null);
+
+  // Staff Toggle Security State
+  const [userToToggleStaff, setUserToToggleStaff] = useState(null);
+  const [staffPassword, setStaffPassword] = useState("");
+  const [isTogglingStaff, setIsTogglingStaff] = useState(false);
+  const staffModalRef = useRef(null);
 
   const pageSize = 10;
   const totalPages = Math.ceil(paginationInfo.count / pageSize) || 1;
@@ -87,14 +93,15 @@ const ManageUsers = () => {
     }
   };
 
+  // Delete Modal Functions
   const openDeleteModal = (user) => {
     setUserToTerminate(user);
     setAdminPassword("");
-    modalRef.current?.showModal();
+    deleteModalRef.current?.showModal();
   };
 
   const closeDeleteModal = () => {
-    modalRef.current?.close();
+    deleteModalRef.current?.close();
     setUserToTerminate(null);
     setAdminPassword("");
   };
@@ -113,10 +120,73 @@ const ManageUsers = () => {
       notify.success("Deletion completed successfully");
       closeDeleteModal();
     } catch (err) {
-      notify.error(err.response?.data?.error || "Deletion failed");
-      setAdminPassword("");  // force retype on wrong password
+      notify.error(err.response?.data?.error || err.response?.data?.detail || "Deletion failed");
+      setAdminPassword("");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // Staff Toggle Modal Functions
+  const openStaffToggleModal = (user) => {
+    setUserToToggleStaff(user);
+    setStaffPassword("");
+    staffModalRef.current?.showModal();
+  };
+
+  const closeStaffToggleModal = () => {
+    staffModalRef.current?.close();
+    setUserToToggleStaff(null);
+    setStaffPassword("");
+  };
+
+  const handleStaffToggle = async () => {
+    if (!staffPassword) return notify.error("Superuser credentials required");
+
+    setIsTogglingStaff(true);
+    try {
+      const res = await api.post(
+        `/users/${userToToggleStaff.id}/toggle-admin/`,
+        { password: staffPassword },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      setUsers(prev => prev.map(u => u.id === userToToggleStaff.id ? { ...u, is_staff: res.data.is_staff } : u));
+      notify.success(res.data.message || `User permissions updated: ${res.data.is_staff ? "Granted Admin" : "Revoked Admin"}`);
+      closeStaffToggleModal();
+    } catch (err) {
+      console.error("Staff toggle error:", err.response?.data, err.response?.status);
+
+      const errorData = err.response?.data;
+      let errorMsg = "Superuser authorization failed";
+
+      if (errorData) {
+        if (typeof errorData === 'string') {
+          errorMsg = errorData;
+        } else if (errorData.detail) {
+          errorMsg = errorData.detail;
+        } else if (errorData.error) {
+          errorMsg = errorData.error;
+        } else if (errorData.message) {
+          errorMsg = errorData.message;
+        } else if (errorData.non_field_errors) {
+          errorMsg = Array.isArray(errorData.non_field_errors)
+            ? errorData.non_field_errors[0]
+            : errorData.non_field_errors;
+        } else if (errorData.password) {
+          errorMsg = Array.isArray(errorData.password)
+            ? errorData.password[0]
+            : errorData.password;
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+
+      notify.error(errorMsg);
+      setStaffPassword("");
+    } finally {
+      setIsTogglingStaff(false);
     }
   };
 
@@ -128,13 +198,67 @@ const ManageUsers = () => {
     setCurrentPage(1);
   };
 
-  if (loading && users.length === 0) return <Loader message="Loading user registry..." />;
+  if (loading && users.length === 0) {
+    return <Loader message="Loading user registry..." />;
+  }
 
   return (
     <div className="relative min-h-screen px-6 pb-12 pt-20 overflow-hidden font-sans bg-base-100">
 
+      {/* STAFF TOGGLE SECURITY MODAL */}
+      <dialog ref={staffModalRef} className="modal backdrop-blur-md">
+        <div className="modal-box bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-[2.5rem] p-8 max-w-md">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3 text-warning">
+              <UserCog size={24} />
+              <h3 className="font-black uppercase tracking-tighter text-xl">
+                {userToToggleStaff?.is_staff ? "Revoke Admin" : "Grant Admin"}
+              </h3>
+            </div>
+            <button onClick={closeStaffToggleModal} className="btn btn-ghost btn-sm btn-circle opacity-50 hover:opacity-100"><X size={20} /></button>
+          </div>
+
+          <div className="p-4 bg-warning/10 border border-warning/20 rounded-2xl mb-6">
+            <p className="text-xs font-bold text-warning/80 leading-relaxed uppercase tracking-wide">
+              Security Action: You are about to {userToToggleStaff?.is_staff ? "revoke admin privileges from" : "grant admin privileges to"} <span className="text-warning font-black normal-case underline">{userToToggleStaff?.username}</span>. This will modify their system access level.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Authorize with Superuser Password</label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30" />
+                <input
+                  type="password"
+                  placeholder="Enter superuser password"
+                  className="input w-full pl-12 bg-base-200/50 border-base-300/30 focus:border-warning rounded-2xl font-bold transition-all placeholder:text-gray-700"
+                  value={staffPassword}
+                  onChange={(e) => setStaffPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && staffPassword && !isTogglingStaff) handleStaffToggle();
+                  }}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleStaffToggle}
+              disabled={!staffPassword || isTogglingStaff}
+              className="btn btn-warning w-full rounded-2xl font-black uppercase tracking-widest disabled:opacity-30 transition-all active:scale-95 text-white"
+            >
+              {isTogglingStaff ? <span className="loading loading-spinner"></span> : userToToggleStaff?.is_staff ? "Confirm Revoke" : "Confirm Grant"}
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={closeStaffToggleModal}>close</button>
+        </form>
+      </dialog>
+
       {/* TERMINATION SECURITY MODAL */}
-      <dialog ref={modalRef} className="modal backdrop-blur-md">
+      <dialog ref={deleteModalRef} className="modal backdrop-blur-md">
         <div className="modal-box bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-[2.5rem] p-8 max-w-md">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3 text-error">
@@ -146,7 +270,7 @@ const ManageUsers = () => {
 
           <div className="p-4 bg-error/10 border border-error/20 rounded-2xl mb-6">
             <p className="text-xs font-bold text-error/80 leading-relaxed uppercase tracking-wide">
-              Critical Action: You are about to permanently delete <span className="text-error font-black underline">{userToTerminate?.username}</span>. This protocol is irreversible.
+              Critical Action: You are about to permanently delete <span className="text-error font-black underline normal-case">{userToTerminate?.username}</span>. This protocol is irreversible.
             </p>
           </div>
 
@@ -172,7 +296,7 @@ const ManageUsers = () => {
             <button
               onClick={handleDelete}
               disabled={!adminPassword || isDeleting}
-              className="btn btn-error w-full rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-error/20 disabled:opacity-30 transition-all active:scale-95 text-white"
+              className="btn btn-error w-full rounded-2xl font-black uppercase tracking-widest disabled:opacity-30 transition-all active:scale-95 text-white"
             >
               {isDeleting ? <span className="loading loading-spinner"></span> : "Confirm Termination"}
             </button>
@@ -202,8 +326,8 @@ const ManageUsers = () => {
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40" />
                 <input
                   type="text"
-                  placeholder="Identify subject..."
-                  className="input w-full pl-12 bg-base-200/50 border-base-300/30 focus:border-primary rounded-2xl font-bold"
+                  placeholder="Identify users..."
+                  className="input w-full pl-12 bg-base-200/50 border-base-300/30 focus:border-primary rounded-2xl font-bold placeholder:text-gray-700"
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -226,9 +350,9 @@ const ManageUsers = () => {
               </span>
               <div className="flex flex-wrap gap-3">
                 {[
-                  { id: "ALL", label: "All Subjects", color: "bg-slate-500" },
-                  { id: "ACTIVE", label: "Active Nodes", color: "bg-success" },
-                  { id: "INACTIVE", label: "Suspended", color: "bg-error" },
+                  { id: "ALL", label: "All Users", color: "bg-slate-500" },
+                  { id: "ACTIVE", label: "Active Users", color: "bg-success" },
+                  { id: "INACTIVE", label: "Suspended Users", color: "bg-error" },
                 ].map(opt => (
                   <button
                     key={opt.id}
@@ -294,9 +418,9 @@ const ManageUsers = () => {
               <table className="table w-full border-separate border-spacing-0">
                 <thead className="sticky top-0 z-20">
                   <tr className="bg-base-300/95 backdrop-blur-md text-secondary uppercase text-[11px] font-black">
-                    <th className="py-6 px-10 text-center">Subject Identity</th>
+                    <th className="py-6 px-10 text-center">User Identity</th>
                     <th className="text-center">Permissions</th>
-                    <th className="text-center">Protocol Actions</th>
+                    <th className="text-center">Actions</th>
                     <th className="text-right px-10">Created At</th>
                   </tr>
                 </thead>
@@ -350,6 +474,21 @@ const ManageUsers = () => {
                         <td className="text-center">
                           {isManageable ? (
                             <div className="flex flex-col items-center gap-2">
+                              {/* Staff Toggle Button - only for Superuser */}
+                              {currentUser?.is_superuser && (
+                                <button
+                                  onClick={() => openStaffToggleModal(user)}
+                                  className={`btn btn-xs h-9 rounded-xl border-none font-black uppercase text-[9px] gap-2 px-4 shadow-md w-32 transition-all active:scale-95 ${user.is_staff
+                                    ? 'bg-warning text-white hover:bg-warning/80'
+                                    : 'bg-primary text-white hover:bg-primary/80'
+                                    }`}
+                                >
+                                  <UserCog size={14} />
+                                  {user.is_staff ? 'Revoke Staff' : 'Make Staff'}
+                                </button>
+                              )}
+
+                              {/* Active/Suspend Toggle */}
                               <button
                                 onClick={() => handleToggle(user.id)}
                                 className={`btn btn-xs h-9 rounded-xl border-none font-black uppercase text-[9px] gap-2 px-4 shadow-md w-32 transition-all active:scale-95 ${user.is_active ? 'bg-success text-white hover:bg-success/80' : 'bg-warning text-white hover:bg-warning/80'
@@ -359,6 +498,7 @@ const ManageUsers = () => {
                                 {user.is_active ? 'Active' : 'Suspended'}
                               </button>
 
+                              {/* Terminate Button */}
                               <button
                                 onClick={() => openDeleteModal(user)}
                                 className="btn btn-xs h-9 rounded-xl bg-error/10 text-error border border-error/20 hover:bg-error hover:text-white font-black uppercase text-[9px] gap-2 px-4 w-32 transition-all active:scale-95"
