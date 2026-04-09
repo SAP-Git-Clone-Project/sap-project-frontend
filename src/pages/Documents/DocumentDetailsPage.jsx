@@ -650,12 +650,8 @@ const DocumentDetailsPage = () => {
                     { label: "Approved", status: "approved", desc: "Verified" },
                     { label: "Pending", status: "pending", desc: "Awaiting" },
                     { label: "Rejected", status: "rejected", desc: "Declined" },
-<<<<<<< HEAD
                     { label: "Draft", status: "draft", desc: "Draft" },
                     { label: "Default", status: "default", desc: "No Status" }
-=======
-                    { label: "Default", status: "default", desc: "No Status" },
->>>>>>> ae01cdbbd78d98b6b9f05fb44146767e461a7f45
                   ].map((item, i) => (
                     <div
                       key={i}
