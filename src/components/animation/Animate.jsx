@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useInView } from "react-intersection-observer";
 
 const VARIANTS = {
@@ -12,12 +13,10 @@ const VARIANTS = {
   "fade-left": {
     hidden: "opacity-0 translate-x-16",
     visible: "opacity-100 translate-x-0"
-
   },
   "fade-right": {
     hidden: "opacity-0 -translate-x-16",
     visible: "opacity-100 translate-x-0"
-
   },
   "fade-in": {
     hidden: "opacity-0",
@@ -41,19 +40,50 @@ const Animate = ({
   threshold = 0.15,
   as = "div",
 }) => {
-
-  const { ref, inView } = useInView({ triggerOnce: false, threshold, rootMargin: '30px 0px -10px 0px' });
+  const { ref, inView } = useInView({ 
+    triggerOnce: false, 
+    threshold, 
+    rootMargin: '30px 0px -10px 0px' 
+  });
+  
   const { hidden, visible } = VARIANTS[variant] || VARIANTS["fade-up"];
   const Tag = as;
 
+  // Create a ref for the DOM node
+  const domRef = useRef(null);
+
+  // CRITICAL FIX: Force a layout calculation (reflow) immediately on mount.
+  // This forces the browser to create a GPU layer for the hidden element NOW,
+  // instead of waiting until the user scrolls (which causes the stutter).
+  useEffect(() => {
+    const node = domRef.current;
+    if (node) {
+      // Reading offsetHeight forces the browser to calculate layout (Reflow).
+      // We do this once at startup to prevent lag during scroll.
+      void node.offsetHeight; 
+    }
+  }, []);
+
+  // Merge the IntersectionObserver ref with our local DOM ref
+  const setRefs = (node) => {
+    domRef.current = node;
+    if (typeof ref === 'function') {
+      ref(node);
+    } else if (ref) {
+      ref.current = node;
+    }
+  };
+
   return (
     <Tag
-      ref={ref}
-      className={`transition-all ease-out will-change-transform ${inView ? visible : hidden
-        }`}
+      ref={setRefs}
+      className={`transition-all will-change-transform transform-gpu backface-hidden ${
+        inView ? visible : hidden
+      }`}
       style={{
         transitionDuration: `${duration}ms`,
         transitionDelay: `${delay}ms`,
+        transitionTimingFunction: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
       }}
     >
       {children}
@@ -62,12 +92,3 @@ const Animate = ({
 };
 
 export default Animate;
-
-/* ------------ Threshold Value Recommendation ----------------
-0.00 → element just enters viewport, may be too early for noticeable effect
-0.08 → fires at the very edge, user barely sees it start
-0.15 → fires when element is just peeking in — user sees the full motion  ✓
-0.25 → good for small cards, risky for tall sections on mobile
-0.5+ → too late, user has to scroll deep before it triggers
-
-*/

@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import Animate from "@/components/animation/Animate.jsx";
 import {
   FileText, ShieldCheck, Users, Zap,
   CheckCircle, Lock, Eye, EyeOff,
@@ -12,8 +11,21 @@ import {
   Bell, BellRing, ClipboardList,
   Activity, AlertCircle, ShieldAlert, Crown
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import GlassCard from "@/components/widgets/GlassCard.jsx";
 import BackgroundEffects from "@/components/background/BackgroundEffects.jsx";
+
+import {
+  ScrollReveal,
+  MagReveal,
+  BlurReveal,
+  StaggerReveal,
+  CharReveal,
+  WordReveal,
+  LineReveal,
+  CounterReveal,
+  useGsapRefresh,
+} from "@/components/gsap/index.jsx";
 
 const PartialIcon = () => (
   <span className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border-2 border-warning/50 bg-warning/10 relative mx-auto">
@@ -22,264 +34,298 @@ const PartialIcon = () => (
 );
 
 const HomePage = () => {
+  useGsapRefresh();
+
+  const starIcons = Array.from({ length: 5 }).map((_, i) => (
+    <Star key={i} size={13} fill="currentColor" className="text-warning" />
+  ));
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      // 768px is a standard breakpoint for tablets/mobiles
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Check immediately on load
+    checkScreenSize();
+
+    // Listen for window resize
+    window.addEventListener('resize', checkScreenSize);
+
+    // Cleanup listener
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   return (
     <div className="relative min-h-screen flex flex-col items-center px-4 sm:px-6 text-center overflow-hidden bg-base-100">
 
-      <BackgroundEffects length={10} />
-
-      <div className="absolute w-[900px] h-[900px] bg-primary/5 blur-[160px] rounded-full top-[-350px] left-[50%] translate-x-[-50%] -z-10" />
-      <div className="absolute w-[600px] h-[600px] bg-secondary/5 blur-[140px] rounded-full bottom-[10%] left-[-10%] -z-10" />
-      <div className="absolute w-[500px] h-[500px] bg-accent/5 blur-[120px] rounded-full top-[40%] right-[-5%] -z-10" />
+      <BackgroundEffects length={isMobile ? 35 : 75} />
 
       {/* ══════════════════════════════════════ */}
-      {/* ── ANNOUNCEMENT BADGE ── */}
+      {/* ANNOUNCEMENT BADGE */}
       {/* ══════════════════════════════════════ */}
-      <Animate variant="fade-down" delay={0}>
-        <div className="pt-6 pb-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary backdrop-blur-sm">
-            <Sparkles size={12} />
-            <span>Simple version control for every document</span>
-            <ChevronRight size={12} />
-          </div>
+      <ScrollReveal y={-20} duration={0.4} start="top 99%" className="pt-6 pb-2 relative z-10">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary backdrop-blur-sm">
+          <Sparkles size={12} />
+          <span>Simple version control for every document</span>
+          <ChevronRight size={12} />
         </div>
-      </Animate>
+      </ScrollReveal>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── HERO ── */}
+      {/* HERO */}
       {/* ══════════════════════════════════════ */}
-      <Animate variant="fade-down" delay={0.1}>
-        <div className="space-y-7 max-w-4xl relative z-10 mb-8 pt-4">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/25">
-              <Zap size={22} fill="white" className="text-white" />
-            </div>
-            <span className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              SAP <span className="text-primary">Hub</span>
-            </span>
+      <ScrollReveal y={25} duration={0.5} start="top 99%" className="space-y-7 max-w-4xl relative z-10 mb-8 pt-4">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/25">
+            <Zap size={22} fill="white" className="text-white" />
           </div>
+          <span className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            SAP <span className="text-primary">Hub</span>
+          </span>
+        </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-base-content leading-[1.05]">
-            Your documents,<br />
-            <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+        <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-base-content leading-[1.05]">
+          <CharReveal
+            className="block"
+            stagger={0.02}
+            y={40}
+            rotateX={-70}
+            duration={0.4}
+            start="top 99%"
+          >
+            Your documents,
+          </CharReveal>
+
+          {/* FIX: Fix here */}
+          {/* UPDATED GRADIENT TEXT */}
+          <span className="inline-block overflow-visible bg-gradient-to-r from-primary via-secondary to-accent bg-[length:200%_auto] animate-gradient-x">
+            <CharReveal
+              className="inline-block [transform-style:preserve-3d] [backface-visibility:hidden]"
+              stagger={0.02}
+              y={40}
+              rotateX={-30}
+              duration={0.4}
+              delay={0.2}
+              start="top 85%"
+            >
               version controlled.
-            </span>
-          </h1>
+            </CharReveal>
+          </span>
+        </h1>
 
-          <p className="text-base-content/55 text-sm sm:text-base md:text-xl leading-relaxed max-w-2xl mx-auto font-light">
-            Create a document, assign writers and reviewers, upload versions,
-            and get every version approved. As the owner, see the full history —
-            including deleted versions. Always.
-          </p>
+        <WordReveal
+          className="text-base-content/55 text-sm sm:text-base md:text-xl leading-relaxed max-w-2xl mx-auto font-light"
+          stagger={0.02}
+          y={20}
+          duration={0.4}
+          delay={0.4}
+          start="top 99%"
+        >
+          Create a document, assign writers and reviewers, upload versions, and get every version approved. As the owner, see the full history — including deleted versions. Always.
+        </WordReveal>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 pt-2">
-            <Link
-              to="/login"
-              className="btn btn-primary btn-lg px-8 sm:px-10 rounded-2xl gap-2 shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]"
-            >
-              Get Started Free
-              <ArrowRight size={18} />
-            </Link>
-            <Link
-              to="#how-it-works"
-              className="btn btn-ghost btn-lg px-8 sm:px-10 rounded-2xl gap-2 border border-base-content/10 hover:border-base-content/25"
-            >
-              See How It Works
-            </Link>
-          </div>
-
-          <p className="text-[11px] sm:text-xs text-base-content/35 font-medium">
-            Free to use · No credit card required · Set up in seconds
-          </p>
+        <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 pt-2">
+          <Link
+            to="/login"
+            className="btn btn-primary btn-lg px-8 sm:px-10 rounded-2xl gap-2 shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]"
+          >
+            Get Started Free
+            <ArrowRight size={18} />
+          </Link>
+          <Link
+            to="#how-it-works"
+            className="btn btn-ghost btn-lg px-8 sm:px-10 rounded-2xl gap-2 border border-base-content/10 hover:border-base-content/25"
+          >
+            See How It Works
+          </Link>
         </div>
-      </Animate>
+
+        <p className="text-[11px] sm:text-xs text-base-content/35 font-medium">
+          Free to use · No credit card required · Set up in seconds
+        </p>
+      </ScrollReveal>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── SUPPORTED FILES ── */}
+      {/* SUPPORTED FILES */}
       {/* ══════════════════════════════════════ */}
-      <Animate variant="fade-up" delay={0.2}>
-        <div className="w-full max-w-4xl relative z-10 mb-8 py-6">
-          <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-base-content/25 font-bold mb-5">
+      <div className="w-full max-w-4xl relative z-10 mb-8 py-6">
+        <BlurReveal y={15} duration={0.4} className="mb-5">
+          <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-base-content/25 font-bold">
             Supported file formats
           </p>
+        </BlurReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            {/* ── Documents ── */}
-            <div className="bg-base-200/30 border border-base-content/5 rounded-2xl p-4 sm:p-5 backdrop-blur-sm">
-              <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-base-content/5">
-                <FileText size={13} className="text-primary/50" />
-                <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-primary/50">Documents</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { ext: ".pdf", icon: <FileText size={13} /> },
-                  { ext: ".doc", icon: <FileText size={13} /> },
-                  { ext: ".docx", icon: <FileText size={13} /> },
-                  { ext: ".txt", icon: <FileText size={13} /> },
-                  { ext: ".md", icon: <FileText size={13} /> },
-                ].map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/[0.04] border border-primary/10 text-[10px] font-mono font-semibold text-primary/60 hover:bg-primary/[0.08] hover:text-primary/80 transition-colors cursor-default"
-                  >
-                    {f.icon}
-                    {f.ext}
-                  </div>
-                ))}
-              </div>
+        <StaggerReveal
+          stagger={0.05}
+          y={20}
+          duration={0.4}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4"
+        >
+          {/* Documents */}
+          <div className="bg-base-200/30 border border-base-content/5 rounded-2xl p-4 sm:p-5 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-base-content/5">
+              <FileText size={13} className="text-primary/50" />
+              <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-primary/50">Documents</span>
             </div>
-
-            {/* ── Code ── */}
-            <div className="bg-base-200/30 border border-base-content/5 rounded-2xl p-4 sm:p-5 backdrop-blur-sm">
-              <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-base-content/5">
-                <FileCode size={13} className="text-secondary/50" />
-                <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-secondary/50">Code</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { ext: ".java", icon: <FileCode size={13} /> },
-                  { ext: ".cpp", icon: <FileCode size={13} /> },
-                  { ext: ".py", icon: <FileCode size={13} /> },
-                  { ext: ".js", icon: <FileCode size={13} /> },
-                  { ext: ".ts", icon: <FileCode size={13} /> },
-                  { ext: ".html", icon: <FileCode size={13} /> },
-                  { ext: ".css", icon: <FileCode size={13} /> },
-                  { ext: ".sql", icon: <Database size={13} /> },
-                ].map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/[0.04] border border-secondary/10 text-[10px] font-mono font-semibold text-secondary/60 hover:bg-secondary/[0.08] hover:text-secondary/80 transition-colors cursor-default"
-                  >
-                    {f.icon}
-                    {f.ext}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Data & Config ── */}
-            <div className="bg-base-200/30 border border-base-content/5 rounded-2xl p-4 sm:p-5 backdrop-blur-sm">
-              <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-base-content/5">
-                <Braces size={13} className="text-accent/50" />
-                <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-accent/50">Data & Config</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { ext: ".json", icon: <Braces size={13} /> },
-                  { ext: ".xml", icon: <Code size={13} /> },
-                  { ext: ".yaml", icon: <FileType size={13} /> },
-                  { ext: ".yml", icon: <FileType size={13} /> },
-                  { ext: ".toml", icon: <FileType size={13} /> },
-                  { ext: ".csv", icon: <FileType size={13} /> },
-                ].map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-accent/[0.04] border border-accent/10 text-[10px] font-mono font-semibold text-accent/60 hover:bg-accent/[0.08] hover:text-accent/80 transition-colors cursor-default"
-                  >
-                    {f.icon}
-                    {f.ext}
-                  </div>
-                ))}
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-base-content/[0.03] border border-base-content/10 text-[10px] font-mono font-semibold text-base-content/30">
-                  + more
+            <div className="flex flex-wrap gap-2">
+              {[".pdf", ".doc", ".docx", ".txt", ".md"].map((ext, i) => (
+                <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/[0.04] border border-primary/10 text-[10px] font-mono font-semibold text-primary/60 hover:bg-primary/[0.08] hover:text-primary/80 transition-colors cursor-default">
+                  <FileText size={13} />{ext}
                 </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Code */}
+          <div className="bg-base-200/30 border border-base-content/5 rounded-2xl p-4 sm:p-5 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-base-content/5">
+              <FileCode size={13} className="text-secondary/50" />
+              <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-secondary/50">Code</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { ext: ".java", icon: <FileCode size={13} /> },
+                { ext: ".cpp", icon: <FileCode size={13} /> },
+                { ext: ".py", icon: <FileCode size={13} /> },
+                { ext: ".js", icon: <FileCode size={13} /> },
+                { ext: ".ts", icon: <FileCode size={13} /> },
+                { ext: ".html", icon: <FileCode size={13} /> },
+                { ext: ".css", icon: <FileCode size={13} /> },
+                { ext: ".sql", icon: <Database size={13} /> },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/[0.04] border border-secondary/10 text-[10px] font-mono font-semibold text-secondary/60 hover:bg-secondary/[0.08] hover:text-secondary/80 transition-colors cursor-default">
+                  {f.icon}{f.ext}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Data & Config */}
+          <div className="bg-base-200/30 border border-base-content/5 rounded-2xl p-4 sm:p-5 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-base-content/5">
+              <Braces size={13} className="text-accent/50" />
+              <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-accent/50">Data & Config</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { ext: ".json", icon: <Braces size={13} /> },
+                { ext: ".xml", icon: <Code size={13} /> },
+                { ext: ".yaml", icon: <FileType size={13} /> },
+                { ext: ".yml", icon: <FileType size={13} /> },
+                { ext: ".toml", icon: <FileType size={13} /> },
+                { ext: ".csv", icon: <FileType size={13} /> },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-accent/[0.04] border border-accent/10 text-[10px] font-mono font-semibold text-accent/60 hover:bg-accent/[0.08] hover:text-accent/80 transition-colors cursor-default">
+                  {f.icon}{f.ext}
+                </div>
+              ))}
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-base-content/[0.03] border border-base-content/10 text-[10px] font-mono font-semibold text-base-content/30">
+                + more
               </div>
             </div>
           </div>
-        </div>
-      </Animate>
+        </StaggerReveal>
+      </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── METRICS ── */}
+      {/* METRICS - Using MagReveal for 3D feel */}
       {/* ══════════════════════════════════════ */}
-      <Animate variant="fade-up" delay={0.3}>
-        <div className="flex flex-wrap justify-center gap-8 sm:gap-10 md:gap-20 mb-32 sm:mb-36 py-8 sm:py-10 border-y border-base-content/5 w-full max-w-6xl relative z-10">
-          {[
-            { label: "Version Format", val: "v1, v2, v3…", sub: "Simple & clean" },
-            { label: "File Types", val: "15+", sub: "Docs & code files" },
-            { label: "Role Control", val: "4 Roles", sub: "Owner · Writer · Reviewer · Viewer" },
-            { label: "Deleted Versions", val: "Always Visible", sub: "Nothing is truly gone" },
-          ].map((m, i) => (
-            <div key={i} className="text-center min-w-[120px]">
-              <div className="text-xl sm:text-2xl md:text-3xl font-black text-base-content">{m.val}</div>
-              <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-base-content/40 font-bold mt-1">{m.label}</div>
-              <div className="text-[9px] sm:text-[10px] text-base-content/25 mt-0.5 hidden sm:block">{m.sub}</div>
-            </div>
-          ))}
-        </div>
-      </Animate>
+      <div className="flex flex-wrap justify-center gap-8 sm:gap-10 md:gap-20 mb-32 sm:mb-36 py-8 sm:py-10 border-y border-base-content/5 w-full max-w-6xl relative z-10">
+        {[
+          { label: "Version Format", val: "v1, v2, v3…", sub: "Simple & clean" },
+          { label: "File Types", val: "15+", sub: "Docs & code files" },
+          { label: "Role Control", val: "4 Roles", sub: "Owner · Writer · Reviewer · Viewer" },
+          { label: "Deleted Versions", val: "Always Visible", sub: "Nothing is truly gone" },
+        ].map((m, i) => (
+          <MagReveal key={i} strength={10} duration={0.5} delay={i * 0.1} className="text-center min-w-[120px]">
+            <div className="text-xl sm:text-2xl md:text-3xl font-black text-base-content">{m.val}</div>
+            <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-base-content/40 font-bold mt-1">{m.label}</div>
+            <div className="text-[9px] sm:text-[10px] text-base-content/25 mt-0.5 hidden sm:block">{m.sub}</div>
+          </MagReveal>
+        ))}
+      </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── HOW IT WORKS ── */}
+      {/* HOW IT WORKS */}
       {/* ══════════════════════════════════════ */}
       <div id="how-it-works" className="w-full max-w-6xl relative z-10 mb-32 sm:mb-40 px-2">
-        <Animate variant="fade-up">
-          <div className="text-center mb-14 sm:mb-20 px-2">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 bg-primary/10 px-3 py-1 rounded-full mb-4">How It Works</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Four steps. That's it.</h2>
+        <div className="text-center mb-14 sm:mb-20 px-2">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 bg-primary/10 px-3 py-1 rounded-full">
+              How It Works
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.015}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Four steps. That&apos;s it.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/45 max-w-xl mx-auto text-sm sm:text-base">
-              No complex setup. No learning curve. Create a document and you're in control.
+              No complex setup. No learning curve. Create a document and you&apos;re in control.
             </p>
-          </div>
-        </Animate>
+          </ScrollReveal>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 relative">
-          {/* Connecting line — desktop only */}
-          <div className="hidden lg:block absolute top-[3.25rem] left-[calc(12.5%+0.75rem)] right-[calc(12.5%+0.75rem)] h-px">
-            <div className="w-full h-full bg-gradient-to-r from-primary/30 via-secondary/30 to-accent/30" />
+        <div className="relative">
+          {/* Connecting line */}
+          <div className="hidden lg:block absolute top-[3.25rem] left-[calc(12.5%+0.75rem)] right-[calc(12.5%+0.75rem)] h-px z-0">
+            <LineReveal
+              className="w-full h-full bg-gradient-to-r from-primary/30 via-secondary/30 to-accent/30"
+              duration={1}
+              start="top 80%"
+            />
           </div>
 
-          {[
-            {
-              step: "01",
-              icon: <Upload className="text-primary" size={26} />,
-              title: "Create Document",
-              desc: "Start a new document. Upload your first file — a PDF, Word doc, or any text-based file.",
-              glassBg: "bg-primary/[0.04]",
-              glassBorder: "border-primary/15",
-              glowColor: "group-hover:shadow-primary/10",
-              stepColor: "text-primary",
-              iconBg: "bg-primary/10 border-primary/20",
-              dotColor: "bg-primary",
-            },
-            {
-              step: "02",
-              icon: <UserPlus className="text-secondary" size={26} />,
-              title: "Assign Roles",
-              desc: "Pick who writes, reviews, or views. You're the owner — you decide who has access.",
-              glassBg: "bg-secondary/[0.04]",
-              glassBorder: "border-secondary/15",
-              glowColor: "group-hover:shadow-secondary/10",
-              stepColor: "text-secondary",
-              iconBg: "bg-secondary/10 border-secondary/20",
-              dotColor: "bg-secondary",
-            },
-            {
-              step: "03",
-              icon: <GitCommit className="text-accent" size={26} />,
-              title: "Upload Versions",
-              desc: "Writers upload new versions. Each gets the next number: v1, v2, v3 — no confusion.",
-              glassBg: "bg-accent/[0.04]",
-              glassBorder: "border-accent/15",
-              glowColor: "group-hover:shadow-accent/10",
-              stepColor: "text-accent",
-              iconBg: "bg-accent/10 border-accent/20",
-              dotColor: "bg-accent",
-            },
-            {
-              step: "04",
-              icon: <UserCheck className="text-success" size={26} />,
-              title: "Reviewers Approve",
-              desc: "Reviewers approve or reject each version. Nothing goes live without their green light.",
-              glassBg: "bg-success/[0.04]",
-              glassBorder: "border-success/15",
-              glowColor: "group-hover:shadow-success/10",
-              stepColor: "text-success",
-              iconBg: "bg-success/10 border-success/20",
-              dotColor: "bg-success",
-            },
-          ].map((s, i) => (
-            <Animate key={i} variant="fade-up" delay={i * 0.12}>
-              <div className={`group relative h-full`}>
+          <StaggerReveal
+            stagger={0.08}
+            y={30}
+            duration={0.5}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 relative z-10"
+          >
+            {[
+              {
+                step: "01", icon: <Upload className="text-primary" size={26} />,
+                title: "Create Document",
+                desc: "Start a new document. Upload your first file — a PDF, Word doc, or any text-based file.",
+                glassBg: "bg-primary/[0.04]", glassBorder: "border-primary/15",
+                glowColor: "group-hover:shadow-primary/10", stepColor: "text-primary",
+                iconBg: "bg-primary/10 border-primary/20", dotColor: "bg-primary",
+              },
+              {
+                step: "02", icon: <UserPlus className="text-secondary" size={26} />,
+                title: "Assign Roles",
+                desc: "Pick who writes, reviews, or views. You're the owner — you decide who has access.",
+                glassBg: "bg-secondary/[0.04]", glassBorder: "border-secondary/15",
+                glowColor: "group-hover:shadow-secondary/10", stepColor: "text-secondary",
+                iconBg: "bg-secondary/10 border-secondary/20", dotColor: "bg-secondary",
+              },
+              {
+                step: "03", icon: <GitCommit className="text-accent" size={26} />,
+                title: "Upload Versions",
+                desc: "Writers upload new versions. Each gets the next number: v1, v2, v3 — no confusion.",
+                glassBg: "bg-accent/[0.04]", glassBorder: "border-accent/15",
+                glowColor: "group-hover:shadow-accent/10", stepColor: "text-accent",
+                iconBg: "bg-accent/10 border-accent/20", dotColor: "bg-accent",
+              },
+              {
+                step: "04", icon: <UserCheck className="text-success" size={26} />,
+                title: "Reviewers Approve",
+                desc: "Reviewers approve or reject each version. Nothing goes live without their green light.",
+                glassBg: "bg-success/[0.04]", glassBorder: "border-success/15",
+                glowColor: "group-hover:shadow-success/10", stepColor: "text-success",
+                iconBg: "bg-success/10 border-success/20", dotColor: "bg-success",
+              },
+            ].map((s, i) => (
+              <div key={i} className="group relative h-full">
                 <GlassCard
                   bg={s.glassBg}
                   border={s.glassBorder}
@@ -287,24 +333,17 @@ const HomePage = () => {
                   className={`h-full transition-all duration-500 group-hover:shadow-xl ${s.glowColor} hover:-translate-y-1`}
                 >
                   <div className="p-6 sm:p-7 flex flex-col h-full relative">
-                    {/* Step number badge */}
                     <div className={`absolute top-4 right-4 text-[10px] font-black font-mono ${s.stepColor} opacity-30`}>
                       {s.step}
                     </div>
-
-                    {/* Icon with ring */}
                     <div className="relative mb-6">
                       <div className={`w-14 h-14 rounded-2xl ${s.iconBg} border flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-110`}>
                         {s.icon}
                       </div>
                       <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${s.dotColor} border-[3px] border-base-100 z-20`} />
                     </div>
-
-                    {/* Content */}
                     <h3 className="font-bold text-lg sm:text-xl mb-2.5 text-base-content">{s.title}</h3>
                     <p className="text-sm text-base-content/50 leading-relaxed flex-1">{s.desc}</p>
-
-                    {/* Mobile step indicator */}
                     <div className="flex items-center gap-2 mt-5 pt-4 border-t border-base-content/5 lg:hidden">
                       <div className={`w-1.5 h-1.5 rounded-full ${s.dotColor}`} />
                       <span className={`text-[10px] font-bold uppercase tracking-[0.15em] ${s.stepColor} opacity-60`}>
@@ -313,8 +352,6 @@ const HomePage = () => {
                     </div>
                   </div>
                 </GlassCard>
-
-                {/* Arrow between cards — mobile/tablet only */}
                 {i < 3 && (
                   <div className="flex lg:hidden justify-center py-1">
                     <div className="w-5 h-5 rounded-full bg-base-200 border border-base-content/10 flex items-center justify-center">
@@ -323,12 +360,11 @@ const HomePage = () => {
                   </div>
                 )}
               </div>
-            </Animate>
-          ))}
+            ))}
+          </StaggerReveal>
         </div>
 
-        {/* Bottom summary strip */}
-        <Animate variant="fade-up" delay={0.55}>
+        <ScrollReveal y={15} duration={0.4} delay={0.2}>
           <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
             {[
               { icon: <Clock size={14} />, label: "Under 30 seconds" },
@@ -338,32 +374,43 @@ const HomePage = () => {
               <div key={i} className="flex items-center gap-2 text-xs text-base-content/35">
                 {item.icon}
                 <span className="font-medium">{item.label}</span>
-                {i < 2 && (
-                  <ArrowRight size={12} className="text-base-content/15 hidden sm:block" />
-                )}
+                {i < 2 && <ArrowRight size={12} className="text-base-content/15 hidden sm:block" />}
               </div>
             ))}
           </div>
-        </Animate>
+        </ScrollReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── FOUR ROLES ── */}
+      {/* FOUR ROLES - Using BlurReveal for Glassmorphism feel */}
       {/* ══════════════════════════════════════ */}
       <div className="w-full max-w-6xl relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-14 px-2">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-secondary/70 bg-secondary/10 px-3 py-1 rounded-full mb-4">Role System</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Four roles. Clear permissions.</h2>
+        <div className="text-center mb-12 sm:mb-14 px-2">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-secondary/70 bg-secondary/10 px-3 py-1 rounded-full">
+              Role System
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.015}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Four roles. Clear permissions.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/45 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
               Every document has one owner, and you assign writers, reviewers, and viewers. No ambiguity about who can do what.
             </p>
-          </div>
-        </Animate>
+          </ScrollReveal>
+        </div>
 
-        <Animate variant="fade-up" delay={0.1}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <GlassCard bg="bg-primary/5" border="border-primary/20" hover>
+        <StaggerReveal stagger={0.08} y={25} duration={0.5} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <GlassCard bg="bg-primary/5" border="border-primary/20" hover>
+            <div className="p-5 sm:p-6">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/15 flex items-center justify-center mb-4">
                 <ShieldCheck className="text-primary" size={26} />
               </div>
@@ -377,9 +424,11 @@ const HomePage = () => {
                   </li>
                 ))}
               </ul>
-            </GlassCard>
+            </div>
+          </GlassCard>
 
-            <GlassCard bg="bg-secondary/5" border="border-secondary/20" hover>
+          <GlassCard bg="bg-secondary/5" border="border-secondary/20" hover>
+            <div className="p-5 sm:p-6">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-secondary/15 flex items-center justify-center mb-4">
                 <RefreshCw className="text-secondary" size={26} />
               </div>
@@ -393,9 +442,11 @@ const HomePage = () => {
                   </li>
                 ))}
               </ul>
-            </GlassCard>
+            </div>
+          </GlassCard>
 
-            <GlassCard bg="bg-success/5" border="border-success/20" hover>
+          <GlassCard bg="bg-success/5" border="border-success/20" hover>
+            <div className="p-5 sm:p-6">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-success/15 flex items-center justify-center mb-4">
                 <UserCheck className="text-success" size={26} />
               </div>
@@ -409,9 +460,11 @@ const HomePage = () => {
                   </li>
                 ))}
               </ul>
-            </GlassCard>
+            </div>
+          </GlassCard>
 
-            <GlassCard bg="bg-accent/5" border="border-accent/20" hover>
+          <GlassCard bg="bg-accent/5" border="border-accent/20" hover>
+            <div className="p-5 sm:p-6">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-accent/15 flex items-center justify-center mb-4">
                 <Eye className="text-accent" size={26} />
               </div>
@@ -425,26 +478,39 @@ const HomePage = () => {
                   </li>
                 ))}
               </ul>
-            </GlassCard>
-          </div>
-        </Animate>
+            </div>
+          </GlassCard>
+        </StaggerReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── VERSION TIMELINE ── */}
+      {/* VERSION TIMELINE */}
       {/* ══════════════════════════════════════ */}
       <div className="max-w-4xl w-full relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-14 px-2">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 bg-primary/10 px-3 py-1 rounded-full mb-4">Live Preview</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Every version. Always visible.</h2>
+        <div className="text-center mb-12 sm:mb-14 px-2">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 bg-primary/10 px-3 py-1 rounded-full">
+              Live Preview
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.015}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Every version. Always visible.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/45 text-sm sm:text-lg max-w-xl mx-auto">
               Even deleted versions are never hidden from the owner. Full transparency, full history.
             </p>
-          </div>
-        </Animate>
+          </ScrollReveal>
+        </div>
 
-        <Animate variant="fade-up" delay={0.1}>
+        <BlurReveal y={30} duration={0.6} delay={0.1}>
           <div className="bg-base-200/40 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 border border-base-content/5 backdrop-blur-xl text-left relative overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6 pb-5 sm:pb-6 border-b border-base-content/5">
               <div className="flex items-center gap-3">
@@ -471,7 +537,6 @@ const HomePage = () => {
 
             <div className="space-y-0 relative">
               <div className="absolute left-[19px] sm:left-[23px] top-4 bottom-4 w-0.5 bg-base-content/10" />
-
               {[
                 { version: "v1", user: "You (Owner)", action: "Uploaded initial file", time: "Jan 6 · 10:00 AM", status: "approved", statusLabel: "Approved", icon: <Upload size={15} />, file: "api-handler.py — 4.2 KB" },
                 { version: "v2", user: "Ravi (Writer)", action: "Uploaded new version", time: "Jan 6 · 2:30 PM", status: "approved", statusLabel: "Approved", icon: <RefreshCw size={15} />, file: "api-handler.py — 5.1 KB", comment: "\"Added error handling for timeout cases\"" },
@@ -480,25 +545,17 @@ const HomePage = () => {
                 { version: "v5", user: "Lena (Writer)", action: "Uploaded new version", time: "Jan 8 · 3:00 PM", status: "pending", statusLabel: "Pending Review", icon: <Clock size={15} />, file: "api-handler.py — 6.0 KB" },
                 { version: "v6", user: "You (Owner)", action: "Deleted this version", time: "Jan 8 · 3:05 PM", status: "deleted", statusLabel: "Deleted", icon: <Trash2 size={15} />, file: "api-handler.py — 6.0 KB", deleted: true },
               ].map((step, i) => (
-                <div key={i} className={`flex items-start gap-3 sm:gap-4 relative group py-3 sm:py-3.5 ${step.deleted ? 'opacity-60' : ''}`}>
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-4 border-base-200 shadow-sm z-10 transition-all duration-300 shrink-0 ${step.status === 'approved' ? 'bg-success/15 text-success' :
-                    step.status === 'rejected' ? 'bg-error/15 text-error' :
-                      step.status === 'pending' ? 'bg-warning/15 text-warning' :
-                        'bg-base-300 text-base-content/30'
-                    }`}>
+                <div key={i} className={`flex items-start gap-3 sm:gap-4 relative group py-3 sm:py-3.5 ${step.deleted ? "opacity-60" : ""}`}>
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-4 border-base-200 shadow-sm z-10 transition-all duration-300 shrink-0 ${step.status === "approved" ? "bg-success/15 text-success" : step.status === "rejected" ? "bg-error/15 text-error" : step.status === "pending" ? "bg-warning/15 text-warning" : "bg-base-300 text-base-content/30"}`}>
                     {step.icon}
                   </div>
                   <div className="flex-1 pt-0.5 sm:pt-1 min-w-0">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1">
-                      <span className={`font-bold text-xs sm:text-sm ${step.deleted ? 'text-base-content/40 line-through' : 'text-base-content'}`}>
+                      <span className={`font-bold text-xs sm:text-sm ${step.deleted ? "text-base-content/40 line-through" : "text-base-content"}`}>
                         {step.action}
                       </span>
                       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${step.status === 'approved' ? 'bg-success/15 text-success' :
-                          step.status === 'rejected' ? 'bg-error/15 text-error' :
-                            step.status === 'pending' ? 'bg-warning/15 text-warning' :
-                              'bg-base-content/10 text-base-content/30'
-                          }`}>
+                        <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${step.status === "approved" ? "bg-success/15 text-success" : step.status === "rejected" ? "bg-error/15 text-error" : step.status === "pending" ? "bg-warning/15 text-warning" : "bg-base-content/10 text-base-content/30"}`}>
                           {step.statusLabel}
                         </span>
                         <span className="text-[10px] sm:text-[11px] font-mono bg-base-300/50 px-1.5 sm:px-2 py-0.5 rounded-lg text-base-content/40 border border-base-content/5">{step.version}</span>
@@ -541,25 +598,37 @@ const HomePage = () => {
               ))}
             </div>
           </div>
-        </Animate>
+        </BlurReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── NOTIFICATIONS PREVIEW ── */}
+      {/* NOTIFICATIONS PREVIEW */}
       {/* ══════════════════════════════════════ */}
       <div className="max-w-4xl w-full relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-14 px-2">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-warning/70 bg-warning/10 px-3 py-1 rounded-full mb-4">Notifications</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Never miss a thing.</h2>
+        <div className="text-center mb-12 sm:mb-14 px-2">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-warning/70 bg-warning/10 px-3 py-1 rounded-full">
+              Notifications
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.015}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Never miss a thing.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/45 text-sm sm:text-base max-w-xl mx-auto">
-              Everyone gets notified about what matters to them. Writers know when their version is reviewed,
-              reviewers know when a new version lands, owners see everything.
+              Everyone gets notified about what matters to them. Writers know when their version is reviewed, reviewers know when a new version lands, owners see everything.
             </p>
-          </div>
-        </Animate>
+          </ScrollReveal>
+        </div>
 
-        <Animate variant="fade-up" delay={0.1}>
+        <BlurReveal y={30} duration={0.6} delay={0.1}>
           <div className="bg-base-200/40 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 border border-base-content/5 backdrop-blur-xl text-left relative overflow-hidden">
             <div className="flex items-center gap-3 mb-6 pb-5 border-b border-base-content/5">
               <div className="w-10 h-10 rounded-xl bg-warning/15 flex items-center justify-center">
@@ -576,63 +645,21 @@ const HomePage = () => {
 
             <div className="space-y-2">
               {[
-                {
-                  icon: <UserCheck size={16} className="text-success" />,
-                  title: "Lena approved v4",
-                  desc: "api-handler.py — Version v4 has been approved and is now the current version.",
-                  time: "2 min ago",
-                  unread: true,
-                  dot: "bg-success"
-                },
-                {
-                  icon: <RefreshCw size={16} className="text-secondary" />,
-                  title: "Ravi uploaded v5",
-                  desc: "api-handler.py — A new version is ready for your review.",
-                  time: "15 min ago",
-                  unread: true,
-                  dot: "bg-secondary"
-                },
-                {
-                  icon: <AlertCircle size={16} className="text-error" />,
-                  title: "Omar rejected v3",
-                  desc: "api-handler.py — \"Missing import statements, please fix.\"",
-                  time: "1 hour ago",
-                  unread: true,
-                  dot: "bg-error"
-                },
-                {
-                  icon: <UserPlus size={16} className="text-primary" />,
-                  title: "You assigned Priya as Viewer",
-                  desc: "api-handler.py — Priya now has read-only access to approved versions.",
-                  time: "3 hours ago",
-                  unread: false,
-                  dot: "bg-primary"
-                },
-                {
-                  icon: <Trash2 size={16} className="text-base-content/30" />,
-                  title: "You deleted v6",
-                  desc: "api-handler.py — The version has been removed from public view but preserved in your timeline.",
-                  time: "5 hours ago",
-                  unread: false,
-                  dot: "bg-base-content/20"
-                },
-                {
-                  icon: <MessageSquare size={16} className="text-accent" />,
-                  title: "Omar commented on v2",
-                  desc: "api-handler.py — \"Good error handling, but consider adding a retry mechanism.\"",
-                  time: "Yesterday",
-                  unread: false,
-                  dot: "bg-accent"
-                },
+                { icon: <UserCheck size={16} className="text-success" />, title: "Lena approved v4", desc: "api-handler.py — Version v4 has been approved and is now the current version.", time: "2 min ago", unread: true, dot: "bg-success" },
+                { icon: <RefreshCw size={16} className="text-secondary" />, title: "Ravi uploaded v5", desc: "api-handler.py — A new version is ready for your review.", time: "15 min ago", unread: true, dot: "bg-secondary" },
+                { icon: <AlertCircle size={16} className="text-error" />, title: "Omar rejected v3", desc: "api-handler.py — \"Missing import statements, please fix.\"", time: "1 hour ago", unread: true, dot: "bg-error" },
+                { icon: <UserPlus size={16} className="text-primary" />, title: "You assigned Priya as Viewer", desc: "api-handler.py — Priya now has read-only access to approved versions.", time: "3 hours ago", unread: false, dot: "bg-primary" },
+                { icon: <Trash2 size={16} className="text-base-content/30" />, title: "You deleted v6", desc: "api-handler.py — The version has been removed from public view but preserved in your timeline.", time: "5 hours ago", unread: false, dot: "bg-base-content/20" },
+                { icon: <MessageSquare size={16} className="text-accent" />, title: "Omar commented on v2", desc: "api-handler.py — \"Good error handling, but consider adding a retry mechanism.\"", time: "Yesterday", unread: false, dot: "bg-accent" },
               ].map((n, i) => (
-                <div key={i} className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-colors ${n.unread ? 'bg-base-300/30 border border-base-content/5' : 'hover:bg-base-content/[0.02]'}`}>
+                <div key={i} className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-colors ${n.unread ? "bg-base-300/30 border border-base-content/5" : "hover:bg-base-content/[0.02]"}`}>
                   <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-base-200 flex items-center justify-center shrink-0 relative">
                     {n.icon}
                     {n.unread && <div className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ${n.dot} border-2 border-base-200`} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className={`text-xs sm:text-sm font-bold ${n.unread ? 'text-base-content' : 'text-base-content/70'}`}>{n.title}</span>
+                      <span className={`text-xs sm:text-sm font-bold ${n.unread ? "text-base-content" : "text-base-content/70"}`}>{n.title}</span>
                     </div>
                     <p className="text-[10px] sm:text-xs text-base-content/40 leading-relaxed">{n.desc}</p>
                   </div>
@@ -646,7 +673,7 @@ const HomePage = () => {
                 { label: "Writers get", val: "Upload confirmed, Review result" },
                 { label: "Reviewers get", val: "New version to review" },
                 { label: "Viewers get", val: "New approved version" },
-                { label: "Document Owners get", val: "Document all permissions" },
+                { label: "Document Owners get", val: "Everything" },
               ].map((n, i) => (
                 <div key={i} className="text-[10px] sm:text-[11px]">
                   <span className="text-base-content/25">{n.label}:</span>
@@ -655,25 +682,37 @@ const HomePage = () => {
               ))}
             </div>
           </div>
-        </Animate>
+        </BlurReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── AUDIT LOG PREVIEW ── */}
+      {/* AUDIT LOG PREVIEW */}
       {/* ══════════════════════════════════════ */}
       <div className="max-w-4xl w-full relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-14 px-2">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-error/70 bg-error/10 px-3 py-1 rounded-full mb-4">Audit Log</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">See everything that happened.</h2>
+        <div className="text-center mb-12 sm:mb-14 px-2">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-error/70 bg-error/10 px-3 py-1 rounded-full">
+              Audit Log
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.015}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            See everything that happened.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/45 text-sm sm:text-base max-w-xl mx-auto">
-              As the owner, you have access to a complete audit log. Every action on every version,
-              by every user, with exact timestamps. No gaps, no guesswork.
+              As the owner, you have access to a complete audit log. Every action on every version, by every user, with exact timestamps. No gaps, no guesswork.
             </p>
-          </div>
-        </Animate>
+          </ScrollReveal>
+        </div>
 
-        <Animate variant="fade-up" delay={0.1}>
+        <BlurReveal y={30} duration={0.6} delay={0.1}>
           <div className="bg-base-200/40 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 border border-base-content/5 backdrop-blur-xl text-left relative overflow-hidden">
             <div className="flex items-center gap-3 mb-6 pb-5 border-b border-base-content/5">
               <div className="w-10 h-10 rounded-xl bg-error/15 flex items-center justify-center">
@@ -685,7 +724,7 @@ const HomePage = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto -mx-5 sm:-mx-8 md:-mx-10 px-5 sm:px-8 md:px-10">
+            <div className="overflow-x-auto -mx-5 sm:-mx-8 md:-mx-10 px-5 sm:px-8 md:px-10 transform-gpu">
               <table className="w-full text-[10px] sm:text-xs min-w-[500px]">
                 <thead>
                   <tr className="border-b border-base-content/5">
@@ -739,22 +778,35 @@ const HomePage = () => {
               ))}
             </div>
           </div>
-        </Animate>
+        </BlurReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── FEATURES GRID ── */}
+      {/* FEATURES GRID */}
       {/* ══════════════════════════════════════ */}
       <div className="w-full max-w-6xl relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-14 px-2">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-accent/70 bg-accent/10 px-3 py-1 rounded-full mb-4">Features</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Built around how you actually work.</h2>
+        <div className="text-center mb-12 sm:mb-14 px-2">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-accent/70 bg-accent/10 px-3 py-1 rounded-full">
+              Features
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.01}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Built around how you actually work.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/45 max-w-2xl mx-auto text-sm sm:text-base">No bloat. No unnecessary complexity. Every feature exists because real teams need it.</p>
-          </div>
-        </Animate>
+          </ScrollReveal>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <StaggerReveal stagger={0.03} y={20} duration={0.4} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[
             { icon: <GitCommit size={24} />, title: "Simple Versioning", desc: "v1, v2, v3 — that's it. No confusing sub-versions, no branches, no tags. Just a clean, linear history." },
             { icon: <UserPlus size={24} />, title: "You Pick the Team", desc: "As the owner, assign writers, reviewers, and viewers. Add or remove people anytime." },
@@ -769,33 +821,44 @@ const HomePage = () => {
             { icon: <Bell size={24} />, title: "Smart Notifications", desc: "Everyone gets notified about what matters to them. Writers, reviewers, viewers, and owners — each gets relevant alerts." },
             { icon: <ClipboardList size={24} />, title: "Owner Audit Log", desc: "As the owner, access a complete, immutable audit log of every action ever taken on your document." },
           ].map((item, idx) => (
-            <Animate key={idx} variant="fade-up" delay={idx * 0.04}>
-              <div className="group p-5 sm:p-6 text-left border border-base-content/5 rounded-2xl hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-300 h-full">
-                <div className="text-primary mb-3 sm:mb-4">{item.icon}</div>
-                <h4 className="font-bold text-base sm:text-lg mb-1.5 sm:mb-2">{item.title}</h4>
-                <p className="text-xs sm:text-sm text-base-content/50 leading-relaxed">{item.desc}</p>
-              </div>
-            </Animate>
+            <div key={idx} className="group p-5 sm:p-6 text-left border border-base-content/5 rounded-2xl hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-300 h-full">
+              <div className="text-primary mb-3 sm:mb-4">{item.icon}</div>
+              <h4 className="font-bold text-base sm:text-lg mb-1.5 sm:mb-2">{item.title}</h4>
+              <p className="text-xs sm:text-sm text-base-content/50 leading-relaxed">{item.desc}</p>
+            </div>
           ))}
-        </div>
+        </StaggerReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── PROBLEM / SOLUTION ── */}
+      {/* PROBLEM / SOLUTION */}
       {/* ══════════════════════════════════════ */}
       <div className="w-full max-w-5xl relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-14 px-2">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-error/70 bg-error/10 px-3 py-1 rounded-full mb-4">The Problem</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Email is not version control.</h2>
+        <div className="text-center mb-12 sm:mb-14 px-2">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-error/70 bg-error/10 px-3 py-1 rounded-full mb-4">
+              The Problem
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.015}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Email is not version control.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/45 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
               If you've ever searched your inbox for "final version please use this one", you already know why you need this.
             </p>
-          </div>
-        </Animate>
+          </ScrollReveal>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-          <Animate variant="fade-right" delay={0.1}>
+          <BlurReveal x={-30} duration={0.5}>
             <div className="bg-error/5 border border-error/15 rounded-2xl p-5 sm:p-7 text-left h-full">
               <h4 className="font-bold text-base sm:text-lg text-error/80 mb-4 sm:mb-5 flex items-center gap-2">
                 <XCircle size={18} /> Without SAP Hub
@@ -817,9 +880,9 @@ const HomePage = () => {
                 ))}
               </ul>
             </div>
-          </Animate>
+          </BlurReveal>
 
-          <Animate variant="fade-left" delay={0.15}>
+          <BlurReveal x={30} duration={0.5}>
             <div className="bg-success/5 border border-success/15 rounded-2xl p-5 sm:p-7 text-left h-full">
               <h4 className="font-bold text-base sm:text-lg text-success/80 mb-4 sm:mb-5 flex items-center gap-2">
                 <CheckCircle size={18} /> With SAP Hub
@@ -841,26 +904,39 @@ const HomePage = () => {
                 ))}
               </ul>
             </div>
-          </Animate>
+          </BlurReveal>
         </div>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── ROLE COMPARISON TABLE ── */}
+      {/* ROLE COMPARISON TABLE */}
       {/* ══════════════════════════════════════ */}
       <div className="w-full max-w-5xl relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-14 px-2">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 bg-primary/10 px-3 py-1 rounded-full mb-4">Permission Matrix</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Who can do what.</h2>
+        <div className="text-center mb-12 sm:mb-14 px-2">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 bg-primary/10 px-3 py-1 rounded-full">
+              Permission Matrix
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.015}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Who can do what.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/45 max-w-xl mx-auto text-sm sm:text-base">
               Six roles. Zero ambiguity. Every action mapped.
             </p>
-          </div>
-        </Animate>
+          </ScrollReveal>
+        </div>
 
-        <Animate variant="fade-up" delay={0.1}>
-          <div className="bg-base-200/30 border border-base-content/5 rounded-2xl overflow-hidden">
+        <ScrollReveal y={30} duration={0.5} delay={0.1}>
+          <div className="bg-base-200/30 border border-base-content/5 rounded-2xl overflow-hidden transform-gpu">
             <div className="overflow-x-auto">
               <table className="w-full text-xs sm:text-sm min-w-[700px]">
                 <thead>
@@ -881,7 +957,7 @@ const HomePage = () => {
                     <th className="p-3.5 sm:p-4 text-center font-bold text-warning text-[10px] sm:text-xs uppercase tracking-wider bg-warning/5 min-w-[80px]">
                       <div className="flex flex-col items-center gap-0.5">
                         <Crown size={14} className="opacity-60" />
-                        Document Owner
+                        Doc Owner
                       </div>
                     </th>
                     <th className="p-3.5 sm:p-4 text-center font-bold text-secondary text-[10px] sm:text-xs uppercase tracking-wider min-w-[80px]">
@@ -905,7 +981,7 @@ const HomePage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* ── Platform Access Section ── */}
+                  {/* Platform Access */}
                   <tr className="border-b border-base-content/5 bg-base-content/[0.015]">
                     <td colSpan={7} className="p-2.5 sm:p-3">
                       <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-bold text-base-content/25 flex items-center gap-1.5">
@@ -941,7 +1017,7 @@ const HomePage = () => {
                     </tr>
                   ))}
 
-                  {/* ── Document Access Section ── */}
+                  {/* Document Access */}
                   <tr className="border-b border-base-content/5 bg-base-content/[0.015]">
                     <td colSpan={7} className="p-2.5 sm:p-3">
                       <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-bold text-base-content/25 flex items-center gap-1.5">
@@ -987,7 +1063,6 @@ const HomePage = () => {
               </table>
             </div>
 
-            {/* Legend */}
             <div className="px-4 sm:px-5 py-4 border-t border-base-content/5 flex flex-wrap gap-x-5 gap-y-2">
               <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-base-content/35">
                 <CheckCircle size={13} className="text-base-content/40" />
@@ -1004,7 +1079,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Callout cards below table */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
             <div className="flex items-start gap-3 bg-error/[0.04] border border-error/10 rounded-xl p-3.5">
               <ShieldAlert size={16} className="text-error/50 shrink-0 mt-0.5" />
@@ -1024,132 +1098,92 @@ const HomePage = () => {
               <Crown size={16} className="text-warning/50 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-warning/70 mb-0.5">Owner + Writer + Reviewer + Viewer</p>
-                <p className="text-[11px] text-base-content/40 leading-relaxed">Full control over their own documents, but no platform-level access (no audit log, user management, or deleting users).</p>
+                <p className="text-[11px] text-base-content/40 leading-relaxed">Full control over their own documents, but no platform-level access.</p>
               </div>
             </div>
           </div>
-        </Animate>
+        </ScrollReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── TESTIMONIALS ── */}
+      {/* TESTIMONIALS */}
       {/* ══════════════════════════════════════ */}
       <div className="w-full max-w-6xl relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-16">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-warning/70 bg-warning/10 px-3 py-1 rounded-full mb-4">What People Say</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Trusted by teams<br className="sm:hidden" /> who ship.</h2>
+        <div className="text-center mb-12 sm:mb-16">
+          <BlurReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-warning/70 bg-warning/10 px-3 py-1 rounded-full">
+              What People Say
+            </span>
+          </BlurReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.015}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Trusted by teams who ship.
+          </CharReveal>
+          <ScrollReveal y={20} duration={0.4} delay={0.1}>
             <p className="text-base-content/40 max-w-md mx-auto text-sm sm:text-base">
               Real feedback from real teams using SAP Hub every day.
             </p>
-          </div>
-        </Animate>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-          {[
-            {
-              quote: "We used to have 47 versions of the same spec floating around in Slack. Now there's one document and everyone knows which version is approved.",
-              name: "Sarah Mitchell",
-              role: "Project Lead",
-              company: "Stackline",
-              rating: 5,
-              highlight: "47 versions → 1 history"
-            },
-            {
-              quote: "The audit log is incredible. When someone asks 'who changed what and when', I just pull it up. No more guessing, no more digging through email threads.",
-              name: "James Carter",
-              role: "Quality Manager",
-              company: "DataForge",
-              rating: 5,
-              highlight: "Instant audit trails"
-            },
-            {
-              quote: "Finally a tool that handles .java and .py files the same way it handles PDFs. The viewer role is exactly what we needed for our stakeholders.",
-              name: "Emily Thornton",
-              role: "Engineering Manager",
-              company: "Nextera Systems",
-              rating: 5,
-              highlight: "Code + docs unified"
-            },
-            {
-              quote: "I deleted a version by accident at 2 AM and panicked. Then I remembered I'm the owner — it was right there in the timeline. Saved my life honestly.",
-              name: "Michael Chen",
-              role: "Senior Developer",
-              company: "Codecraft Labs",
-              rating: 5,
-              highlight: "Deleted ≠ gone"
-            },
-            {
-              quote: "We onboard new contractors every month. Assigning them as viewers takes 5 seconds and they instantly see only what they need.",
-              name: "Rachel Adams",
-              role: "Operations Director",
-              company: "Meridian Group",
-              rating: 5,
-              highlight: "5-sec onboarding"
-            },
-            {
-              quote: "The notifications alone are worth it. Our reviewer gets pinged the second a new version lands, and the writer knows right away if it's approved or needs changes.",
-              name: "David Brooks",
-              role: "Team Lead",
-              company: "Velocity Tech",
-              rating: 5,
-              highlight: "Zero lag in reviews"
-            },
-          ].map((t, i) => (
-            <Animate key={i} variant="fade-up" delay={i * 0.08}>
-              <div className="h-full flex flex-col">
-                <GlassCard
-                  bg="bg-base-200/20"
-                  border="border-base-content/5"
-                  hover
-                  className="h-full flex flex-col transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/15"
-                >
-                  <div className="p-6 sm:p-7 flex flex-col flex-1 relative">
-
-                    {/* Highlight badge */}
-                    <div className="absolute top-5 right-5 sm:top-6 sm:right-6">
-                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.08em] text-primary/50 bg-primary/[0.06] border border-primary/10 px-2 py-0.5 rounded-full">
-                        {t.highlight}
-                      </span>
-                    </div>
-
-                    {/* Stars */}
-                    <div className="flex items-center gap-0.5 mb-4 sm:mb-5">
-                      {Array.from({ length: t.rating }).map((_, j) => (
-                        <Star key={j} size={13} fill="currentColor" className="text-warning" />
-                      ))}
-                    </div>
-
-                    {/* Quote — this stretches to fill space */}
-                    <div className="relative mb-5 sm:mb-6 flex-1 min-h-[80px]">
-                      <Quote size={20} className="text-primary/10 absolute -top-1 -left-1 rotate-180" />
-                      <p className="text-xs sm:text-[13px] text-base-content/65 leading-[1.7] pl-5 sm:pl-6">
-                        {t.quote}
-                      </p>
-                    </div>
-
-                    {/* Author — always pushed to bottom */}
-                    <div className="flex items-center gap-3 pt-4 sm:pt-5 border-t border-base-content/5 mt-auto">
-                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 border border-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm shrink-0">
-                        {t.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-bold text-xs sm:text-sm text-base-content truncate">{t.name}</div>
-                        <div className="text-[10px] sm:text-[11px] text-base-content/35 truncate">
-                          {t.role} <span className="text-base-content/15 mx-1">at</span> {t.company}
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                </GlassCard>
-              </div>
-            </Animate>
-          ))}
+          </ScrollReveal>
         </div>
 
-        {/* Bottom stats strip */}
-        <Animate variant="fade-up" delay={0.5}>
+        <StaggerReveal stagger={0.06} y={20} duration={0.4} className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+          {[
+            { quote: "We used to have 47 versions of the same spec floating around in Slack. Now there's one document and everyone knows which version is approved.", name: "Sarah Mitchell", role: "Project Lead", company: "Stackline", highlight: "47 versions → 1 history" },
+            { quote: "The audit log is incredible. When someone asks 'who changed what and when', I just pull it up. No more guessing, no more digging through email threads.", name: "James Carter", role: "Quality Manager", company: "DataForge", highlight: "Instant audit trails" },
+            { quote: "Finally a tool that handles .java and .py files the same way it handles PDFs. The viewer role is exactly what we needed for our stakeholders.", name: "Emily Thornton", role: "Engineering Manager", company: "Nextera Systems", highlight: "Code + docs unified" },
+            { quote: "I deleted a version by accident at 2 AM and panicked. Then I remembered I'm the owner — it was right there in the timeline. Saved my life honestly.", name: "Michael Chen", role: "Senior Developer", company: "Codecraft Labs", highlight: "Deleted ≠ gone" },
+            { quote: "We onboard new contractors every month. Assigning them as viewers takes 5 seconds and they instantly see only what they need.", name: "Rachel Adams", role: "Operations Director", company: "Meridian Group", highlight: "5-sec onboarding" },
+            { quote: "The notifications alone are worth it. Our reviewer gets pinged the second a new version lands, and the writer knows right away if it's approved or needs changes.", name: "David Brooks", role: "Team Lead", company: "Velocity Tech", highlight: "Zero lag in reviews" },
+          ].map((t, i) => (
+            <div key={i} className="h-full flex flex-col">
+              <GlassCard
+                bg="bg-base-200/20"
+                border="border-base-content/5"
+                hover
+                className="h-full flex flex-col transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/15"
+              >
+                <div className="p-6 sm:p-7 flex flex-col flex-1 relative">
+                  <div className="absolute top-5 right-5 sm:top-6 sm:right-6">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.08em] text-primary/50 bg-primary/[0.06] border border-primary/10 px-2 py-0.5 rounded-full">
+                      {t.highlight}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-0.5 mb-4 sm:mb-5">
+                    {starIcons}
+                  </div>
+
+                  <div className="relative mb-5 sm:mb-6 flex-1 min-h-[80px]">
+                    <Quote size={20} className="text-primary/10 absolute -top-1 -left-1 rotate-180" />
+                    <p className="text-xs sm:text-[13px] text-base-content/65 leading-[1.7] pl-5 sm:pl-6">
+                      {t.quote}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-4 sm:pt-5 border-t border-base-content/5 mt-auto">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 border border-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm shrink-0">
+                      {t.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs sm:text-sm text-base-content truncate">{t.name}</div>
+                      <div className="text-[10px] sm:text-[11px] text-base-content/35 truncate">
+                        {t.role} <span className="text-base-content/15 mx-1">at</span> {t.company}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+          ))}
+        </StaggerReveal>
+
+        <ScrollReveal y={20} duration={0.4} delay={0.2}>
           <div className="mt-10 sm:mt-14 grid grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
             {[
               { val: "4.9", label: "Average rating" },
@@ -1162,56 +1196,65 @@ const HomePage = () => {
               </div>
             ))}
           </div>
-        </Animate>
+        </ScrollReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── FAQ ── */}
+      {/* FAQ */}
       {/* ══════════════════════════════════════ */}
       <div className="w-full max-w-3xl relative z-10 mb-32 sm:mb-40">
-        <Animate variant="fade-up">
-          <div className="text-center mb-12 sm:mb-14">
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-base-content/30 bg-base-content/5 px-3 py-1 rounded-full mb-4">FAQ</span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4">Questions & answers.</h2>
-          </div>
-        </Animate>
+        <div className="text-center mb-12 sm:mb-14">
+          <ScrollReveal y={15} duration={0.4} className="mb-4">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-base-content/30 bg-base-content/5 px-3 py-1 rounded-full">
+              FAQ
+            </span>
+          </ScrollReveal>
+          <CharReveal
+            as="h2"
+            className="block text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 p-4"
+            stagger={0.02}
+            y={30}
+            rotateX={-60}
+            duration={0.4}
+          >
+            Questions & answers.
+          </CharReveal>
+        </div>
 
-        <Animate variant="fade-up" delay={0.1}>
-          <div className="space-y-2.5 sm:space-y-3 text-left">
-            {[
-              { q: "What does the version numbering look like?", a: "Dead simple: v1, v2, v3, v4, and so on. Every time a writer uploads a new file, it gets the next number. No sub-versions, no v1.0.1 or v2.3-rc nonsense. Just clean, sequential numbers." },
-              { q: "Can I see deleted versions?", a: "Yes — but only if you're the owner. Deleted versions are preserved in the timeline and clearly marked. Writers, reviewers, and viewers cannot see them." },
-              { q: "What file types can I upload?", a: "Documents like .pdf, .doc, .docx, .txt, .md — and all text-based code files like .java, .cpp, .py, .js, .ts, .html, .css, .sql, .json, .xml, .yaml, and more." },
-              { q: "What can a Viewer do?", a: "Viewers can only see and download approved versions. They cannot upload, approve, reject, comment, or see the audit log. They get notified when a new version is approved." },
-              { q: "Can a reviewer also be a writer?", a: "No. Each person has exactly one role per document: Owner, Writer, Reviewer, or Viewer. This keeps permissions clear with no overlap." },
-              { q: "What happens when a reviewer rejects a version?", a: "The version stays in the history marked as 'Rejected' with the reviewer's comment. The writer gets a notification with the feedback and can upload a new version (next number). The rejected version stays visible." },
-              { q: "Who can see the audit log?", a: "Only the owner. The audit log is a complete, immutable record of every action — uploads, approvals, rejections, deletions, role assignments — with exact timestamps and user names." },
-              { q: "How do notifications work?", a: "Writers get notified when their version is reviewed. Reviewers get notified when a new version needs review. Viewers get notified when a new version is approved. Owners get notified about everything." },
-              { q: "Can I remove someone from my document?", a: "Yes. As the owner, remove writers, reviewers, or viewers at any time. They immediately lose access. Their past activity remains in the audit log and timeline." },
-              { q: "Is there a limit on versions?", a: "No. Have as many versions as you need. The timeline and audit log handle it, and you can search and filter to find any version quickly." },
-            ].map((faq, i) => (
-              <details key={i} className="group bg-base-200/30 border border-base-content/5 rounded-xl overflow-hidden">
-                <summary className="flex items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 cursor-pointer font-semibold text-xs sm:text-sm text-base-content/80 hover:text-base-content transition-colors list-none">
-                  <span className="flex items-center gap-2 sm:gap-3">
-                    <HelpCircle size={14} className="text-base-content/20 shrink-0" />
-                    {faq.q}
-                  </span>
-                  <ChevronDown size={14} className="text-base-content/20 shrink-0 transition-transform group-open:rotate-180" />
-                </summary>
-                <div className="px-4 sm:px-5 pb-4 sm:pb-5 text-xs sm:text-sm text-base-content/50 leading-relaxed -mt-1">
-                  {faq.a}
-                </div>
-              </details>
-            ))}
-          </div>
-        </Animate>
+        <StaggerReveal stagger={0.04} y={15} duration={0.4} className="space-y-2.5 sm:space-y-3 text-left">
+          {[
+            { q: "What does the version numbering look like?", a: "Dead simple: v1, v2, v3, v4, and so on. Every time a writer uploads a new file, it gets the next number. No sub-versions, no v1.0.1 or v2.3-rc nonsense. Just clean, sequential numbers." },
+            { q: "Can I see deleted versions?", a: "Yes — but only if you're the owner. Deleted versions are preserved in the timeline and clearly marked. Writers, reviewers, and viewers cannot see them." },
+            { q: "What file types can I upload?", a: "Documents like .pdf, .doc, .docx, .txt, .md — and all text-based code files like .java, .cpp, .py, .js, .ts, .html, .css, .sql, .json, .xml, .yaml, and more." },
+            { q: "What can a Viewer do?", a: "Viewers can only see and download approved versions. They cannot upload, approve, reject, comment, or see the audit log. They get notified when a new version is approved." },
+            { q: "Can a reviewer also be a writer?", a: "No. Each person has exactly one role per document: Owner, Writer, Reviewer, or Viewer. This keeps permissions clear with no overlap." },
+            { q: "What happens when a reviewer rejects a version?", a: "The version stays in the history marked as 'Rejected' with the reviewer's comment. The writer gets a notification with the feedback and can upload a new version (next number). The rejected version stays visible." },
+            { q: "Who can see the audit log?", a: "Only the owner. The audit log is a complete, immutable record of every action — uploads, approvals, rejections, deletions, role assignments — with exact timestamps and user names." },
+            { q: "How do notifications work?", a: "Writers get notified when their version is reviewed. Reviewers get notified when a new version needs review. Viewers get notified when a new version is approved. Owners get notified about everything." },
+            { q: "Can I remove someone from my document?", a: "Yes. As the owner, remove writers, reviewers, or viewers at any time. They immediately lose access. Their past activity remains in the audit log and timeline." },
+            { q: "Is there a limit on versions?", a: "No. Have as many versions as you need. The timeline and audit log handle it, and you can search and filter to find any version quickly." },
+          ].map((faq, i) => (
+            <details key={i} className="group bg-base-200/30 border border-base-content/5 rounded-xl overflow-hidden">
+              <summary className="flex items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 cursor-pointer font-semibold text-xs sm:text-sm text-base-content/80 hover:text-base-content transition-colors list-none">
+                <span className="flex items-center gap-2 sm:gap-3">
+                  <HelpCircle size={14} className="text-base-content/20 shrink-0" />
+                  {faq.q}
+                </span>
+                <ChevronDown size={14} className="text-base-content/20 shrink-0 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="px-4 sm:px-5 pb-4 sm:pb-5 text-xs sm:text-sm text-base-content/50 leading-relaxed -mt-1">
+                {faq.a}
+              </div>
+            </details>
+          ))}
+        </StaggerReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
-      {/* ── CTA ── */}
+      {/* CTA */}
       {/* ══════════════════════════════════════ */}
       <div className="mt-8 sm:mt-12 mb-16 sm:mb-24 w-full max-w-5xl relative z-10">
-        <Animate variant="zoom-in">
+        <ScrollReveal scale={0.95} duration={0.5} start="top 90%">
           <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-8 sm:p-12 md:p-16 rounded-2xl sm:rounded-[2rem] border border-primary/20 text-center relative overflow-hidden">
             <div className="absolute top-0 right-0 p-6 sm:p-8 opacity-[0.07] text-primary">
               <Zap size={100} fill="currentColor" />
@@ -1226,21 +1269,35 @@ const HomePage = () => {
                 Free to use · No credit card
               </div>
 
-              <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-5 sm:mb-6 leading-tight">
-                Stop losing track of<br />
-                <span className="text-primary">your documents.</span>
-              </h2>
-              <p className="text-sm sm:text-lg text-base-content/50 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
-                Create your first document in seconds. Assign your team, upload versions,
-                and let reviewers do their job. It really is that simple.
-              </p>
+              <CharReveal
+                as="h2"
+                className="block text-3xl sm:text-4xl md:text-6xl font-black mb-5 sm:mb-6 leading-tight p-4"
+                stagger={0.015}
+                y={30}
+                rotateX={-60}
+                duration={0.4}
+                start="top 95%"
+              >
+                Stop losing track of your documents.
+              </CharReveal>
+
+              <WordReveal
+                className="text-sm sm:text-lg text-base-content/50 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed"
+                stagger={0.02}
+                y={15}
+                duration={0.4}
+                delay={0.2}
+                start="top 95%"
+              >
+                Create your first document in seconds. Assign your team, upload versions, and let reviewers do their job. It really is that simple.
+              </WordReveal>
 
               <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-7 sm:mb-8">
                 <Link
                   to="/login"
                   className="btn btn-primary btn-lg px-8 sm:px-12 rounded-2xl gap-2 shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]"
                 >
-                  Create Your First Document
+                  Create Your Document
                   <ArrowRight size={18} />
                 </Link>
               </div>
@@ -1255,7 +1312,7 @@ const HomePage = () => {
               </div>
             </div>
           </div>
-        </Animate>
+        </ScrollReveal>
       </div>
 
     </div>

@@ -225,7 +225,7 @@ const DocumentsPage = () => {
                     {filteredDocuments.map((doc) => (
                       <tr
                         key={doc.id}
-                        className={`hover:bg-primary/5 transition-colors group ${doc.is_deleted ? "bg-error/15 hover:bg-error/25" : ""}`}
+                        className={`transition-colors group ${doc.is_deleted ? "bg-error/15 hover:bg-error/25" : "hover:bg-primary/5"}`}
                       >
                         <td className="py-6 px-10">
                           <Link to={`/documents/${doc.id}`} className="flex items-center gap-4 outline-none">

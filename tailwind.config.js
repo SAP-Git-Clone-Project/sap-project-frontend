@@ -23,6 +23,24 @@ export default {
         // This creates a custom breakpoint at 1070px
         nav: "1000px",
       },
+      backgroundSize: {
+        "200%": "200%",
+      },
+      // Define the animation
+      animation: {
+        "gradient-x": "gradient-x 3s ease infinite",
+      },
+      // Define the keyframes for the animation
+      keyframes: {
+        "gradient-x": {
+          "0%, 100%": {
+            "background-position": "left center",
+          },
+          "50%": {
+            "background-position": "right center",
+          },
+        },
+      },
     },
   },
 
