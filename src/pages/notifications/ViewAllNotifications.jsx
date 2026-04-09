@@ -7,10 +7,12 @@ import {
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
-import api from "@/components/api/api.js";
 import Loader from "@/components/widgets/Loader.jsx";
-import { useAuth } from "@/context/AuthContext";
 import notify from "@/components/toaster/notify";
+import GetGreeting from "@/components/greetings/GetGreeting";
+
+import api from "@/components/api/api.js";
+import { useAuth } from "@/context/AuthContext";
 
 const FILTERS = ["all", "unread", "read"];
 
@@ -97,10 +99,8 @@ const ViewAllNotifications = () => {
   // }, [fetchNotifications]);
 
   const fetchNotifications = useCallback(async (isSilent = false) => {
-    // 🚫 Prevent overlapping requests
-    // if (isFetchingRef.current) return;
 
-    // ❌ Cancel previous request (avoid stale responses)
+    // Cancel previous request (avoid stale responses)
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -250,7 +250,7 @@ const ViewAllNotifications = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.4em]">Notification Registry</span>
             </div>
             <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-base-content leading-[0.9]">
-              Hello, <span className="text-primary">{user?.first_name || "Agent"}</span> <span className="text-primary">{user?.last_name || "Agent"}</span>
+              <GetGreeting variant={2}/> <span className="text-primary">{user?.first_name || "Agent"}</span> <span className="text-primary">{user?.last_name || "Agent"}</span>
             </h1>
           </div>
           <button
