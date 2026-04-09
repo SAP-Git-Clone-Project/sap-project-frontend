@@ -8,6 +8,10 @@ const BackgroundEffects = ({ length = 12 }) => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: true });
 
+    // PERFORMANCE TWEAK: Render at lower resolution (25%) and scale up via CSS.
+    // This drastically reduces GPU load while the blur hides the pixelation.
+    const RESOLUTION_SCALE = 0.35;
+
     let blobs = [];
     let animationFrameId;
 
@@ -46,20 +50,17 @@ const BackgroundEffects = ({ length = 12 }) => {
       return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${alpha})`;
     };
 
-    // --- DYNAMIC RESIZE FIX ---
     const resize = () => {
-      // Look at the parent container's actual height, not the window
       const container = canvas.parentElement;
       if (container) {
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
+        canvas.width = container.clientWidth * RESOLUTION_SCALE;
+        canvas.height = container.clientHeight * RESOLUTION_SCALE;
       }
     };
 
     resize();
     window.addEventListener('resize', resize);
     
-    // Also watch for content changes (if sections expand)
     const resizeObserver = new ResizeObserver(resize);
     if (canvas.parentElement) resizeObserver.observe(canvas.parentElement);
 
@@ -70,17 +71,31 @@ const BackgroundEffects = ({ length = 12 }) => {
       }
 
       reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
+        const virtualWidth = canvas.width / RESOLUTION_SCALE;
+        const virtualHeight = canvas.height / RESOLUTION_SCALE;
+
+        this.x = Math.random() * virtualWidth;
+        this.y = Math.random() * virtualHeight;
+        
         this.radius = 120 + Math.random() * 150;
-        this.vx = (Math.random() - 0.5) * 0.9;
-        this.vy = (Math.random() - 0.5) * 0.8;
+        
+        // --- INCREASED SPEEDS FOR DYNAMIC MOVEMENT ---
+        // Increased velocity range significantly for faster movement
+        this.vx = (Math.random() - 0.5) * 0.5; 
+        this.vy = (Math.random() - 0.5) * 0.5; 
+        
         this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.008;
-        this.wobbleSpeed = 0.006 + Math.random() * 0.01;
+        // Faster rotation for more energy
+        this.rotationSpeed = (Math.random() - 0.5) * 0.02; 
+        
+        // Much faster wobble speed to make it feel "alive" and shifting rapidly
+        this.wobbleSpeed = 0.01 + Math.random() * 0.01; 
+        
         this.color = weightedColors[Math.floor(Math.random() * weightedColors.length)];
         this.alpha = 0.4 + Math.random() * 0.15;
-        this.numPoints = 5;
+        
+        // Keep points low (3) for performance, but increase variation for dynamic shape
+        this.numPoints = 3; 
         this.offsets = Array.from({ length: this.numPoints }, () => Math.random() * Math.PI * 2);
       }
 
@@ -90,31 +105,43 @@ const BackgroundEffects = ({ length = 12 }) => {
         this.rotation += this.rotationSpeed;
         this.time += this.wobbleSpeed;
 
+        const virtualWidth = canvas.width / RESOLUTION_SCALE;
+        const virtualHeight = canvas.height / RESOLUTION_SCALE;
         const pad = this.radius * 2;
-        if (this.x < -pad) this.x = canvas.width + pad;
-        if (this.x > canvas.width + pad) this.x = -pad;
-        if (this.y < -pad) this.y = canvas.height + pad;
-        if (this.y > canvas.height + pad) this.y = -pad;
+
+        if (this.x < -pad) this.x = virtualWidth + pad;
+        if (this.x > virtualWidth + pad) this.x = -pad;
+        if (this.y < -pad) this.y = virtualHeight + pad;
+        if (this.y > virtualHeight + pad) this.y = -pad;
       }
 
       draw() {
         ctx.save();
+        
+        ctx.scale(RESOLUTION_SCALE, RESOLUTION_SCALE);
+
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
-        ctx.filter = 'blur(60px)'; // Increased blur slightly for smoothness
+        
+        // REMOVED ctx.filter (Optimization)
+        
         ctx.fillStyle = cssColorToRgba(this.color, this.alpha);
 
         const points = [];
         const angleStep = (Math.PI * 2) / this.numPoints;
         for (let i = 0; i < this.numPoints; i++) {
           const angle = i * angleStep;
-          const variation = Math.sin(this.time + this.offsets[i]) * 55;
+          // Slightly larger variation to match the faster, more dynamic feel
+          const variation = Math.sin(this.time + this.offsets[i]) * 60; 
           const r = this.radius + variation;
           points.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
         }
 
         ctx.beginPath();
-        ctx.moveTo((points[0].x + points[this.numPoints - 1].x) / 2, (points[0].y + points[this.numPoints - 1].y) / 2);
+        const midX = (points[0].x + points[this.numPoints - 1].x) / 2;
+        const midY = (points[0].y + points[this.numPoints - 1].y) / 2;
+        ctx.moveTo(midX, midY);
+
         for (let i = 0; i < this.numPoints; i++) {
           const p1 = points[i];
           const p2 = points[(i + 1) % this.numPoints];
@@ -149,7 +176,8 @@ const BackgroundEffects = ({ length = 12 }) => {
     <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none bg-transparent">
       <canvas
         ref={canvasRef}
-        className="block w-full h-full contrast-[1.1] brightness-[1.02]"
+        // CSS blur is applied here for performance
+        className="block w-full h-full contrast-[1.1] brightness-[1.02] blur-[40px]"
       />
       <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none" />
     </div>

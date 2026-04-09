@@ -157,7 +157,7 @@ const Register = () => {
   return (
     <div className="relative min-h-[100vh] w-full flex items-center justify-center overflow-hidden bg-base-100">
 
-      <BackgroundEffects length={10} />
+      <BackgroundEffects length={12} />
 
       <div className="relative z-10 w-full max-w-[650px] px-4 py-10">
 
