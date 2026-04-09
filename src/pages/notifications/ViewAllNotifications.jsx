@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell, Check, ArrowRight, CheckCircle2, MailOpen,
@@ -33,8 +33,8 @@ const ViewAllNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
-  
-  const [searchInput, setSearchInput] = useState(""); 
+
+  const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,51 +45,160 @@ const ViewAllNotifications = () => {
     hasPrev: false
   });
 
+  // 
+  const isFetchingRef = useRef(false);
+  const abortControllerRef = useRef(null);
+
   // Handle Search Debouncing
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchInput);
-      setCurrentPage(1); 
+      setCurrentPage(1);
     }, 300);
     return () => clearTimeout(handler);
   }, [searchInput]);
 
   // Fetch Logic (Memoized to prevent unnecessary re-renders)
+  // const fetchNotifications = useCallback(async (isSilent = false) => {
+  //   // isSilent=true means don't show the big loading spinner (used for live updates)
+  //   if (!isSilent) setLoading(true);
+
+  //   try {
+  //     const res = await api.get("/notifications/", {
+  //       params: {
+  //         page: currentPage,
+  //         status: filter,
+  //         q: debouncedSearch,
+  //         page_size: 50
+  //       }
+  //     });
+
+  //     setNotifications(res.data?.notifications || []);
+  //     setUnreadCount(res.data?.unread_count || 0);
+  //     setPaginationInfo(res.data?.pagination || { count: 0, totalPages: 1 });
+  //   } catch (err) {
+  //     console.error("Fetch failed", err);
+  //     // We don't notify.error here to avoid spamming the user during live background refreshes
+  //   } finally {
+  //     if (!isSilent) setLoading(false);
+  //   }
+  // }, [currentPage, filter, debouncedSearch]);
+
+  // // Initial Load & Live Update Interval
+  // useEffect(() => {
+  //   fetchNotifications();
+
+  //   // Set up polling (Live Update every 25 seconds)
+  //   const interval = setInterval(() => {
+  //     fetchNotifications(true); 
+  //   }, 25000);
+
+  //   return () => clearInterval(interval);
+  // }, [fetchNotifications]);
+
   const fetchNotifications = useCallback(async (isSilent = false) => {
-    // isSilent=true means don't show the big loading spinner (used for live updates)
+    // 🚫 Prevent overlapping requests
+    // if (isFetchingRef.current) return;
+
+    // ❌ Cancel previous request (avoid stale responses)
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    isFetchingRef.current = true;
+
     if (!isSilent) setLoading(true);
-    
+
     try {
       const res = await api.get("/notifications/", {
+        signal: controller.signal,
         params: {
           page: currentPage,
           status: filter,
           q: debouncedSearch,
-          page_size: 50
-        }
+          page_size: 50,
+        },
       });
 
       setNotifications(res.data?.notifications || []);
       setUnreadCount(res.data?.unread_count || 0);
       setPaginationInfo(res.data?.pagination || { count: 0, totalPages: 1 });
+
     } catch (err) {
-      console.error("Fetch failed", err);
-      // We don't notify.error here to avoid spamming the user during live background refreshes
+      if (err.name !== "CanceledError") {
+        console.error("Fetch failed", err);
+      }
     } finally {
+      isFetchingRef.current = false;
       if (!isSilent) setLoading(false);
     }
-  }, [currentPage, filter, debouncedSearch]);
+  }, [
+    api,
+    currentPage,
+    filter,
+    debouncedSearch,
+  ]);
+
 
   // Initial Load & Live Update Interval
+  // useEffect(() => {
+  //   fetchNotifications();
+
+  //   // 👁️ Refetch instantly when tab becomes active
+  //   const handleVisibilityChange = () => {
+  //     if (document.visibilityState === "visible") {
+  //       fetchNotifications(true);
+  //     }
+  //   };
+
+  //   document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  //   // 🔁 Polling every 25s (only if visible)
+  //   const interval = setInterval(() => {
+  //     if (document.visibilityState === "visible") {
+  //       fetchNotifications(true);
+  //     }
+  //   }, 25000);
+
+  //   return () => {
+  //     clearInterval(interval);
+  //     document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+  //     // 🧹 Cancel any in-flight request on unmount
+  //     if (abortControllerRef.current) {
+  //       abortControllerRef.current.abort();
+  //     }
+  //   };
+  // }, [fetchNotifications]);
+
   useEffect(() => {
     fetchNotifications();
 
-    // Set up polling (Live Update every 5 seconds)
-    const interval = setInterval(() => {
-      fetchNotifications(true); 
-    }, 10000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications(true);
+      }
+    };
 
-    return () => clearInterval(interval);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications(true);
+      }
+    }, 25000);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchNotifications]);
 
   const markAsRead = async (id) => {
@@ -107,8 +216,9 @@ const ViewAllNotifications = () => {
     try {
       await api.delete(`/notifications/${id}/delete/`);
       setNotifications(prev => prev.filter(n => n.id !== id));
+      setCurrentPage(1);
       // Refresh count/list after deletion to ensure pagination matches
-      fetchNotifications(true);
+      await fetchNotifications(true);
       notify.success("Entry purged");
     } catch (err) {
       notify.error("Deletion failed");
@@ -159,9 +269,9 @@ const ViewAllNotifications = () => {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
             <div className="grid grid-cols-3 lg:flex gap-1 w-full lg:w-auto">
               {FILTERS.map((f) => (
-                <button 
-                  key={f} 
-                  onClick={() => { setFilter(f); setCurrentPage(1); }} 
+                <button
+                  key={f}
+                  onClick={() => { setFilter(f); setCurrentPage(1); }}
                   className={`btn btn-xs sm:btn-sm rounded-xl px-5 border-none uppercase text-[9px] lg:text-[10px] font-black tracking-widest ${filter === f ? "btn-primary " : "btn-ghost text-secondary hover:bg-base-300"}`}
                 >
                   {f}
@@ -170,12 +280,12 @@ const ViewAllNotifications = () => {
             </div>
             <div className="relative w-full lg:max-w-[280px]">
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-20" />
-              <input 
-                type="text" 
-                placeholder="Search logs..." 
-                value={searchInput} 
-                onChange={(e) => setSearchInput(e.target.value)} 
-                className="input w-full pl-12 bg-base-100/50 border-base-300/30 focus:border-primary rounded-2xl" 
+              <input
+                type="text"
+                placeholder="Search logs..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="input w-full pl-12 bg-base-100/50 border-base-300/30 focus:border-primary rounded-2xl"
               />
             </div>
           </div>
@@ -251,8 +361,22 @@ const ViewAllNotifications = () => {
                             </button>
                           </div>
                         </td>
-                        <td className={`text-right px-10 text-[11px] font-mono ${n.is_read ? 'opacity-30' : 'opacity-60'}`}>
-                          {new Date(n.created_at).toLocaleString()}
+                        <td className={`text-right px-10 group-hover:opacity-100 transition-opacity ${n.is_read ? 'opacity-30' : 'opacity-60'}`}>
+                          <div className="text-[11px] font-mono leading-none">
+                            {new Date(n.created_at).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </div>
+                          <div className="text-[9px] font-mono mt-1 opacity-70">
+                            {new Date(n.created_at).toLocaleTimeString(undefined, {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                              hour12: true
+                            })}
+                          </div>
                         </td>
                       </tr>
                     );

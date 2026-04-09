@@ -88,7 +88,7 @@ const Register = () => {
     if (!form.email.trim()) e.email = "Email is required";
     else if (!isValidEmail(form.email)) e.email = "Invalid email";
 
-    if (form.password.length < 6) e.password = "Min 6 characters";
+    if (form.password.length < 8) e.password = "Min 8 characters";
     if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords don't match";
 
     setErrors(e);
@@ -97,7 +97,8 @@ const Register = () => {
 
   const handleSubmit = async (ev) => {
     ev.preventDefault();
-    if (!validate()) return;
+    // Safety: prevent double-submit and validate first
+    if (submitting || !validate()) return;
 
     setSubmitting(true);
     setApiError("");
@@ -111,14 +112,13 @@ const Register = () => {
         password: form.password,
       });
 
-      // Success → send to login with the success banner
+      // Success → send to login with the success state
       navigate("/login", { replace: true, state: { registered: true } });
 
     } catch (err) {
       const data = err.response?.data;
 
-      if (data) {
-        // Map DRF field errors back into inline form errors
+      if (data && typeof data === 'object') {
         const fieldMap = {
           first_name: "firstName",
           last_name: "lastName",
@@ -126,13 +126,15 @@ const Register = () => {
           email: "email",
           password: "password",
         };
+
         const fieldErrors = {};
         let hasFieldError = false;
 
         for (const [key, value] of Object.entries(data)) {
-          const local = fieldMap[key];
-          if (local) {
-            fieldErrors[local] = Array.isArray(value) ? value[0] : value;
+          const localKey = fieldMap[key];
+          if (localKey) {
+            // Safety: Grab first error if backend sends an array
+            fieldErrors[localKey] = Array.isArray(value) ? value[0] : value;
             hasFieldError = true;
           }
         }
@@ -140,12 +142,14 @@ const Register = () => {
         if (hasFieldError) {
           setErrors((prev) => ({ ...prev, ...fieldErrors }));
         } else {
-          setApiError(data.detail ?? "Registration failed. Please try again.");
+          // Fallback to "detail", "message", or a generic string
+          setApiError(data.detail || data.message || "Registration failed. Please try again.");
         }
       } else {
-        setApiError("Network error. Please check your connection and try again.");
+        setApiError("Network error. Please check your connection.");
       }
-
+    } finally {
+      // Always reset the loading state
       setSubmitting(false);
     }
   };

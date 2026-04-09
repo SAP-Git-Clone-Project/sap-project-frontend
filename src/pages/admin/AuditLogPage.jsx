@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, Activity, FileText, ChevronLeft, ChevronRight, Calendar, FilterX, ShieldCheck, UserPlus, LogIn, Trash2, Edit3, Tags } from "lucide-react";
+import { Search, Activity, FileText, ChevronLeft, ChevronRight, Calendar, FilterX, TextSearch, UserPlus, LogIn, Trash2, Edit3, Tags } from "lucide-react";
 import Animate from "@/components/animation/Animate.jsx";
 import api from "@/components/api/api";
 import notify from "@/components/toaster/notify";
@@ -11,7 +11,7 @@ const GLOBAL_GROUPS = [
   { id: "UPDATE", label: "Updates", icon: <Edit3 size={14} />, values: ["update document", "update user", "update permission", "update metadata"], color: "bg-warning" },
   { id: "DELETE", label: "Deletions", icon: <Trash2 size={14} />, values: ["delete document", "delete user", "delete version"], color: "bg-error" },
   { id: "AUTH", label: "Access", icon: <LogIn size={14} />, values: ["login", "logout"], color: "bg-info" },
-  { id: "REVIEW", label: "Reviews", icon: <ShieldCheck size={14} />, values: ["approve version", "reject version"], color: "bg-accent" },
+  { id: "REVIEW", label: "Reviews", icon: <TextSearch size={14} />, values: ["approve version", "reject version"], color: "bg-accent" },
 ];
 
 const AuditLogPage = () => {
@@ -46,21 +46,73 @@ const AuditLogPage = () => {
     setCurrentPage(1);
   };
 
-  const fetchLogs = useCallback(async () => {
+  // const fetchLogs = useCallback(async () => {
+  //   setLoading(true);
+  //   try {
+  //     const params = { page: currentPage, search: searchTerm };
+  //     if (startDate) params.start_date = startDate;
+  //     if (endDate) params.end_date = endDate;
+  //     if (backendActions.length > 0) params.action = backendActions;
+
+  //     const res = await api.get(`/audit-log/logs/`, {
+  //       params,
+  //       paramsSerializer: { indexes: null }
+  //     });
+
+  //     const rawArray = res.data.results || [];
+  //     setLogs(rawArray.map(item => ({
+  //       id: item.id,
+  //       user: item.username || "Unknown User",
+  //       user_id: item.user || "unknown",
+  //       action: item.action_type || "Unknown",
+  //       description: item.description || "No technical details provided.",
+  //       target: item.document_title || "Root System",
+  //       ip: item.ip_address || "0.0.0.0",
+  //       created_by_avatar_url: item.created_by_avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.username || "Unknown")}`,
+  //       time: item.timestamp
+  //     })));
+
+  //     setPaginationInfo({
+  //       count: res.data.count || 0,
+  //       hasNext: !!res.data.next,
+  //       hasPrev: !!res.data.previous
+  //     });
+  //   } catch (err) {
+  //     notify.error("Failed to fetch logs");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [currentPage, searchTerm, backendActions, startDate, endDate]);
+
+  // useEffect(() => {
+  //   const delayDebounceFn = setTimeout(() => fetchLogs(), 300);
+  //   return () => clearTimeout(delayDebounceFn);
+  // }, [fetchLogs]);
+
+  const fetchLogs = useCallback(async (signal) => {
     setLoading(true);
     try {
-      const params = { page: currentPage, search: searchTerm };
+      const params = {
+        page: currentPage,
+        search: searchTerm.trim()
+      };
+
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
+
+      // Convert array to string or handle as multi-param based on API needs
       if (backendActions.length > 0) params.action = backendActions;
 
       const res = await api.get(`/audit-log/logs/`, {
         params,
-        paramsSerializer: { indexes: null }
+        paramsSerializer: { indexes: null },
+        signal,
       });
 
-      const rawArray = res.data.results || [];
-      setLogs(rawArray.map(item => ({
+      const { results, count, next, previous } = res.data;
+
+      // Map and set in one go
+      setLogs((results || []).map(item => ({
         id: item.id,
         user: item.username || "Unknown User",
         user_id: item.user || "unknown",
@@ -73,20 +125,33 @@ const AuditLogPage = () => {
       })));
 
       setPaginationInfo({
-        count: res.data.count || 0,
-        hasNext: !!res.data.next,
-        hasPrev: !!res.data.previous
+        count: count || 0,
+        hasNext: !!next,
+        hasPrev: !!previous
       });
     } catch (err) {
-      notify.error("Failed to fetch logs");
+      // Don't show error if request was simply canceled
+      if (err.name !== 'CanceledError') {
+        notify.error("Failed to fetch logs");
+      }
     } finally {
       setLoading(false);
     }
   }, [currentPage, searchTerm, backendActions, startDate, endDate]);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => fetchLogs(), 300);
-    return () => clearTimeout(delayDebounceFn);
+    const controller = new AbortController();
+
+    // Increased slightly to 400ms for better server mercy
+    const delayDebounceFn = setTimeout(() => {
+      fetchLogs(controller.signal);
+    }, 400);
+
+    return () => {
+      controller.abort();
+      // Cancel pervious request if still pending
+      clearTimeout(delayDebounceFn);
+    };
   }, [fetchLogs]);
 
   const getActionColor = (action) => {
@@ -122,7 +187,7 @@ const AuditLogPage = () => {
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40" />
                 <input
                   type="text"
-                  placeholder="Search by multiple criteria ..."
+                  placeholder="Search by multiple criteria..."
                   className="input w-full pl-12 bg-base-200/50 border-base-300/30 focus:border-primary rounded-2xl font-bold placeholder-gray-700"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -227,7 +292,7 @@ const AuditLogPage = () => {
                                   <img src={log.created_by_avatar_url} alt="avatar" className="w-full h-full object-cover" />
                                 </div>
                               </div>
-                              <span className="font-bold text-sm tracking-tight truncate text-slate-800 dark:text-slate-100">{log.user}</span>
+                              <span className="font-bold text-sm tracking-tight">{log.user}</span>
                             </div>
                           </Link>
                           <div className="flex flex-col gap-1.5 w-full">
@@ -262,8 +327,21 @@ const AuditLogPage = () => {
                       </td>
                       <td className="text-[11px] opacity-60 px-10 font-mono text-center">
                         <div className="flex flex-col items-end">
-                          <span className="font-black text-base-content tracking-tighter">{new Date(log.time).toLocaleTimeString()}</span>
-                          <span className="text-[9px] font-bold opacity-30 uppercase tracking-widest">{new Date(log.time).toLocaleDateString()}</span>
+                          <span className="font-black text-base-content tracking-tighter">{
+                            new Date(log.time).toLocaleTimeString(undefined, {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                              hour12: true
+                            })}
+                          </span>
+                          <span className="text-[9px] font-bold opacity-30 uppercase tracking-widest">{
+                            new Date(log.time).toLocaleDateString("en-GB", {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </span>
                         </div>
                       </td>
                     </tr>

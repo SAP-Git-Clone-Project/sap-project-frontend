@@ -13,24 +13,77 @@ const Notifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef(null);
 
-  // Memoized fetch function
-  const fetchNotifications = useCallback(async () => {
+  const isFetchingRef = useRef(false);
+  const abortControllerRef = useRef(null);
+
+  // Memoized fetch function with cancellation support
+  const fetchNotifications = useCallback(async (isSilent = false) => {
+    // Prevent overlapping calls
+    if (isFetchingRef.current) return;
+
+    // Cancel previous in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    isFetchingRef.current = true;
+
     try {
-      const res = await api.get("/notifications/");
+      const res = await api.get("/notifications/", {
+        signal: controller.signal
+      });
       const allNotifs = res.data.notifications || [];
       setNotifications(allNotifs.slice(0, 10));
       setUnreadCount(res.data.unread_count || 0);
     } catch (err) {
-      console.error("Failed to fetch notifications", err);
+      if (err.name !== "CanceledError" && err.name !== "AbortError") {
+        console.error("Failed to fetch notifications", err);
+      }
+    } finally {
+      isFetchingRef.current = false;
     }
-  }, []); 
+  }, []);
+
+  useEffect(() => {
+    // Initial fetch on component mount
+    fetchNotifications();
+
+    // Instant fetch when the user switches back to this tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // true = silent fetch (no loading spinners)
+        fetchNotifications(true);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Smart Polling (every 15s, but only if visible)
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications(true);
+      }
+    }, 15000);
+
+    // Comprehensive Cleanup
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchNotifications]);
 
   // Initial Load & Live Update Interval
-  useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
-  }, [fetchNotifications]); 
+  // useEffect(() => {
+  //   fetchNotifications();
+  //   const interval = setInterval(fetchNotifications, 15000);
+  //   return () => clearInterval(interval);
+  // }, [fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -55,41 +108,52 @@ const Notifications = () => {
   };
 
   const markAsRead = async (id) => {
-    // Find the specific notification in your current state
     const targetNotif = notifications.find(n => n.id === id);
 
-    // Only proceed if the notification exists and is currently UNREAD
     if (targetNotif && !targetNotif.is_read) {
+      // Optimistic Update
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+
       try {
         await api.patch(`/notifications/${id}/read/`);
-
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-
-        // Show a toast when user clicks on single notification
         notify.success("Marked as read");
-
       } catch (err) {
+        // Revert to server state if the patch fails
         notify.error("Update failed");
+        fetchNotifications(true);
       }
     }
   };
 
   // HANDLER FOR ACCEPT/REJECT
   const handleRequestAction = async (e, id, action) => {
-    e.stopPropagation(); // Prevents the 'markAsRead' from firing on the parent div
+    e.stopPropagation();
+
+    // Mark it as read locally and change the verb so the user sees instant progress
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.id === id
+          ? { ...n, is_read: true, verb: `You ${action}ed the request for` }
+          : n
+      )
+    );
+    if (unreadCount > 0) setUnreadCount(prev => prev - 1);
+
     try {
-      // This calls the backend endpoint we created earlier
       await api.post(`/notifications/${id}/handle-request/`, { action });
       notify.success(`Request ${action === 'accept' ? 'Accepted' : 'Declined'}`);
 
-      // Refresh list to show updated verb (e.g., "You accepted...")
-      fetchNotifications();
+      // Refresh to get the final state from server
+      fetchNotifications(true);
     } catch (err) {
+
+      // If the server fails, we put it back 
       notify.error("Could not process request");
-      console.error(err);
+      // This will reset the state to whatever the server says
+      fetchNotifications(true);
     }
   };
 
@@ -217,9 +281,13 @@ const Notifications = () => {
                       {/* ---------------------------------- */}
 
                       <div className="mt-3 flex items-center justify-between">
-                        <p className="text-[9px] font-black text-base-content/30 uppercase tracking-[0.1em]">
-                          {new Date(n.created_at).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-                        </p>
+                        <p className="text-[9px] font-black text-base-content/30 uppercase tracking-[0.1em]">{
+                          new Date(n.created_at).toLocaleDateString('en-GB', { weekday: 'long' }) +
+                          ', ' +
+                          new Date(n.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) +
+                          ', ' +
+                          new Date(n.created_at).getFullYear()
+                        }</p>
                         {!n.is_read && (
                           <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-black uppercase">New</span>
                         )}

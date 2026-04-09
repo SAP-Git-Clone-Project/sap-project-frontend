@@ -154,7 +154,7 @@ const DocumentDetailsPage = () => {
 
   if (loading) {
     return (
-      <Loader message="Loading document detail..." />
+      <Loader message="Loading document details..." />
     );
   }
 
@@ -190,14 +190,14 @@ const DocumentDetailsPage = () => {
                 <>
                   <button
                     onClick={() => openModal("WRITE")}
-                    className="btn btn-secondary btn-sm rounded-xl"
+                    className="btn bg-secondary/40 hover:bg-secondary hover:scale-105 transition-all btn-sm rounded-xl"
                   >
                     Add Co-Author
                   </button>
 
                   <button
                     onClick={() => openModal("READ")}
-                    className="btn btn-outline btn-sm rounded-xl btn-accent"
+                    className="btn btn-outline btn-sm rounded-xl hover:scale-105 transition-all btn-accent"
                   >
                     Add Reader
                   </button>
@@ -205,7 +205,7 @@ const DocumentDetailsPage = () => {
                   {/* NEW BUTTON: Add Reviewer */}
                   <button
                     onClick={() => openModal("APPROVE")}
-                    className="btn btn-warning btn-sm rounded-xl"
+                    className="btn bg-warning/40 hover:bg-warning hover:scale-105 transition-all btn-sm rounded-xl"
                   >
                     Add Reviewer
                   </button>
@@ -225,7 +225,7 @@ const DocumentDetailsPage = () => {
                       alert("Failed to delete document.");
                     }
                   }}
-                  className="btn btn-error btn-sm rounded-xl"
+                  className="btn bg-error/60 hover:bg-error hover:scale-105 transition-all btn-sm rounded-xl text-white"
                 >
                   Delete Document
                 </button>
@@ -313,11 +313,25 @@ const DocumentDetailsPage = () => {
                   <div className="flex items-center gap-4 flex-1 md:justify-end">
                     <div className="flex flex-col md:items-end order-2 md:order-1">
                       <span className="text-[9px] uppercase font-black opacity-40 tracking-[0.2em] mb-0.5">Last Modified</span>
-                      <span className="text-sm font-bold text-base-content/90 tracking-tight">
-                        {new Date(document.updated_at).toLocaleDateString(undefined, {
-                          month: 'short', day: 'numeric', year: 'numeric'
-                        })}
-                      </span>
+                      <div className="flex flex-col items-center justify-center gap-0.5">
+                        {/* Date Div */}
+                        <div className="text-[13px] font-bold text-base-content/90 tracking-tight text-center">
+                          {new Date(document.updated_at).toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'short'
+                          }) + ', ' + new Date(document.updated_at).getFullYear()}
+                        </div>
+
+                        {/* Time Div */}
+                        <div className="text-[11px] font-medium opacity-40 uppercase tracking-wide text-center">
+                          {new Date(document.updated_at).toLocaleTimeString(undefined, {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                          })}
+                        </div>
+                      </div>
                     </div>
                     <div className="h-11 w-11 rounded-2xl bg-base-300/20 flex items-center justify-center text-secondary shadow-inner shrink-0 order-1 md:order-2">
                       <CalendarDays size={18} />
@@ -642,14 +656,30 @@ const DocumentDetailsPage = () => {
                               <span>{v.created_by_username || v.author}</span>
                               <span className="text-[9px] font-medium opacity-50 tracking-tighter">
                                 {v.created_at ? (
-                                  (() => {
-                                    const d = new Date(v.created_at);
-                                    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                                    const yearPart = d.getFullYear();
-                                    const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-                                    return `${datePart} ${yearPart}, ${timePart}`;
-                                  })()
-                                ) : 'Pending Date'}
+                                  <div className="flex flex-col items-center justify-center gap-0.5 w-full">
+                                    {/* Date Line - 13px */}
+                                    <div className="text-[13px] font-bold text-base-content whitespace-nowrap text-center">
+                                      {new Date(v.created_at).toLocaleDateString('en-GB', {
+                                        day: 'numeric',
+                                        month: 'short'
+                                      }) + ', ' + new Date(v.created_at).getFullYear()}
+                                    </div>
+
+                                    {/* Time Line - 11px */}
+                                    <div className="text-[11px] font-medium opacity-40 uppercase tracking-wide text-center">
+                                      {new Date(v.created_at).toLocaleTimeString(undefined, {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: true
+                                      })}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-center w-full">
+                                    <div className="text-[11px] italic opacity-30 text-center">Pending Date</div>
+                                  </div>
+                                )}
                               </span>
                             </div>
                           </td>

@@ -48,7 +48,9 @@ const InputField = ({ label, icon, error, isPassword, showPass, togglePass, hasF
       {error && (
         <Animate variant="fade-in" duration={300}>
           <p className="mt-1 ml-1 flex items-center gap-1.5 text-[11px] font-semibold text-error">
-            <AlertCircle size={12} /> {error}
+            <AlertCircle size={12} />
+            {/* If error is an array, take the first one; otherwise render as is */}
+            {Array.isArray(error) ? error[0] : error}
           </p>
         </Animate>
       )}

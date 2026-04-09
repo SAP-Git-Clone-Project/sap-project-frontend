@@ -67,12 +67,23 @@ const Login = () => {
   const [showPass, setShowPass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Redirect if user is already logged in
   useEffect(() => {
     if (ready && isAuthenticated) {
       const from = location.state?.from?.pathname || "/documents";
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, ready, navigate, location]);
+
+  // Show success message if coming from a successful Registration
+  useEffect(() => {
+    if (location.state?.registered) {
+      // Clean up the location state so the message doesn't repeat on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+      
+      notify.success("Account created! You can now log in.");
+    }
+  }, [location, navigate]);
 
   const setField = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -103,6 +114,8 @@ const Login = () => {
     if (!validate() || submitting) return;
 
     setSubmitting(true);
+    // Clear previous errors so the user starts fresh
+    setErrors({}); 
 
     try {
       const res = await api.post("/users/login/", {
@@ -114,9 +127,7 @@ const Login = () => {
 
       const userData = {
         id: apiUser?.id,
-        name:
-          `${apiUser?.first_name || ""} ${apiUser?.last_name || ""}`.trim() ||
-          apiUser?.username,
+        name: `${apiUser?.first_name || ""} ${apiUser?.last_name || ""}`.trim() || apiUser?.username,
         username: apiUser?.username,
         email: apiUser?.email,
         avatar: apiUser?.avatar ?? null,
@@ -129,10 +140,22 @@ const Login = () => {
 
       login({ access, refresh }, userData);
       notify.success("Welcome back!");
+
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.detail || "Invalid email or password.";
-      notify.error(errorMessage);
+      // Improved error parsing
+      const backendErrors = err.response?.data;
+
+      if (backendErrors && typeof backendErrors === 'object') {
+        // If the backend sent field-specific errors, highlight the inputs
+        // This maps backend keys (email, password) directly to your local errors state
+        setErrors(backendErrors);
+
+        // Show a general toast - if there's no "detail" key, use a generic message
+        notify.error("Please check your credentials.");
+      } else {
+        // Fallback for network issues or server 500 crashes
+        notify.error("Connection lost. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }

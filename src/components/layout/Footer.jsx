@@ -101,7 +101,7 @@ const Footer = () => {
         <div className="pt-8 border-t border-base-300 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-8">
           <div className="space-y-2">
             <div className="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.3em]">
-              © 2026 SAP Hub Systems
+              © {new Date().getFullYear()} SAP Hub. All rights reserved.
             </div>
             <p className="text-[11px] text-base-content/50 leading-relaxed max-w-md whitespace-nowrap">
               Created by <span className="font-bold text-base-content/80 underline decoration-primary/30">Jewel Shahi, Alexander Iliev, Alexander Ivanov, Plamen Nikolov and Krasimir Milanov.</span>

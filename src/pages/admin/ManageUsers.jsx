@@ -484,7 +484,7 @@ const ManageUsers = () => {
                                     }`}
                                 >
                                   <UserCog size={14} />
-                                  {user.is_staff ? 'Revoke Staff' : 'Make Staff'}
+                                  {user.is_staff ? 'Revoke Admin' : 'Make Admin'}
                                 </button>
                               )}
 
@@ -516,9 +516,9 @@ const ManageUsers = () => {
 
                         <td className="text-[11px] opacity-60 px-10 font-mono text-center">
                           <div className="flex flex-col items-end">
-                            <span className="font-black text-base-content tracking-tighter">
+                            <span className="font-black text-base-content tracking-tighter text-[13px]">
                               {user.created_at
-                                ? new Date(user.created_at).toLocaleDateString(undefined, {
+                                ? new Date(user.created_at).toLocaleDateString("en-GB", {
                                   year: 'numeric',
                                   month: '2-digit',
                                   day: '2-digit'
@@ -527,9 +527,10 @@ const ManageUsers = () => {
                             </span>
                             <span className="text-[9px] font-bold opacity-30 uppercase tracking-widest">
                               {user.created_at
-                                ? new Date(user.created_at).toLocaleTimeString([], {
+                                ? new Date(user.created_at).toLocaleTimeString(undefined, {
                                   hour: '2-digit',
                                   minute: '2-digit',
+                                  second: '2-digit',
                                   hour12: true
                                 })
                                 : "TIME_MISSING"}

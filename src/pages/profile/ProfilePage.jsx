@@ -252,7 +252,9 @@ const ProfilePage = () => {
 
                     <div className="flex items-center gap-3 px-4 py-2 bg-base-300/30 rounded-xl text-sm border border-white/5">
                       <Calendar size={16} className="text-teal" />
-                      <span>Joined {new Date(profile?.created_at).toLocaleDateString()}</span>
+                      <span>Joined on {
+                        new Date(profile?.created_at).toLocaleDateString("en-GB")
+                      }</span>
                     </div>
 
                     {profile?.is_superuser && (

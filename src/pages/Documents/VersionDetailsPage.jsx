@@ -261,12 +261,26 @@ const VersionDetailsPage = () => {
 
                   <div className="flex items-center gap-4 flex-1 md:justify-end">
                     <div className="flex flex-col md:items-end order-2 md:order-1">
-                      <span className="text-[9px] uppercase font-black opacity-40 tracking-[0.2em] mb-0.5">Timestamp</span>
-                      <span className="text-sm font-bold text-base-content/90 tracking-tight">
-                        {new Date(version.created_at).toLocaleDateString(undefined, {
-                          month: 'short', day: 'numeric', year: 'numeric'
-                        })}
-                      </span>
+                      <span className="text-[9px] uppercase font-black opacity-40 tracking-[0.2em] mb-0.5">Created at</span>
+                      <div className="flex flex-col items-center justify-center gap-0.5">
+                        {/* Date Div */}
+                        <div className="text-[13px] font-bold text-base-content/90 tracking-tight text-center">
+                          {new Date(version.created_at).toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'short'
+                          }) + ', ' + new Date(version.created_at).getFullYear()}
+                        </div>
+
+                        {/* Time Div */}
+                        <div className="text-[11px] font-medium opacity-40 uppercase tracking-wide text-center">
+                          {new Date(version.created_at).toLocaleTimeString(undefined, {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                          })}
+                        </div>
+                      </div>
                     </div>
                     <div className="h-11 w-11 rounded-2xl bg-base-300/20 flex items-center justify-center text-secondary shadow-inner shrink-0 order-1 md:order-2">
                       <CalendarDays size={18} />
@@ -385,10 +399,10 @@ const VersionDetailsPage = () => {
                               <button
                                 key={r.user}
                                 onMouseDown={(e) => {
-                                    // Use onMouseDown to prevent blur from closing menu before click is registered
-                                    e.preventDefault(); 
-                                    handleToggleReviewer(r.user);
-                                    setReviewerSearch("");
+                                  // Use onMouseDown to prevent blur from closing menu before click is registered
+                                  e.preventDefault();
+                                  handleToggleReviewer(r.user);
+                                  setReviewerSearch("");
                                 }}
                                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/10 transition-colors border-b border-base-300/5 last:border-0 text-left"
                               >

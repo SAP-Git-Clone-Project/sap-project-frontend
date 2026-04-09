@@ -223,7 +223,10 @@ const DocumentsPage = () => {
                   </thead>
                   <tbody className="divide-y divide-base-300/5">
                     {filteredDocuments.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-primary/5 transition-colors group">
+                      <tr
+                        key={doc.id}
+                        className={`hover:bg-primary/5 transition-colors group ${doc.is_deleted ? "bg-error/15 hover:bg-error/25" : ""}`}
+                      >
                         <td className="py-6 px-10">
                           <Link to={`/documents/${doc.id}`} className="flex items-center gap-4 outline-none">
                             <div className="p-3 bg-base-300/30 rounded-xl group-hover:text-primary group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
@@ -238,8 +241,7 @@ const DocumentsPage = () => {
                         <td>
                           <Link to={`/profile/${doc.created_by}`} className="flex items-center gap-3 hover:text-primary transition-colors">
                             <div className="avatar group">
-                              <div className="w-7 h-7 rounded-full ring ring-primary/10 ring-offset-base-100 ring-offset-1 
-    group-hover:ring-primary/40 group-hover:scale-110 transition-all duration-300 overflow-hidden bg-base-300">
+                              <div className="w-7 h-7 rounded-full ring ring-primary/10 ring-offset-base-100 ring-offset-1 group-hover:ring-primary/40 group-hover:scale-110 transition-all duration-300 overflow-hidden bg-base-300">
                                 <img
                                   src={doc.created_by_avatar_url}
                                   alt={doc.created_by_username}
@@ -256,12 +258,24 @@ const DocumentsPage = () => {
                           </div>
                         </td>
                         <td className="text-center">
-                          <span className="badge badge-sm border-none bg-primary/10 text-primary font-mono font-black px-3">v{doc.active_version?.version_number || "1.0"}</span>
+                          <span className="badge badge-sm border-none bg-primary/10 text-primary font-mono font-black px-3">v{doc.active_version?.version_number || "1"}</span>
                         </td>
                         <td className="text-right px-10 text-[11px] opacity-60">
                           <div className="flex flex-col items-end">
-                            <span className="font-bold text-base-content/80">{new Date(doc.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                            <span className="text-[9px] opacity-50 font-mono uppercase">{new Date(doc.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="font-bold text-base-content/80">{
+                              new Date(doc.updated_at).toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short'
+                              }) + ', ' + new Date(doc.updated_at).getFullYear()
+                            }</span>
+                            <span className="text-[9px] opacity-50 font-mono uppercase">{
+                              new Date(doc.updated_at).toLocaleTimeString(undefined, {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true
+                              })}
+                            </span>
                           </div>
                         </td>
                       </tr>
