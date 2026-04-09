@@ -15,8 +15,30 @@
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
+.gradient-text-clip {
+  display: inline-block;
+  background-image: linear-gradient(60deg, #232bc4, #1dbde6, #60b6f1, #42047e);
 
+  background-size: 200% auto;
+
+  animation: gradient-flow 10s linear infinite alternate;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+}
+
+/* The animation keyframes */
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}

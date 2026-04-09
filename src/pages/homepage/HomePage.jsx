@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
 import {
   FileText, ShieldCheck, Users, Zap,
   CheckCircle, Lock, Eye, EyeOff,
@@ -11,9 +13,6 @@ import {
   Bell, BellRing, ClipboardList,
   Activity, AlertCircle, ShieldAlert, Crown
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import GlassCard from "@/components/widgets/GlassCard.jsx";
-import BackgroundEffects from "@/components/background/BackgroundEffects.jsx";
 
 import {
   ScrollReveal,
@@ -23,9 +22,14 @@ import {
   CharReveal,
   WordReveal,
   LineReveal,
-  CounterReveal,
+  KineticText,
   useGsapRefresh,
 } from "@/components/gsap/index.jsx";
+
+import GlassCard from "@/components/widgets/GlassCard.jsx";
+import BackgroundEffects from "@/components/background/BackgroundEffects.jsx";
+
+import "@/index.css";
 
 const PartialIcon = () => (
   <span className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border-2 border-warning/50 bg-warning/10 relative mx-auto">
@@ -88,7 +92,7 @@ const HomePage = () => {
         </div>
 
         <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-base-content leading-[1.05]">
-          <CharReveal
+          <KineticText
             className="block"
             stagger={0.02}
             y={40}
@@ -97,23 +101,22 @@ const HomePage = () => {
             start="top 99%"
           >
             Your documents,
-          </CharReveal>
+          </KineticText>
 
-          {/* FIX: Fix here */}
-          {/* UPDATED GRADIENT TEXT */}
-          <span className="inline-block overflow-visible bg-gradient-to-r from-primary via-secondary to-accent bg-[length:200%_auto] animate-gradient-x">
-            <CharReveal
-              className="inline-block [transform-style:preserve-3d] [backface-visibility:hidden]"
-              stagger={0.02}
-              y={40}
-              rotateX={-30}
-              duration={0.4}
-              delay={0.2}
-              start="top 85%"
-            >
+          {/* Applying the pure CSS class here */}
+          <KineticText
+            className="inline-block [transform-style:preserve-3d] [backface-visibility:hidden]"
+            stagger={0.02}
+            y={40}
+            rotateX={-30}
+            duration={0.4}
+            delay={0.2}
+            start="top 85%"
+          >
+            <div className="gradient-text-clip">
               version controlled.
-            </CharReveal>
-          </span>
+            </div>
+          </KineticText>
         </h1>
 
         <WordReveal
@@ -992,7 +995,7 @@ const HomePage = () => {
                   {[
                     { action: "Access audit log", su: true, admin: true, owner: false, writer: false, reviewer: false, viewer: false },
                     { action: "Manage users & roles", su: true, admin: true, owner: false, writer: false, reviewer: false, viewer: false },
-                    { action: "Delete users", su: true, admin: "partial", owner: false, writer: false, reviewer: false, viewer: false },
+                    { action: "Delete users", su: true, admin: true, owner: false, writer: false, reviewer: false, viewer: false },
                   ].map((row, i) => (
                     <tr key={`plat-${i}`} className="border-b border-base-content/[0.03] hover:bg-base-content/[0.02] transition-colors">
                       <td className="text-left p-3 sm:p-3.5 text-base-content/60 font-medium text-xs">{row.action}</td>

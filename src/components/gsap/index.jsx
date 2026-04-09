@@ -552,3 +552,121 @@ export function useGsapRefresh() {
     };
   }, []);
 }
+
+// ════════════════════════════════════════════════════
+// KineticText - special effect for the first words
+// ════════════════════════════════════════════════════
+export function KineticText({
+  children,
+  className,
+  style,
+  as: Tag = "div",
+  stagger = 0.03,
+  y = 50,
+  scale = 1.2,
+  blur = 10,
+  skewX = 10,
+  rotateX = 20,
+  opacity = 0,
+  duration = 5.0,
+  delay = 0.5,
+  ease = "power4.out",
+  triggerOnScroll = false,
+}) {
+  const containerRef = useRef(null);
+  const ctxRef = useRef(null);
+
+  const text = typeof children === "string" ? children : "";
+
+  const chars = useMemo(() => {
+    if (!text) return null;
+    const segments = text.split(/(\s+)/);
+    let idx = 0;
+    return segments.map((seg, si) => {
+      if (/^\s+$/.test(seg)) {
+        return (
+          <span key={`s${si}`} className="inline-block">
+            &nbsp;
+          </span>
+        );
+      }
+      return (
+        <span key={`w${si}`} className="inline-block overflow-hidden">
+          {[...seg].map((ch) => {
+            const i = idx++;
+            return (
+              <span
+                key={`c${i}`}
+                data-char
+                className="inline-block will-change-transform"
+                style={{ display: "inline-block", whiteSpace: "pre" }}
+              >
+                {ch}
+              </span>
+            );
+          })}
+        </span>
+      );
+    });
+  }, [text]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !text) return;
+
+    ctxRef.current = gsap.context(() => {
+      const spans = el.querySelectorAll("[data-char]");
+      if (!spans.length) return;
+
+      gsap.set(spans, {
+        opacity,
+        y,
+        scale,
+        rotationX: rotateX,
+        skewX: skewX,
+        filter: `blur(${blur}px)`,
+        transformOrigin: "center bottom",
+      });
+
+      const tl = gsap.timeline({
+        delay: delay,
+        defaults: { ease, duration }
+      });
+
+      tl.to(spans, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        rotationX: 0,
+        skewX: 0,
+        filter: "blur(0px)",
+        stagger: {
+          amount: stagger * spans.length,
+          from: "start"
+        },
+        scrollTrigger: triggerOnScroll ? {
+          trigger: el,
+          start: "top 85%",
+          toggleActions: "play none none reverse",
+        } : null,
+      });
+
+    }, el);
+
+    return () => ctxRef.current?.revert();
+  }, [text, delay, stagger, duration, ease, y, scale, blur, skewX, rotateX, opacity, triggerOnScroll]);
+
+  if (!text) {
+    return <Tag className={className} style={style}>{children}</Tag>;
+  }
+
+  return (
+    <Tag
+      ref={containerRef}
+      className={className}
+      style={{ display: "inline-block", ...style }}
+    >
+      {chars}
+    </Tag>
+  );
+}
