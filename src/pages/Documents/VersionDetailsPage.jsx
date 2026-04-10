@@ -95,6 +95,16 @@ const VersionDetailsPage = () => {
   const [readerSearch, setReaderSearch] = useState("");
   const [showReaderDropdown, setShowReaderDropdown] = useState(false);
 
+  // Tracks permission row IDs of readers who are inherited from the document
+  // level (version === null on their permission record). These cannot be
+  // revoked here — they must be managed from the document page.
+  const [lockedReaderIds, setLockedReaderIds] = useState(new Set());
+
+  // Confirmation modal state (mirrors DocumentDetailsPage removeTarget pattern)
+  const [removeReaderTarget, setRemoveReaderTarget] = useState(null); // member object
+  const [removeReaderLoading, setRemoveReaderLoading] = useState(false);
+  const [removeReaderError, setRemoveReaderError] = useState(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -108,7 +118,22 @@ const VersionDetailsPage = () => {
         const membersRes = await api.get(
           `/permissions/${versionData.id}/members/`,
         );
-        setMembers(membersRes.data);
+        const membersData = membersRes.data;
+        setMembers(membersData);
+
+        // Determine which READ permission rows are inherited from the document
+        // (their `version` field is null) vs explicitly granted on this version.
+        // Inherited readers are locked — removal must happen on the document page.
+        const inherited = new Set(
+          membersData
+            .filter(
+              (m) =>
+                m.permission_type?.toUpperCase() === "READ" &&
+                m.version === null,
+            )
+            .map((m) => m.id),
+        );
+        setLockedReaderIds(inherited);
 
         const allUsersRes = await api.get("/users/search/");
         setAllUsers(allUsersRes.data);
@@ -166,7 +191,6 @@ const VersionDetailsPage = () => {
         .catch(() => setPreviewContent("Preview unavailable."));
     }
   }, [version]);
-
 
   const documentReviewers = useMemo(() => {
     if (!members.length) return [];
@@ -265,23 +289,41 @@ const VersionDetailsPage = () => {
         document: version.document,
         permission_type: "READ",
       });
-      // Refresh members list
       const membersRes = await api.get(`/permissions/${id}/members/`);
-      setMembers(membersRes.data);
+      const membersData = membersRes.data;
+      setMembers(membersData);
+
+      // Recompute locked readers after member list refresh
+      const inherited = new Set(
+        membersData
+          .filter(
+            (m) =>
+              m.permission_type?.toUpperCase() === "READ" &&
+              m.version === null,
+          )
+          .map((m) => m.id),
+      );
+      setLockedReaderIds(inherited);
       setReaderSearch("");
     } catch (err) {
       console.error("Failed to add reader", err);
     }
   };
 
-  const handleRevokePermission = async (permissionId) => {
-    if (!window.confirm("Are you sure you want to revoke this user's access?"))
-      return;
+  const handleRevokeReader = async () => {
+    if (!removeReaderTarget) return;
+    setRemoveReaderLoading(true);
+    setRemoveReaderError(null);
+
     try {
-      await api.delete(`/permissions/${permissionId}/revoke/`);
-      setMembers(members.filter((m) => m.id !== permissionId));
+      await api.delete(`/permissions/${removeReaderTarget.id}/revoke/`);
+      setMembers((prev) => prev.filter((m) => m.id !== removeReaderTarget.id));
+      setRemoveReaderTarget(null);
     } catch (err) {
       console.error("Failed to revoke permission", err);
+      setRemoveReaderError("Failed to remove access. Please try again.");
+    } finally {
+      setRemoveReaderLoading(false);
     }
   };
 
@@ -534,6 +576,7 @@ const VersionDetailsPage = () => {
                     <tr className="text-secondary uppercase text-[10px] tracking-widest font-black border-b border-base-300/10">
                       <th className="bg-transparent">Identity</th>
                       <th className="bg-transparent">Access Type</th>
+                      <th className="bg-transparent">Scope</th>
                       <th className="bg-transparent text-right">Actions</th>
                     </tr>
                   </thead>
@@ -541,41 +584,92 @@ const VersionDetailsPage = () => {
                     {readers.length === 0 ? (
                       <tr>
                         <td
-                          colSpan="3"
+                          colSpan="4"
                           className="text-center py-10 opacity-30 text-[10px] font-black uppercase tracking-widest"
                         >
-                          No version-specific readers assigned
+                          No readers assigned
                         </td>
                       </tr>
                     ) : (
-                      readers.map((reader) => (
-                        <tr
-                          key={reader.id}
-                          className="hover:bg-base-200/30 transition-colors"
-                        >
-                          <td>
-                            <div className="flex items-center gap-3">
-                              <User size={14} className="opacity-40" />
-                              <span className="font-bold text-sm">
-                                {reader.username}
+                      readers.map((reader) => {
+                        const isLocked = lockedReaderIds.has(reader.id);
+                        return (
+                          <tr
+                            key={reader.id}
+                            className="hover:bg-base-200/30 transition-colors group/row"
+                          >
+                            {/* Identity */}
+                            <td>
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-full overflow-hidden ring-1 ring-info/20 bg-base-300/20 shrink-0">
+                                  <img
+                                    src={
+                                      reader.user_avatar ||
+                                      `https://ui-avatars.com/api/?name=${reader.username}`
+                                    }
+                                    className="h-full w-full object-cover"
+                                    alt=""
+                                  />
+                                </div>
+                                <div className="flex flex-col leading-tight">
+                                  <span className="font-bold text-sm">
+                                    {reader.full_name ||
+                                      reader.username ||
+                                      "Unidentified Subject"}
+                                  </span>
+                                  <span className="text-[10px] font-mono opacity-40">
+                                    {reader.username}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Access badge */}
+                            <td>
+                              <span className="badge badge-outline border-info/30 text-info text-[9px] font-black uppercase px-2">
+                                Read Only
                               </span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="badge badge-outline border-info/30 text-info text-[9px] font-black uppercase px-2">
-                              Read Only
-                            </span>
-                          </td>
-                          <td className="text-right">
-                            <button
-                              onClick={() => handleRevokePermission(reader.id)}
-                              className="btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+
+                            {/* Scope: version-specific vs inherited */}
+                            <td>
+                              {isLocked ? (
+                                <span className="text-[9px] font-black uppercase tracking-widest opacity-40 bg-base-300/30 px-2 py-1 rounded-lg">
+                                  Document-Level
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-black uppercase tracking-widest text-info bg-info/10 border border-info/20 px-2 py-1 rounded-lg">
+                                  Version-Specific
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Action */}
+                            <td className="text-right">
+                              {isLocked ? (
+                                <div
+                                  className="tooltip tooltip-left before:z-[10000] after:z-[10000]"
+                                  data-tip="Inherited from document — manage on the document page"
+                                >
+                                  <div className="btn btn-ghost btn-xs text-base-content/20 cursor-not-allowed rounded-lg p-1">
+                                    <ShieldCheck size={14} />
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    setRemoveReaderTarget(reader)
+                                  }
+                                  className="opacity-0 group-hover/row:opacity-100 transition-all btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg"
+                                  title="Revoke version access"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -793,8 +887,7 @@ const VersionDetailsPage = () => {
                                   <div className="flex items-center gap-3">
                                     <div className="avatar">
                                       <div className="w-10 h-10 rounded-full ring-2 ring-primary/10 group-hover:ring-primary/40 group-hover:scale-110 transition-all duration-300 overflow-hidden bg-base-300">
-                                      {/* FIX: Add correct image */}
-                                        <img src={review.new_version.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                                        <img src={review.new_version?.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                                       </div>
                                     </div>
                                     <span className="font-bold text-sm tracking-tight">{review.reviewer_name}</span>
@@ -875,6 +968,120 @@ const VersionDetailsPage = () => {
           </div>
         </Animate>
       </div>
+
+      {/* REMOVE READER CONFIRMATION MODAL */}
+      {removeReaderTarget && (
+        <dialog
+          ref={(el) => {
+            if (el && !el.open) el.showModal();
+          }}
+          className="modal backdrop-blur-lg"
+          onClose={() => {
+            setRemoveReaderTarget(null);
+            setRemoveReaderError(null);
+          }}
+        >
+          <div className="modal-box bg-base-100 p-8 rounded-[2rem] max-w-sm space-y-6 shadow-2xl border border-error/10 relative overflow-hidden">
+            <div className="absolute inset-0 bg-error/3 pointer-events-none rounded-[2rem]" />
+
+            {/* Header */}
+            <div className="flex items-start gap-4">
+              <div className="h-10 w-10 rounded-2xl bg-error/10 border border-error/20 flex items-center justify-center shrink-0">
+                <Trash2 size={18} className="text-error" />
+              </div>
+              <div>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-error mb-1">
+                  Revoke Version Access
+                </h3>
+                <h2 className="font-bold text-lg leading-tight">
+                  Remove Reader
+                </h2>
+              </div>
+            </div>
+
+            {/* User preview */}
+            <div className="p-4 rounded-xl bg-base-200/40 border border-base-content/5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full overflow-hidden ring-2 ring-error/20 shrink-0">
+                  <img
+                    src={
+                      removeReaderTarget.user_avatar ||
+                      `https://ui-avatars.com/api/?name=${removeReaderTarget.username}`
+                    }
+                    className="h-full w-full object-cover"
+                    alt=""
+                  />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-bold truncate">
+                    {removeReaderTarget.full_name ||
+                      removeReaderTarget.username ||
+                      "Unidentified Subject"}
+                  </span>
+                  <span className="text-[10px] font-mono opacity-40 tracking-tighter">
+                    ID: {removeReaderTarget.user}
+                  </span>
+                </div>
+              </div>
+              <p className="text-[11px] text-base-content/50 leading-relaxed">
+                This will revoke their{" "}
+                <span className="font-black text-base-content/70 uppercase tracking-wide">
+                  Read
+                </span>{" "}
+                access to this specific version. Their document-level access
+                (if any) is unaffected.
+              </p>
+            </div>
+
+            {/* Error */}
+            {removeReaderError && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-error/10 border border-error/20 text-error text-[10px] font-bold">
+                <XCircle size={12} />
+                {removeReaderError}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                className="btn btn-ghost flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100"
+                onClick={() => {
+                  setRemoveReaderTarget(null);
+                  setRemoveReaderError(null);
+                }}
+                disabled={removeReaderLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn bg-error hover:bg-error/80 text-white flex-[2] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                onClick={handleRevokeReader}
+                disabled={removeReaderLoading}
+              >
+                {removeReaderLoading ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <>
+                    <Trash2 size={13} />
+                    Confirm Removal
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <form method="dialog" className="modal-backdrop">
+            <button
+              onClick={() => {
+                setRemoveReaderTarget(null);
+                setRemoveReaderError(null);
+              }}
+            >
+              close
+            </button>
+          </form>
+        </dialog>
+      )}
     </section>
   );
 };

@@ -16,6 +16,8 @@ import {
   Info,
   FileCog,
   CloudCog,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
@@ -84,6 +86,14 @@ const DocumentDetailsPage = () => {
 
   const [versionPermissions, setVersionPermissions] = useState({});
 
+  // Track which reviewer user IDs have ever been assigned to a version
+  const [lockedReviewerUserIds, setLockedReviewerUserIds] = useState(new Set());
+
+  // Removal confirmation state
+  const [removeTarget, setRemoveTarget] = useState(null); // { member, type: 'co-author' | 'reviewer' }
+  const [removeLoading, setRemoveLoading] = useState(false);
+  const [removeError, setRemoveError] = useState(null);
+
   useEffect(() => {
     const delay = setTimeout(async () => {
       try {
@@ -119,10 +129,33 @@ const DocumentDetailsPage = () => {
       setShowModal(false);
       setSelectedUser(null);
       setSearch("");
-      // Optional: You might want to refetch members here instead of a full reload
-      // window.location.reload();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Fetch all version-level reviewer assignments to determine locked reviewers
+  const fetchLockedReviewers = async (fetchedVersions) => {
+    if (!fetchedVersions || fetchedVersions.length === 0) return;
+
+    try {
+      const versionReviewerResults = await Promise.all(
+        fetchedVersions.map((v) =>
+          api
+            .get(`/permissions/version/${v.id}/reviewers/`)
+            .then((r) => r.data)
+            .catch(() => []),
+        ),
+      );
+
+      const lockedIds = new Set();
+      versionReviewerResults.flat().forEach((reviewer) => {
+        if (reviewer?.user) lockedIds.add(reviewer.user);
+      });
+
+      setLockedReviewerUserIds(lockedIds);
+    } catch (err) {
+      console.error("Failed to fetch version reviewers:", err);
     }
   };
 
@@ -154,6 +187,9 @@ const DocumentDetailsPage = () => {
             permMap[vId] = vMembers;
           });
           setVersionPermissions(permMap);
+
+          // Determine which reviewers are locked (have been assigned to a version)
+          await fetchLockedReviewers(fetchedVersions);
         }
       } catch (err) {
         setError("Database Linkage Failure.");
@@ -164,6 +200,37 @@ const DocumentDetailsPage = () => {
 
     fetchData();
   }, [id]);
+
+  const refetchMembers = async () => {
+    try {
+      const membersRes = await api.get(`/permissions/${id}/members/`);
+      setMembers(membersRes.data);
+    } catch (err) {
+      console.error("Failed to refetch members:", err);
+    }
+  };
+
+  const handleRemovePermission = async () => {
+    if (!removeTarget) return;
+    setRemoveLoading(true);
+    setRemoveError(null);
+
+    if (removeTarget.member.id in lockedReviewerUserIds) {
+      return;
+    }
+
+    try {
+      await api.delete(`/permissions/${removeTarget.member.id}/revoke/`);
+
+      await refetchMembers();
+      setRemoveTarget(null);
+    } catch (err) {
+      console.error(err);
+      setRemoveError("Failed to remove permission. Please try again.");
+    } finally {
+      setRemoveLoading(false);
+    }
+  };
 
   const isReader = useMemo(() => {
     if (!user || !members.length) return false;
@@ -217,11 +284,6 @@ const DocumentDetailsPage = () => {
     user,
   ]);
 
-  const userInfoForReviewers =
-    permissionType === "APPROVE"
-      ? users.filter((u) => reviewers.some((r) => r.user === u.id))
-      : users;
-
   const displayContent =
     versions[0]?.content ||
     "System Remark: No description data provided for this entry.";
@@ -239,6 +301,8 @@ const DocumentDetailsPage = () => {
         linkTo="/documents"
       />
     );
+
+  const canManagePermissions = isOwner || isSuperUser;
 
   return (
     <section className="px-6 py-20 min-h-screen bg-base-100 overflow-x-hidden">
@@ -271,7 +335,6 @@ const DocumentDetailsPage = () => {
                     Add Co-Author
                   </button>
 
-                  {/* NEW BUTTON: Add Reviewer */}
                   <button
                     onClick={() => openModal("APPROVE")}
                     className="btn bg-warning/40 hover:bg-warning hover:scale-105 transition-all btn-sm rounded-xl"
@@ -471,12 +534,16 @@ const DocumentDetailsPage = () => {
                 {/* TABLE WRAPPER FOR X-AXIS SCROLL */}
                 <div className="flex-1 flex flex-col min-h-0 border border-base-content/5 rounded-xl bg-base-100/10 overflow-hidden">
                   <div className="overflow-x-auto custom-scrollbar">
-                    {/* Set a min-width here so columns don't collapse on small screens */}
                     <div className="min-w-[500px] flex flex-col">
                       {/* Table Header Row */}
-                      <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-base-content/10 bg-base-content/5 text-[9px] font-black uppercase tracking-widest opacity-60 shrink-0">
-                        <div className="col-span-8">User Details</div>
-                        <div className="col-span-4 text-right">User ID</div>
+                      <div
+                        className={`grid gap-2 px-4 py-2 border-b border-base-content/10 bg-base-content/5 text-[9px] font-black uppercase tracking-widest opacity-60 shrink-0 ${canManagePermissions ? "grid-cols-12" : "grid-cols-12"}`}
+                      >
+                        <div className="col-span-7">User Details</div>
+                        <div className="col-span-3 text-right">User ID</div>
+                        {canManagePermissions && (
+                          <div className="col-span-2 text-right">Action</div>
+                        )}
                       </div>
 
                       {/* Scrollable Rows (Y-Axis) */}
@@ -515,11 +582,27 @@ const DocumentDetailsPage = () => {
                                   </div>
                                 </Link>
                               </div>
-                              <div className="col-span-5 text-right">
+                              <div className="col-span-3 text-right">
                                 <span className="text-[9px] tracking-tighter text-primary font-black px-2 py-0.5">
                                   {m.user}
                                 </span>
                               </div>
+                              {canManagePermissions && (
+                                <div className="col-span-2 flex justify-end">
+                                  <button
+                                    onClick={() =>
+                                      setRemoveTarget({
+                                        member: m,
+                                        type: "co-author",
+                                      })
+                                    }
+                                    className="opacity-0 group-hover/row:opacity-100 transition-all btn btn-ghost btn-xs rounded-lg text-error hover:bg-error/10 hover:scale-105 p-1"
+                                    title="Remove co-author"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           ))
                         ) : (
@@ -553,52 +636,87 @@ const DocumentDetailsPage = () => {
                   <div className="overflow-x-auto custom-scrollbar">
                     <div className="min-w-[500px] flex flex-col">
                       <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-base-content/10 bg-base-content/5 text-[9px] font-black uppercase tracking-widest opacity-60 shrink-0">
-                        <div className="col-span-8">User Details</div>
-                        <div className="col-span-4 text-right">User ID</div>
+                        <div className="col-span-7">User Details</div>
+                        <div className="col-span-3 text-right">User ID</div>
+                        {canManagePermissions && (
+                          <div className="col-span-2 text-right">Action</div>
+                        )}
                       </div>
 
                       <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
                         {reviewers?.length > 0 ? (
-                          reviewers.map((m) => (
-                            <div
-                              key={m.id}
-                              className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-base-content/5 items-center hover:bg-warning/5 transition-colors group/row"
-                            >
-                              <div className="col-span-7">
-                                <Link
-                                  to={`/profile/${m.user}`}
-                                  className="flex items-center gap-3 group/link min-w-0 w-fit"
-                                >
-                                  <div className="h-8 w-8 rounded-full ring-1 ring-warning/30 bg-base-300/20 overflow-hidden shrink-0 group-hover/link:ring-warning/60 transition-all">
-                                    <img
-                                      src={
-                                        m.user_avatar ||
-                                        `https://ui-avatars.com/api/?name=${m.username}`
-                                      }
-                                      className="h-full w-full object-cover"
-                                      alt=""
-                                    />
+                          reviewers.map((m) => {
+                            const isLocked = lockedReviewerUserIds.has(m.user);
+                            return (
+                              <div
+                                key={m.id}
+                                className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-base-content/5 items-center hover:bg-warning/5 transition-colors group/row"
+                              >
+                                <div className="col-span-7">
+                                  <Link
+                                    to={`/profile/${m.user}`}
+                                    className="flex items-center gap-3 group/link min-w-0 w-fit"
+                                  >
+                                    <div className="h-8 w-8 rounded-full ring-1 ring-warning/30 bg-base-300/20 overflow-hidden shrink-0 group-hover/link:ring-warning/60 transition-all">
+                                      <img
+                                        src={
+                                          m.user_avatar ||
+                                          `https://ui-avatars.com/api/?name=${m.username}`
+                                        }
+                                        className="h-full w-full object-cover"
+                                        alt=""
+                                      />
+                                    </div>
+                                    <div className="flex flex-col min-w-0 leading-tight gap-1">
+                                      <span className="text-xs font-bold truncate opacity-90 group-hover/link:text-warning transition-colors">
+                                        {m.full_name ||
+                                          (m.first_name || m.last_name
+                                            ? `${m.first_name || ""} ${m.last_name || ""}`.trim()
+                                            : "Unidentified Subject")}
+                                      </span>
+                                      <span className="text-[10px] font-mono opacity-50 tracking-tighter truncate">
+                                        Username: {m.username || "No ID"}
+                                      </span>
+                                    </div>
+                                  </Link>
+                                </div>
+                                <div className="col-span-3 text-right">
+                                  <span className="text-[9px] tracking-tighter text-warning font-black px-2 py-0.5">
+                                    {m.user}
+                                  </span>
+                                </div>
+                                {canManagePermissions && (
+                                  <div className="col-span-2 flex justify-end">
+                                    {isLocked ? (
+                                      /* Locked: reviewer has been used in a version */
+                                      <div
+                                        className="opacity-0 group-hover/row:opacity-100 transition-all tooltip tooltip-left before:z-[10000] after:z-[10000]"
+                                        data-tip="Cannot remove — reviewer is assigned to one or more versions"
+                                      >
+                                        <div className="btn btn-ghost btn-xs rounded-lg text-base-content/20 cursor-not-allowed p-1">
+                                          <ShieldCheck size={13} />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      /* Unlocked: safe to remove */
+                                      <button
+                                        onClick={() =>
+                                          setRemoveTarget({
+                                            member: m,
+                                            type: "reviewer",
+                                          })
+                                        }
+                                        className="opacity-0 group-hover/row:opacity-100 transition-all btn btn-ghost btn-xs rounded-lg text-error hover:bg-error/10 hover:scale-105 p-1"
+                                        title="Remove reviewer"
+                                      >
+                                        <Trash2 size={13} />
+                                      </button>
+                                    )}
                                   </div>
-                                  <div className="flex flex-col min-w-0 leading-tight gap-1">
-                                    <span className="text-xs font-bold truncate opacity-90 group-hover/link:text-warning transition-colors">
-                                      {m.full_name ||
-                                        (m.first_name || m.last_name
-                                          ? `${m.first_name || ""} ${m.last_name || ""}`.trim()
-                                          : "Unidentified Subject")}
-                                    </span>
-                                    <span className="text-[10px] font-mono opacity-50 tracking-tighter truncate">
-                                      Username: {m.username || "No ID"}
-                                    </span>
-                                  </div>
-                                </Link>
+                                )}
                               </div>
-                              <div className="col-span-5 text-right">
-                                <span className="text-[9px] tracking-tighter text-warning font-black px-2 py-0.5">
-                                  {m.user}
-                                </span>
-                              </div>
-                            </div>
-                          ))
+                            );
+                          })
                         ) : (
                           <div className="h-32 flex items-center justify-center opacity-20 text-[10px] font-bold uppercase tracking-widest">
                             Registry Empty
@@ -644,7 +762,7 @@ const DocumentDetailsPage = () => {
                     { label: "Pending", status: "pending", desc: "Awaiting" },
                     { label: "Rejected", status: "rejected", desc: "Declined" },
                     { label: "Draft", status: "draft", desc: "Draft" },
-                    { label: "Default", status: "default", desc: "No Status" }
+                    { label: "Default", status: "default", desc: "No Status" },
                   ].map((item, i) => (
                     <div
                       key={i}
@@ -804,7 +922,7 @@ const DocumentDetailsPage = () => {
         )}
       </div>
 
-      {/* MODAL */}
+      {/* GRANT PERMISSION MODAL */}
       {showModal && (
         <dialog
           ref={(el) => {
@@ -820,7 +938,6 @@ const DocumentDetailsPage = () => {
                 Permission Registry
               </h3>
               <h2 className="font-bold text-xl">
-                {/* Updated logic to handle "APPROVE" */}
                 Add{" "}
                 {permissionType === "WRITE"
                   ? "Co-author"
@@ -926,6 +1043,125 @@ const DocumentDetailsPage = () => {
           {/* Background Close Logic */}
           <form method="dialog" className="modal-backdrop">
             <button onClick={() => setShowModal(false)}>close</button>
+          </form>
+        </dialog>
+      )}
+
+      {/* REMOVE PERMISSION CONFIRMATION MODAL */}
+      {removeTarget && (
+        <dialog
+          ref={(el) => {
+            if (el && !el.open) el.showModal();
+          }}
+          className="modal backdrop-blur-lg"
+          onClose={() => {
+            setRemoveTarget(null);
+            setRemoveError(null);
+          }}
+        >
+          <div className="modal-box bg-base-100 p-8 rounded-[2rem] max-w-sm space-y-6 shadow-2xl border border-error/10 relative overflow-hidden">
+            {/* Ambient glow */}
+            <div className="absolute inset-0 bg-error/3 pointer-events-none rounded-[2rem]" />
+
+            {/* Header */}
+            <div className="flex items-start gap-4">
+              <div className="h-10 w-10 rounded-2xl bg-error/10 border border-error/20 flex items-center justify-center shrink-0">
+                <AlertTriangle size={18} className="text-error" />
+              </div>
+              <div>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-error mb-1">
+                  Revoke Access
+                </h3>
+                <h2 className="font-bold text-lg leading-tight">
+                  Remove{" "}
+                  {removeTarget.type === "co-author" ? "Co-Author" : "Reviewer"}
+                </h2>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 rounded-xl bg-base-200/40 border border-base-content/5 space-y-3">
+              {/* User preview */}
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full overflow-hidden ring-2 ring-error/20 shrink-0">
+                  <img
+                    src={
+                      removeTarget.member.user_avatar ||
+                      `https://ui-avatars.com/api/?name=${removeTarget.member.username}`
+                    }
+                    className="h-full w-full object-cover"
+                    alt=""
+                  />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-bold truncate">
+                    {removeTarget.member.full_name ||
+                      removeTarget.member.username ||
+                      "Unidentified Subject"}
+                  </span>
+                  <span className="text-[10px] font-mono opacity-40 tracking-tighter">
+                    ID: {removeTarget.member.user}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-base-content/50 leading-relaxed">
+                This will revoke their{" "}
+                <span className="font-black text-base-content/70 uppercase tracking-wide">
+                  {removeTarget.type === "co-author" ? "Write" : "Approve"}
+                </span>{" "}
+                permission on this document. This action can be undone by
+                re-adding them.
+              </p>
+            </div>
+
+            {/* Error message */}
+            {removeError && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-error/10 border border-error/20 text-error text-[10px] font-bold">
+                <XCircle size={12} />
+                {removeError}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                className="btn btn-ghost flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100"
+                onClick={() => {
+                  setRemoveTarget(null);
+                  setRemoveError(null);
+                }}
+                disabled={removeLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn bg-error hover:bg-error/80 text-white flex-[2] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                onClick={handleRemovePermission}
+                disabled={removeLoading}
+              >
+                {removeLoading ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <>
+                    <Trash2 size={13} />
+                    Confirm Removal
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Background close */}
+          <form method="dialog" className="modal-backdrop">
+            <button
+              onClick={() => {
+                setRemoveTarget(null);
+                setRemoveError(null);
+              }}
+            >
+              close
+            </button>
           </form>
         </dialog>
       )}
