@@ -327,6 +327,8 @@ const VersionDetailsPage = () => {
     }
   };
 
+  console.log(reviews)
+
   if (loading) return <Loader message="Loading version details..." />;
   if (error || !version)
     return (
@@ -887,7 +889,7 @@ const VersionDetailsPage = () => {
                                   <div className="flex items-center gap-3">
                                     <div className="avatar">
                                       <div className="w-10 h-10 rounded-full ring-2 ring-primary/10 group-hover:ring-primary/40 group-hover:scale-110 transition-all duration-300 overflow-hidden bg-base-300">
-                                        <img src={review.new_version?.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                                        <img src={review.reviewer_avatar} alt="avatar" className="w-full h-full object-cover" />
                                       </div>
                                     </div>
                                     <span className="font-bold text-sm tracking-tight">{review.reviewer_name}</span>
