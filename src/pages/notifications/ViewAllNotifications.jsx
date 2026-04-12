@@ -174,6 +174,8 @@ const ViewAllNotifications = () => {
   //   };
   // }, [fetchNotifications]);
 
+  const [actionLoading, setActionLoading] = useState(null);
+
   useEffect(() => {
     fetchNotifications();
 
@@ -237,6 +239,76 @@ const ViewAllNotifications = () => {
     }
   };
 
+  const respondToRequest = async (notificationId, action) => {
+    try {
+      setActionLoading(notificationId);
+
+      await api.post(`/notifications/${notificationId}/handle-request/`, { action });
+
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId
+            ? {
+              ...n,
+              is_read: true,
+              permission: n.permission
+                ? {
+                  ...n.permission,
+                  status: action === "accept" ? "ACCEPTED" : "REJECTED",
+                }
+                : null,
+            }
+            : n
+        )
+      );
+
+      notify.success(
+        action === "accept" ? "Access granted" : "Request rejected"
+      );
+    } catch (err) {
+      notify.error("Action failed");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const respondToDeletion = async (notificationId, action) => {
+    try {
+      setActionLoading(notificationId);
+
+      await api.post(`/notifications/${notificationId}/handle-deletion/`, { action });
+
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId
+            ? {
+              ...n,
+              is_read: true,
+              deletion: n.deletion
+                ? {
+                  ...n.deletion,
+                  status: action === "accept" ? "APPROVED" : "REJECTED",
+                }
+                : null,
+            }
+            : n
+        )
+      );
+
+      notify.success(
+        action === "accept" ? "Deletion approved" : "Deletion rejected"
+      );
+
+      // Refresh list — the document may now be gone
+      await fetchNotifications(true);
+
+    } catch (err) {
+      notify.error("Action failed");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (loading && notifications.length === 0) return <Loader message="Accessing Registry..." />;
 
   return (
@@ -250,7 +322,7 @@ const ViewAllNotifications = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.4em]">Notification Registry</span>
             </div>
             <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-base-content leading-[0.9]">
-              <GetGreeting variant={2}/> <span className="text-primary">{user?.first_name || "Agent"}</span> <span className="text-primary">{user?.last_name || "Agent"}</span>
+              <GetGreeting variant={2} /> <span className="text-primary">{user?.first_name || "Agent"}</span> <span className="text-primary">{user?.last_name || "Agent"}</span>
             </h1>
           </div>
           <button
@@ -347,18 +419,80 @@ const ViewAllNotifications = () => {
                         </td>
                         <td className="text-center">
                           <div className="flex items-center justify-center gap-2">
-                            {!n.is_read ? (
-                              <button onClick={() => markAsRead(n.id)} className="btn btn-xs btn-primary rounded-lg uppercase text-[9px] font-black">
-                                <Check size={12} /> Resolve
-                              </button>
+
+                            {n.deletion ? (
+                              <>
+                                <button
+                                  onClick={() => respondToDeletion(n.id, "accept")}
+                                  disabled={
+                                    n.deletion?.status !== "PENDING" ||
+                                    actionLoading === n.id
+                                  }
+                                  className="btn btn-xs btn-success rounded-lg uppercase text-[9px] font-black"
+                                >
+                                  {actionLoading === n.id ? "..." : "Approve"}
+                                </button>
+
+                                <button
+                                  onClick={() => respondToDeletion(n.id, "reject")}
+                                  disabled={
+                                    n.deletion?.status !== "PENDING" ||
+                                    actionLoading === n.id
+                                  }
+                                  className="btn btn-xs btn-error rounded-lg uppercase text-[9px] font-black"
+                                >
+                                  {actionLoading === n.id ? "..." : "Reject"}
+                                </button>
+                              </>
+
+                            ) : n.permission ? (
+                              <>
+                                <button
+                                  onClick={() => respondToRequest(n.id, "accept")}
+                                  disabled={
+                                    n.permission?.status !== "PENDING" ||
+                                    actionLoading === n.id
+                                  }
+                                  className="btn btn-xs btn-success rounded-lg uppercase text-[9px] font-black"
+                                >
+                                  {actionLoading === n.id ? "..." : "Accept"}
+                                </button>
+
+                                <button
+                                  onClick={() => respondToRequest(n.id, "reject")}
+                                  disabled={
+                                    n.permission?.status !== "PENDING" ||
+                                    actionLoading === n.id
+                                  }
+                                  className="btn btn-xs btn-error rounded-lg uppercase text-[9px] font-black"
+                                >
+                                  {actionLoading === n.id ? "..." : "Reject"}
+                                </button>
+                              </>
                             ) : (
-                              <div className="flex items-center gap-1 text-success font-black uppercase text-[9px] bg-success/10 px-2 py-1 rounded-md">
-                                <CheckCircle2 size={10} /> Archived
-                              </div>
+                              <>
+                                {!n.is_read ? (
+                                  <button
+                                    onClick={() => markAsRead(n.id)}
+                                    className="btn btn-xs btn-primary rounded-lg uppercase text-[9px] font-black"
+                                  >
+                                    <Check size={12} /> Resolve
+                                  </button>
+                                ) : (
+                                  <div className="flex items-center gap-1 text-success font-black uppercase text-[9px] bg-success/10 px-2 py-1 rounded-md">
+                                    <CheckCircle2 size={10} /> Archived
+                                  </div>
+                                )}
+                              </>
                             )}
-                            <button onClick={() => deleteNotification(n.id)} className="btn btn-xs btn-ghost text-error/30 hover:text-error hover:bg-error/10 rounded-lg p-1 transition-colors">
+
+                            <button
+                              onClick={() => deleteNotification(n.id)}
+                              className="btn btn-xs btn-ghost text-error/30 hover:text-error hover:bg-error/10 rounded-lg p-1 transition-colors"
+                            >
                               <Trash2 size={14} />
                             </button>
+
                           </div>
                         </td>
                         <td className={`text-right px-10 group-hover:opacity-100 transition-opacity ${n.is_read ? 'opacity-30' : 'opacity-60'}`}>

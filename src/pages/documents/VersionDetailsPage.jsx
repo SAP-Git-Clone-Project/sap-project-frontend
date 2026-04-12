@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import * as pdfjsLib from 'pdfjs-dist';
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -115,10 +116,13 @@ const VersionDetailsPage = () => {
         const docRes = await api.get(`/documents/${versionData.document}/`);
         setDocument(docRes.data);
 
-        const membersRes = await api.get(
+        const membersRes1 = await api.get(
+          `/permissions/${versionData.document}/members/`,
+        );
+        const membersRes2 = await api.get(
           `/permissions/${versionData.id}/members/`,
         );
-        const membersData = membersRes.data;
+        const membersData = [...membersRes1.data, ...membersRes2.data];
         setMembers(membersData);
 
         // Determine which READ permission rows are inherited from the document
@@ -180,6 +184,8 @@ const VersionDetailsPage = () => {
     return "unknown";
   };
 
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
   useEffect(() => {
     if (!version?.file_path) return;
     const type = getFileType(version.file_path);
@@ -189,8 +195,34 @@ const VersionDetailsPage = () => {
         .then((res) => res.text())
         .then((data) => setPreviewContent(data.slice(0, 2000)))
         .catch(() => setPreviewContent("Preview unavailable."));
+    } else if (type === "pdf") {
+      const extractPdfText = async () => {
+        try {
+          const loadingTask = pdfjsLib.getDocument(version.file_path);
+          const pdf = await loadingTask.promise;
+          let fullText = "";
+
+          const pagesToRead = Math.min(pdf.numPages, 1);
+
+          for (let i = 1; i <= pagesToRead; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(" ");
+            fullText += pageText + "\n\n";
+          }
+
+          setPreviewContent(fullText.slice(0, 2000) || "No extractable text found.");
+        } catch (err) {
+          console.error("PDF extraction error:", err);
+          setPreviewContent("Failed to extract PDF text preview.");
+        }
+      };
+
+      extractPdfText();
     }
   }, [version]);
+
+  console.log("Members: ", members);
 
   const documentReviewers = useMemo(() => {
     if (!members.length) return [];
@@ -198,6 +230,8 @@ const VersionDetailsPage = () => {
       (m) => m.permission_type?.toUpperCase() === "APPROVE",
     );
   }, [members]);
+
+  console.log("Reviewers: ", documentReviewers);
 
   const availableReviewers = useMemo(() => {
     return documentReviewers.filter((r) => {
@@ -210,6 +244,8 @@ const VersionDetailsPage = () => {
       return !isAlreadySelected && matchesSearch;
     });
   }, [documentReviewers, selectedReviewers, reviewerSearch]);
+
+  console.log("Available Reviewers: ", availableReviewers);
 
   const handleToggleReviewer = (userId) => {
     setSelectedReviewers((prev) => {
@@ -283,7 +319,7 @@ const VersionDetailsPage = () => {
 
   const handleAddReader = async (userId) => {
     try {
-      await api.post("/permissions/grant/", {
+      await api.post("/permissions/request/", {
         user: userId,
         version: id,
         document: version.document,
@@ -326,8 +362,6 @@ const VersionDetailsPage = () => {
       setRemoveReaderLoading(false);
     }
   };
-
-  console.log(reviews)
 
   if (loading) return <Loader message="Loading version details..." />;
   if (error || !version)
@@ -950,7 +984,7 @@ const VersionDetailsPage = () => {
                 />
               )}
 
-              {(fileType === "markdown" || fileType === "text") && (
+              {(fileType === "markdown" || fileType === "text" || fileType === "pdf") && (
                 <div className="bg-base-300/20 p-8 rounded-2xl border border-base-300/10">
                   <pre className="text-xs whitespace-pre-wrap font-mono opacity-80 leading-relaxed">
                     {previewContent || "Loading internal data buffers..."}

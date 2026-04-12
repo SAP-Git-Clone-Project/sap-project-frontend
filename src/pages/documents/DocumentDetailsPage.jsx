@@ -120,7 +120,7 @@ const DocumentDetailsPage = () => {
     if (!selectedUser) return;
 
     try {
-      await api.post("/permissions/grant/", {
+      await api.post("/permissions/request/", {
         user: selectedUser.id,
         document: id,
         permission_type: permissionType,
@@ -355,7 +355,7 @@ const DocumentDetailsPage = () => {
                       return;
 
                     try {
-                      await api.delete(`/documents/${id}/`);
+                      const res = await api.post(`/documents/${id}/request-delete/`);
                       window.location.href = "/documents";
                     } catch (err) {
                       console.error(err);

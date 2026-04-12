@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   FileText, Plus, Search, FileStack, Clock3, CheckCircle2,
-  PencilLine, FileBadge, FileLock2, AlertCircle,
+  PencilLine, FileBadge, FileLock2, AlertCircle, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -34,21 +34,45 @@ const DocumentsPage = () => {
   const [filter, setFilter] = useState("all");
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginationInfo, setPaginationInfo] = useState({ count: 0, hasNext: false, hasPrev: false });
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchDocuments = async () => {
+      setLoading(true);
       try {
-        const res = await api.get("/documents/");
-        setDocuments(res.data);
+        const res = await api.get("/documents/", {
+          params: { page: currentPage },
+          signal: controller.signal,
+        });
+        console.log("res.data:", res.data);
+        const { results, count, next, previous } = res.data;
+        setDocuments(results || []);
+        setPaginationInfo({ count: count || 0, hasNext: !!next, hasPrev: !!previous });
       } catch (err) {
-        notify.error("Backend Server is Offline (Port 5000)");
-        console.error(err);
+        if (err.name !== "CanceledError")
+          notify.error("Backend Server is Offline (Port 5000)");
       } finally {
         setLoading(false);
       }
     };
+
     fetchDocuments();
-  }, []);
+    return () => controller.abort();
+  }, [currentPage]);
+
+  const handleFilterChange = (f) => {
+    setFilter(f);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   const filteredDocuments = useMemo(() => {
     return documents.filter((doc) => {
@@ -148,7 +172,7 @@ const DocumentsPage = () => {
               {FILTERS.map((f) => (
                 <button
                   key={f}
-                  onClick={() => setFilter(f)}
+                  onClick={() => handleFilterChange(f)}
                   className={`btn btn-xs sm:btn-sm rounded-xl px-2 lg:px-5 border-none transition-all uppercase text-[9px] lg:text-[10px] font-black tracking-tighter lg:tracking-widest ${filter === f
                     ? "btn-primary"
                     : "btn-ghost text-secondary hover:bg-base-300"
@@ -167,7 +191,7 @@ const DocumentsPage = () => {
                 type="text"
                 placeholder="Search by title..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={handleSearchChange}
                 className="input w-full pl-12 bg-base-100/50 border-base-300/30 focus:border-primary rounded-2xl"
               />
             </div>
@@ -298,6 +322,36 @@ const DocumentsPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Pagination */}
+        <div className="max-w-7xl mx-auto mt-6 flex flex-col md:flex-row items-center justify-between gap-6 pb-10">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
+            Matches Found: {paginationInfo.count}
+          </div>
+          <div className="join border border-base-300/30 bg-base-200/50 rounded-2xl p-1 shadow-lg">
+            <button
+              className="join-item btn btn-sm btn-ghost hover:bg-base-300/70"
+              onClick={() => { setCurrentPage(p => Math.max(p - 1, 1)); window.scrollTo(0, 0); }}
+              disabled={!paginationInfo.hasPrev || loading}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button className="join-item px-4 no-animation cursor-default">
+              <span className="opacity-40 mr-2 uppercase text-[10px] font-black">Page</span>
+              <span className="text-primary font-black">{currentPage}</span>
+              <span className="mx-2 opacity-20">/</span>
+              <span className="opacity-40 font-bold">{Math.ceil(paginationInfo.count / PAGE_SIZE) || 1}</span>
+            </button>
+            <button
+              className="join-item btn btn-sm btn-ghost hover:bg-base-300/70"
+              onClick={() => { setCurrentPage(p => p + 1); window.scrollTo(0, 0); }}
+              disabled={!paginationInfo.hasNext || loading}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
       </Animate>
     </div>
   );
