@@ -198,7 +198,7 @@ const ProfilePage = () => {
                 <div className="px-6 pb-8 text-center -mt-14 flex-1 flex flex-col items-center justify-center">
                   {/* Avatar */}
                   <div className="relative inline-block group">
-                    <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-base-200 shadow-xl mx-auto transition-transform group-hover:scale-105 duration-300 relative z-0">
+                    <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-base-200 shadow-xl mx-auto transition-transform group-hover:scale-105 duration-300 relative z-0 bg-base-200">
                       <img
                         src={profile?.avatar || "/avatar.png"}
                         alt="User"

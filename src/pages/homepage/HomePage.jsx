@@ -1274,7 +1274,7 @@ const HomePage = () => {
 
               <CharReveal
                 as="h2"
-                className="block text-3xl sm:text-4xl md:text-6xl font-black mb-5 sm:mb-6 leading-tight p-4"
+                className="block text-3xl sm:text-4xl md:text-6xl font-black mb-5 sm:mb-6"
                 stagger={0.015}
                 y={30}
                 rotateX={-60}

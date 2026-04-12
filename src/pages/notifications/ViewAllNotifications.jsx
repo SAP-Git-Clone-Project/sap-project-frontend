@@ -420,55 +420,59 @@ const ViewAllNotifications = () => {
                         <td className="text-center">
                           <div className="flex items-center justify-center gap-2">
 
+                            {/* 1. DELETION REQUESTS */}
                             {n.deletion ? (
-                              <>
-                                <button
-                                  onClick={() => respondToDeletion(n.id, "accept")}
-                                  disabled={
-                                    n.deletion?.status !== "PENDING" ||
-                                    actionLoading === n.id
-                                  }
-                                  className="btn btn-xs btn-success rounded-lg uppercase text-[9px] font-black"
-                                >
-                                  {actionLoading === n.id ? "..." : "Approve"}
-                                </button>
+                              n.deletion.status === "PENDING" ? (
+                                <>
+                                  <button
+                                    onClick={() => respondToDeletion(n.id, "accept")}
+                                    disabled={actionLoading === n.id}
+                                    className="btn btn-xs btn-success rounded-lg uppercase text-[9px] font-black text-white"
+                                  >
+                                    {actionLoading === n.id ? "..." : "Approve"}
+                                  </button>
+                                  <button
+                                    onClick={() => respondToDeletion(n.id, "reject")}
+                                    disabled={actionLoading === n.id}
+                                    className="btn btn-xs btn-error rounded-lg uppercase text-[9px] text-white font-black"
+                                  >
+                                    {actionLoading === n.id ? "..." : "Reject"}
+                                  </button>
+                                </>
+                              ) : (
+                                /* Show final status if not PENDING */
+                                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${n.deletion.status === "APPROVED" ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}>
+                                  {n.deletion.status}
+                                </span>
+                              )
 
-                                <button
-                                  onClick={() => respondToDeletion(n.id, "reject")}
-                                  disabled={
-                                    n.deletion?.status !== "PENDING" ||
-                                    actionLoading === n.id
-                                  }
-                                  className="btn btn-xs btn-error rounded-lg uppercase text-[9px] font-black"
-                                >
-                                  {actionLoading === n.id ? "..." : "Reject"}
-                                </button>
-                              </>
-
+                              /* 2. PERMISSION REQUESTS */
                             ) : n.permission ? (
-                              <>
-                                <button
-                                  onClick={() => respondToRequest(n.id, "accept")}
-                                  disabled={
-                                    n.permission?.status !== "PENDING" ||
-                                    actionLoading === n.id
-                                  }
-                                  className="btn btn-xs btn-success rounded-lg uppercase text-[9px] font-black"
-                                >
-                                  {actionLoading === n.id ? "..." : "Accept"}
-                                </button>
+                              n.permission.status === "PENDING" ? (
+                                <>
+                                  <button
+                                    onClick={() => respondToRequest(n.id, "accept")}
+                                    disabled={actionLoading === n.id}
+                                    className="btn btn-xs btn-success rounded-lg uppercase text-[9px] text-white font-black"
+                                  >
+                                    {actionLoading === n.id ? "..." : "Accept"}
+                                  </button>
+                                  <button
+                                    onClick={() => respondToRequest(n.id, "reject")}
+                                    disabled={actionLoading === n.id}
+                                    className="btn btn-xs btn-error rounded-lg uppercase text-[9px] text-white font-black"
+                                  >
+                                    {actionLoading === n.id ? "..." : "Reject"}
+                                  </button>
+                                </>
+                              ) : (
+                                /* Show final status if not PENDING */
+                                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${n.permission.status === "ACCEPTED" ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}>
+                                  {n.permission.status}
+                                </span>
+                              )
 
-                                <button
-                                  onClick={() => respondToRequest(n.id, "reject")}
-                                  disabled={
-                                    n.permission?.status !== "PENDING" ||
-                                    actionLoading === n.id
-                                  }
-                                  className="btn btn-xs btn-error rounded-lg uppercase text-[9px] font-black"
-                                >
-                                  {actionLoading === n.id ? "..." : "Reject"}
-                                </button>
-                              </>
+                              /* 3. DEFAULT SYSTEM NOTIFICATIONS */
                             ) : (
                               <>
                                 {!n.is_read ? (
@@ -486,13 +490,13 @@ const ViewAllNotifications = () => {
                               </>
                             )}
 
+                            {/* ALWAYS SHOW TRASH BUTTON */}
                             <button
                               onClick={() => deleteNotification(n.id)}
                               className="btn btn-xs btn-ghost text-error/30 hover:text-error hover:bg-error/10 rounded-lg p-1 transition-colors"
                             >
                               <Trash2 size={14} />
                             </button>
-
                           </div>
                         </td>
                         <td className={`text-right px-10 group-hover:opacity-100 transition-opacity ${n.is_read ? 'opacity-30' : 'opacity-60'}`}>
