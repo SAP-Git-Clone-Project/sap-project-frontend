@@ -355,7 +355,7 @@ const DocumentDetailsPage = () => {
                       return;
 
                     try {
-                      await api.delete(`/documents/${id}/`);
+                      const res = await api.post(`/documents/${id}/request-delete/`);
                       window.location.href = "/documents";
                     } catch (err) {
                       console.error(err);

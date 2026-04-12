@@ -272,6 +272,43 @@ const ViewAllNotifications = () => {
     }
   };
 
+  const respondToDeletion = async (notificationId, action) => {
+    try {
+      setActionLoading(notificationId);
+
+      await api.post(`/notifications/${notificationId}/handle-deletion/`, { action });
+
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId
+            ? {
+              ...n,
+              is_read: true,
+              deletion: n.deletion
+                ? {
+                  ...n.deletion,
+                  status: action === "accept" ? "APPROVED" : "REJECTED",
+                }
+                : null,
+            }
+            : n
+        )
+      );
+
+      notify.success(
+        action === "accept" ? "Deletion approved" : "Deletion rejected"
+      );
+
+      // Refresh list — the document may now be gone
+      await fetchNotifications(true);
+
+    } catch (err) {
+      notify.error("Action failed");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (loading && notifications.length === 0) return <Loader message="Accessing Registry..." />;
 
   return (
@@ -383,7 +420,32 @@ const ViewAllNotifications = () => {
                         <td className="text-center">
                           <div className="flex items-center justify-center gap-2">
 
-                            {n.permission ? (
+                            {n.deletion ? (
+                              <>
+                                <button
+                                  onClick={() => respondToDeletion(n.id, "accept")}
+                                  disabled={
+                                    n.deletion?.status !== "PENDING" ||
+                                    actionLoading === n.id
+                                  }
+                                  className="btn btn-xs btn-success rounded-lg uppercase text-[9px] font-black"
+                                >
+                                  {actionLoading === n.id ? "..." : "Approve"}
+                                </button>
+
+                                <button
+                                  onClick={() => respondToDeletion(n.id, "reject")}
+                                  disabled={
+                                    n.deletion?.status !== "PENDING" ||
+                                    actionLoading === n.id
+                                  }
+                                  className="btn btn-xs btn-error rounded-lg uppercase text-[9px] font-black"
+                                >
+                                  {actionLoading === n.id ? "..." : "Reject"}
+                                </button>
+                              </>
+
+                            ) : n.permission ? (
                               <>
                                 <button
                                   onClick={() => respondToRequest(n.id, "accept")}

@@ -115,10 +115,13 @@ const VersionDetailsPage = () => {
         const docRes = await api.get(`/documents/${versionData.document}/`);
         setDocument(docRes.data);
 
-        const membersRes = await api.get(
+        const membersRes1 = await api.get(
+          `/permissions/${versionData.document}/members/`,
+        );
+        const membersRes2 = await api.get(
           `/permissions/${versionData.id}/members/`,
         );
-        const membersData = membersRes.data;
+        const membersData = [...membersRes1.data, ...membersRes2.data];
         setMembers(membersData);
 
         // Determine which READ permission rows are inherited from the document
@@ -192,12 +195,16 @@ const VersionDetailsPage = () => {
     }
   }, [version]);
 
+  console.log("Members: ", members);
+
   const documentReviewers = useMemo(() => {
     if (!members.length) return [];
     return members.filter(
       (m) => m.permission_type?.toUpperCase() === "APPROVE",
     );
   }, [members]);
+
+  console.log("Reviewers: ", documentReviewers);
 
   const availableReviewers = useMemo(() => {
     return documentReviewers.filter((r) => {
@@ -210,6 +217,8 @@ const VersionDetailsPage = () => {
       return !isAlreadySelected && matchesSearch;
     });
   }, [documentReviewers, selectedReviewers, reviewerSearch]);
+
+  console.log("Available Reviewers: ", availableReviewers);
 
   const handleToggleReviewer = (userId) => {
     setSelectedReviewers((prev) => {
