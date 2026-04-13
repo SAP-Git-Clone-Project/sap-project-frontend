@@ -222,8 +222,6 @@ const VersionDetailsPage = () => {
     }
   }, [version]);
 
-  console.log("Members: ", members);
-
   const documentReviewers = useMemo(() => {
     if (!members.length) return [];
     return members.filter(
@@ -244,8 +242,6 @@ const VersionDetailsPage = () => {
       return !isAlreadySelected && matchesSearch;
     });
   }, [documentReviewers, selectedReviewers, reviewerSearch]);
-
-  console.log("Available Reviewers: ", availableReviewers);
 
   const handleToggleReviewer = (userId) => {
     setSelectedReviewers((prev) => {
