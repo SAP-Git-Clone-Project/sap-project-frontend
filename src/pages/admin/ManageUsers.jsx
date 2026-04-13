@@ -454,7 +454,7 @@ const ManageUsers = () => {
                                   <p className="font-bold text-sm tracking-tight">
                                     {user.first_name + " " + user.last_name}
                                     {currentUser?.id === user.id && (
-                                      <span className="badge badge-soft bg-primary/60 text-[13px] ml-1">
+                                      <span className="badge badge-soft bg-primary/60 text-[13px] ml-1 text-white">
                                         You
                                       </span>
                                     )}
@@ -492,9 +492,16 @@ const ManageUsers = () => {
                         <td className="py-6">
                           <div className="flex flex-col gap-2 items-center">
                             <div className="flex items-center gap-2">
-                              {user.is_superuser && <span className="badge badge-error font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm">SUPERUSER</span>}
+                              {user.is_superuser && <span className="badge bg-purple font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm">SUPERUSER</span>}
                               {user.is_staff && <span className="badge badge-warning font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm">ADMIN STAFF</span>}
-                              {!user.is_staff && !user.is_superuser && <span className="badge badge-primary font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm">STANDARD</span>}
+                              {!user.is_staff && !user.is_superuser && (
+                                <span
+                                  className={`badge font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm ${user.is_active ? 'bg-primary' : 'bg-error'
+                                    }`}
+                                >
+                                  {user.is_active ? 'STANDARD' : 'BANNED'}
+                                </span>
+                              )}
                             </div>
                             <div className="bg-base-300/10 p-3 rounded-xl border border-base-300/20 text-[11px] font-medium opacity-80 max-w-[200px] text-center">
                               {user.is_superuser ? "Full System Access" : user.is_staff ? "Management Access" : "Standard Platform Access"}

@@ -53,8 +53,8 @@ const Testimonials = () => {
             </h3>
 
             {/* Changed to a grid that is 2 columns on small screens (grid-cols-2)
-      and switches to a single column list on large screens (lg:flex lg:flex-col)
-  */}
+                and switches to a single column list on large screens (lg:flex lg:flex-col)
+            */}
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar grid grid-cols-2 lg:flex lg:flex-col gap-2">
               {testimonials.map((t, i) => (
                 <button
@@ -101,7 +101,7 @@ const Testimonials = () => {
           </div>
 
           {/* RIGHT SIDE: Content Area */}
-          <div className="lg:col-span-8 order-2 p-8 lg:p-10 flex flex-col justify-center relative bg-gradient-to-br from-transparent to-base-300/5">
+          <div className="lg:col-span-8 order-2 p-8 lg:p-10 flex flex-col justify-center relative bg-gradient-to-br from-transparent to-base-300/5 rounded-t-[0.75rem]">
             <div key={activeIndex} className="relative z-10 flex flex-col h-full">
               <StaggerReveal y={20} duration={0.6} className="flex flex-col h-full">
 
