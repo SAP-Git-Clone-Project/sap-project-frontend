@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 
 import {
   FileText, ShieldCheck, Users, Zap,
   CheckCircle, Lock, Eye, EyeOff,
   RefreshCw, Search, Code, Braces, Database,
-  ArrowRight, Star, ChevronRight, ChevronDown,
-  Upload, UserPlus, UserCheck,
+  ArrowRight, Star, ChevronRight,
+  Upload, UserPlus, UserCheck, Check,
   GitCommit, Trash2, History,
   MessageSquare, FileCode, FileType, Clock,
-  HelpCircle, Quote, Sparkles, XCircle,
+  Quote, Sparkles, XCircle,
   Bell, BellRing, ClipboardList,
   Activity, AlertCircle, ShieldAlert, Crown
 } from "lucide-react";
@@ -29,6 +29,10 @@ import {
 import GlassCard from "@/components/widgets/GlassCard.jsx";
 import BackgroundEffects from "@/components/background/BackgroundEffects.jsx";
 
+// Components
+import FAQSection from "./components/FAQSection";
+import Testimonials from "./components/Testimonials";
+
 import "@/index.css";
 
 const PartialIcon = () => (
@@ -36,6 +40,7 @@ const PartialIcon = () => (
     <span className="block w-[6px] h-[0.5px] bg-warning/70 absolute rotate-45" />
   </span>
 );
+
 
 const HomePage = () => {
   useGsapRefresh();
@@ -74,14 +79,17 @@ const HomePage = () => {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary backdrop-blur-sm">
           <Sparkles size={12} />
           <span>Simple version control for every document</span>
-          <ChevronRight size={12} />
         </div>
       </ScrollReveal>
 
       {/* ══════════════════════════════════════ */}
       {/* HERO */}
       {/* ══════════════════════════════════════ */}
-      <ScrollReveal y={25} duration={0.5} start="top 99%" className="space-y-7 max-w-4xl relative z-10 mb-8 pt-4">
+      <MagReveal>
+
+
+      </MagReveal>
+      <ScrollReveal y={25} duration={0.5} start="top 99%" className="space-y-7 max-w-7xl relative z-10 mb-8 pt-4">
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/25">
             <Zap size={22} fill="white" className="text-white" />
@@ -91,33 +99,35 @@ const HomePage = () => {
           </span>
         </div>
 
-        <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-base-content leading-[1.05]">
-          <KineticText
-            className="block"
-            stagger={0.02}
-            y={40}
-            rotateX={-70}
-            duration={0.4}
-            start="top 99%"
-          >
-            Your documents,
-          </KineticText>
+        <MagReveal>
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-base-content leading-[1.05]">
+            <KineticText
+              className="block"
+              stagger={0.02}
+              y={40}
+              rotateX={-70}
+              duration={0.4}
+              start="top 99%"
+            >
+              Your documents,
+            </KineticText>
 
-          {/* Applying the pure CSS class here */}
-          <KineticText
-            className="inline-block [transform-style:preserve-3d] [backface-visibility:hidden]"
-            stagger={0.02}
-            y={40}
-            rotateX={-30}
-            duration={0.4}
-            delay={0.2}
-            start="top 85%"
-          >
-            <div className="gradient-text-clip">
-              version controlled.
-            </div>
-          </KineticText>
-        </h1>
+            {/* Applying the pure CSS class here */}
+            <KineticText
+              className="inline-block [transform-style:preserve-3d] [backface-visibility:hidden]"
+              stagger={0.02}
+              y={40}
+              rotateX={-30}
+              duration={0.4}
+              delay={0.2}
+              start="top 85%"
+            >
+              <div className="gradient-text-clip">
+                version controlled.
+              </div>
+            </KineticText>
+          </h1>
+        </MagReveal>
 
         <WordReveal
           className="text-base-content/55 text-sm sm:text-base md:text-xl leading-relaxed max-w-2xl mx-auto font-light"
@@ -138,12 +148,12 @@ const HomePage = () => {
             Get Started Free
             <ArrowRight size={18} />
           </Link>
-          <Link
-            to="#how-it-works"
+          <a
+            href="#how-it-works"
             className="btn btn-ghost btn-lg px-8 sm:px-10 rounded-2xl gap-2 border border-base-content/10 hover:border-base-content/25"
           >
             See How It Works
-          </Link>
+          </a>
         </div>
 
         <p className="text-[11px] sm:text-xs text-base-content/35 font-medium">
@@ -154,7 +164,7 @@ const HomePage = () => {
       {/* ══════════════════════════════════════ */}
       {/* SUPPORTED FILES */}
       {/* ══════════════════════════════════════ */}
-      <div className="w-full max-w-4xl relative z-10 mb-8 py-6">
+      <div className="w-full max-w-7xl relative z-10 mb-8 py-6">
         <BlurReveal y={15} duration={0.4} className="mb-5">
           <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-base-content/25 font-bold">
             Supported file formats
@@ -181,6 +191,7 @@ const HomePage = () => {
               ))}
             </div>
           </div>
+
 
           {/* Code */}
           <div className="bg-base-200/30 border border-base-content/5 rounded-2xl p-4 sm:p-5 backdrop-blur-sm">
@@ -254,7 +265,7 @@ const HomePage = () => {
       {/* ══════════════════════════════════════ */}
       {/* HOW IT WORKS */}
       {/* ══════════════════════════════════════ */}
-      <div id="how-it-works" className="w-full max-w-6xl relative z-10 mb-32 sm:mb-40 px-2">
+      <div id="how-it-works" className="scroll-mt-24 w-full max-w-6xl relative z-10 mb-32 sm:mb-40 px-2">
         <div className="text-center mb-14 sm:mb-20 px-2">
           <BlurReveal y={15} duration={0.4} className="mb-4">
             <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 bg-primary/10 px-3 py-1 rounded-full">
@@ -279,20 +290,12 @@ const HomePage = () => {
         </div>
 
         <div className="relative">
-          {/* Connecting line */}
-          <div className="hidden lg:block absolute top-[3.25rem] left-[calc(12.5%+0.75rem)] right-[calc(12.5%+0.75rem)] h-px z-0">
-            <LineReveal
-              className="w-full h-full bg-gradient-to-r from-primary/30 via-secondary/30 to-accent/30"
-              duration={1}
-              start="top 80%"
-            />
-          </div>
 
           <StaggerReveal
             stagger={0.08}
             y={30}
             duration={0.5}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 relative z-10"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 relative z-10 items-stretch auto-rows-fr"
           >
             {[
               {
@@ -328,43 +331,47 @@ const HomePage = () => {
                 iconBg: "bg-success/10 border-success/20", dotColor: "bg-success",
               },
             ].map((s, i) => (
-              <div key={i} className="group relative h-full">
+              <div key={i} className="group flex">
                 <GlassCard
                   bg={s.glassBg}
                   border={s.glassBorder}
                   hover
-                  className={`h-full transition-all duration-500 group-hover:shadow-xl ${s.glowColor} hover:-translate-y-1`}
+                  className={`flex-1 transition-all duration-500 group-hover:shadow-xl ${s.glowColor} hover:-translate-y-1`}
                 >
                   <div className="p-6 sm:p-7 flex flex-col h-full relative">
+
                     <div className={`absolute top-4 right-4 text-[10px] font-black font-mono ${s.stepColor} opacity-30`}>
                       {s.step}
                     </div>
+
                     <div className="relative mb-6">
                       <div className={`w-14 h-14 rounded-2xl ${s.iconBg} border flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-110`}>
                         {s.icon}
                       </div>
                       <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${s.dotColor} border-[3px] border-base-100 z-20`} />
                     </div>
-                    <h3 className="font-bold text-lg sm:text-xl mb-2.5 text-base-content">{s.title}</h3>
-                    <p className="text-sm text-base-content/50 leading-relaxed flex-1">{s.desc}</p>
+
+                    <h3 className="font-bold text-lg sm:text-xl mb-2.5 text-base-content">
+                      {s.title}
+                    </h3>
+
+                    <p className="text-sm text-base-content/50 leading-relaxed flex-1">
+                      {s.desc}
+                    </p>
+
                     <div className="flex items-center gap-2 mt-5 pt-4 border-t border-base-content/5 lg:hidden">
                       <div className={`w-1.5 h-1.5 rounded-full ${s.dotColor}`} />
                       <span className={`text-[10px] font-bold uppercase tracking-[0.15em] ${s.stepColor} opacity-60`}>
                         Step {s.step}
                       </span>
                     </div>
+
                   </div>
                 </GlassCard>
-                {i < 3 && (
-                  <div className="flex lg:hidden justify-center py-1">
-                    <div className="w-5 h-5 rounded-full bg-base-200 border border-base-content/10 flex items-center justify-center">
-                      <ArrowRight size={10} className="text-base-content/25" />
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </StaggerReveal>
+
         </div>
 
         <ScrollReveal y={15} duration={0.4} delay={0.2}>
@@ -411,14 +418,29 @@ const HomePage = () => {
           </ScrollReveal>
         </div>
 
-        <StaggerReveal stagger={0.08} y={25} duration={0.5} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StaggerReveal
+          stagger={0.08}
+          y={25}
+          duration={0.5}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+        >
+
+          {/* OWNER */}
           <GlassCard bg="bg-primary/5" border="border-primary/20" hover>
-            <div className="p-5 sm:p-6">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/15 flex items-center justify-center mb-4">
-                <ShieldCheck className="text-primary" size={26} />
+            <div className="p-5 sm:p-6 flex flex-col h-full">
+
+              {/* ICON HEADER (CENTERED) */}
+              <div className="flex flex-col items-center text-center mb-5">
+                <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mb-3">
+                  <ShieldCheck className="text-primary" size={26} />
+                </div>
+
+                <h3 className="font-bold text-lg sm:text-xl">Document Owner</h3>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-primary/60 font-bold mt-1">
+                  Full document control
+                </p>
               </div>
-              <h3 className="font-bold text-lg sm:text-xl mb-1">Document Owner</h3>
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-primary/60 font-bold mb-4">Full document control</p>
+
               <ul className="space-y-2 text-xs sm:text-sm text-base-content/55">
                 {["Create & delete documents", "Assign roles", "View deleted versions", "Remove anyone", "Receive all notifications"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
@@ -427,16 +449,25 @@ const HomePage = () => {
                   </li>
                 ))}
               </ul>
+
             </div>
           </GlassCard>
 
+          {/* WRITER */}
           <GlassCard bg="bg-secondary/5" border="border-secondary/20" hover>
-            <div className="p-5 sm:p-6">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-secondary/15 flex items-center justify-center mb-4">
-                <RefreshCw className="text-secondary" size={26} />
+            <div className="p-5 sm:p-6 flex flex-col h-full">
+
+              <div className="flex flex-col items-center text-center mb-5">
+                <div className="w-14 h-14 rounded-2xl bg-secondary/15 flex items-center justify-center mb-3">
+                  <RefreshCw className="text-secondary" size={26} />
+                </div>
+
+                <h3 className="font-bold text-lg sm:text-xl">Writer</h3>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-secondary/60 font-bold mt-1">
+                  Uploads versions
+                </p>
               </div>
-              <h3 className="font-bold text-lg sm:text-xl mb-1">Writer</h3>
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-secondary/60 font-bold mb-4">Uploads versions</p>
+
               <ul className="space-y-2 text-xs sm:text-sm text-base-content/55">
                 {["Upload new versions", "See approved versions", "View own upload status", "Cannot delete versions", "Cannot approve or reject", "Gets upload notifications"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
@@ -445,16 +476,25 @@ const HomePage = () => {
                   </li>
                 ))}
               </ul>
+
             </div>
           </GlassCard>
 
+          {/* REVIEWER */}
           <GlassCard bg="bg-success/5" border="border-success/20" hover>
-            <div className="p-5 sm:p-6">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-success/15 flex items-center justify-center mb-4">
-                <UserCheck className="text-success" size={26} />
+            <div className="p-5 sm:p-6 flex flex-col h-full">
+
+              <div className="flex flex-col items-center text-center mb-5">
+                <div className="w-14 h-14 rounded-2xl bg-success/15 flex items-center justify-center mb-3">
+                  <UserCheck className="text-success" size={26} />
+                </div>
+
+                <h3 className="font-bold text-lg sm:text-xl">Reviewer</h3>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-success/60 font-bold mt-1">
+                  Approve or reject
+                </p>
               </div>
-              <h3 className="font-bold text-lg sm:text-xl mb-1">Reviewer</h3>
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-success/60 font-bold mb-4">Approve or reject</p>
+
               <ul className="space-y-2 text-xs sm:text-sm text-base-content/55">
                 {["Approve or reject versions", "View all uploaded versions", "Add comments", "Cannot upload files", "Cannot delete anything", "Gets review notifications"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
@@ -463,16 +503,25 @@ const HomePage = () => {
                   </li>
                 ))}
               </ul>
+
             </div>
           </GlassCard>
 
+          {/* VIEWER */}
           <GlassCard bg="bg-accent/5" border="border-accent/20" hover>
-            <div className="p-5 sm:p-6">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-accent/15 flex items-center justify-center mb-4">
-                <Eye className="text-accent" size={26} />
+            <div className="p-5 sm:p-6 flex flex-col h-full">
+
+              <div className="flex flex-col items-center text-center mb-5">
+                <div className="w-14 h-14 rounded-2xl bg-accent/15 flex items-center justify-center mb-3">
+                  <Eye className="text-accent" size={26} />
+                </div>
+
+                <h3 className="font-bold text-lg sm:text-xl">Viewer</h3>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-accent/60 font-bold mt-1">
+                  Read-only access
+                </p>
               </div>
-              <h3 className="font-bold text-lg sm:text-xl mb-1">Viewer</h3>
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-accent/60 font-bold mb-4">Read-only access</p>
+
               <ul className="space-y-2 text-xs sm:text-sm text-base-content/55">
                 {["View approved versions only", "Download approved files", "See document info", "Cannot upload anything", "Cannot approve or reject", "Gets update notifications"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
@@ -481,15 +530,17 @@ const HomePage = () => {
                   </li>
                 ))}
               </ul>
+
             </div>
           </GlassCard>
+
         </StaggerReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
       {/* VERSION TIMELINE */}
       {/* ══════════════════════════════════════ */}
-      <div className="max-w-4xl w-full relative z-10 mb-32 sm:mb-40">
+      <div className="max-w-7xl w-full relative z-10 mb-32 sm:mb-40">
         <div className="text-center mb-12 sm:mb-14 px-2">
           <BlurReveal y={15} duration={0.4} className="mb-4">
             <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 bg-primary/10 px-3 py-1 rounded-full">
@@ -607,7 +658,7 @@ const HomePage = () => {
       {/* ══════════════════════════════════════ */}
       {/* NOTIFICATIONS PREVIEW */}
       {/* ══════════════════════════════════════ */}
-      <div className="max-w-4xl w-full relative z-10 mb-32 sm:mb-40">
+      <div className="max-w-7xl w-full relative z-10 mb-32 sm:mb-40">
         <div className="text-center mb-12 sm:mb-14 px-2">
           <BlurReveal y={15} duration={0.4} className="mb-4">
             <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-warning/70 bg-warning/10 px-3 py-1 rounded-full">
@@ -691,7 +742,7 @@ const HomePage = () => {
       {/* ══════════════════════════════════════ */}
       {/* AUDIT LOG PREVIEW */}
       {/* ══════════════════════════════════════ */}
-      <div className="max-w-4xl w-full relative z-10 mb-32 sm:mb-40">
+      <div className="max-w-7xl w-full relative z-10 mb-32 sm:mb-40">
         <div className="text-center mb-12 sm:mb-14 px-2">
           <BlurReveal y={15} duration={0.4} className="mb-4">
             <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-bold text-error/70 bg-error/10 px-3 py-1 rounded-full">
@@ -1135,56 +1186,8 @@ const HomePage = () => {
           </ScrollReveal>
         </div>
 
-        <StaggerReveal stagger={0.06} y={20} duration={0.4} className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-          {[
-            { quote: "We used to have 47 versions of the same spec floating around in Slack. Now there's one document and everyone knows which version is approved.", name: "Sarah Mitchell", role: "Project Lead", company: "Stackline", highlight: "47 versions → 1 history" },
-            { quote: "The audit log is incredible. When someone asks 'who changed what and when', I just pull it up. No more guessing, no more digging through email threads.", name: "James Carter", role: "Quality Manager", company: "DataForge", highlight: "Instant audit trails" },
-            { quote: "Finally a tool that handles .java and .py files the same way it handles PDFs. The viewer role is exactly what we needed for our stakeholders.", name: "Emily Thornton", role: "Engineering Manager", company: "Nextera Systems", highlight: "Code + docs unified" },
-            { quote: "I deleted a version by accident at 2 AM and panicked. Then I remembered I'm the owner — it was right there in the timeline. Saved my life honestly.", name: "Michael Chen", role: "Senior Developer", company: "Codecraft Labs", highlight: "Deleted ≠ gone" },
-            { quote: "We onboard new contractors every month. Assigning them as viewers takes 5 seconds and they instantly see only what they need.", name: "Rachel Adams", role: "Operations Director", company: "Meridian Group", highlight: "5-sec onboarding" },
-            { quote: "The notifications alone are worth it. Our reviewer gets pinged the second a new version lands, and the writer knows right away if it's approved or needs changes.", name: "David Brooks", role: "Team Lead", company: "Velocity Tech", highlight: "Zero lag in reviews" },
-          ].map((t, i) => (
-            <div key={i} className="h-full flex flex-col">
-              <GlassCard
-                bg="bg-base-200/20"
-                border="border-base-content/5"
-                hover
-                className="h-full flex flex-col transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/15"
-              >
-                <div className="p-6 sm:p-7 flex flex-col flex-1 relative">
-                  <div className="absolute top-5 right-5 sm:top-6 sm:right-6">
-                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.08em] text-primary/50 bg-primary/[0.06] border border-primary/10 px-2 py-0.5 rounded-full">
-                      {t.highlight}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-0.5 mb-4 sm:mb-5">
-                    {starIcons}
-                  </div>
-
-                  <div className="relative mb-5 sm:mb-6 flex-1 min-h-[80px]">
-                    <Quote size={20} className="text-primary/10 absolute -top-1 -left-1 rotate-180" />
-                    <p className="text-xs sm:text-[13px] text-base-content/65 leading-[1.7] pl-5 sm:pl-6">
-                      {t.quote}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-4 sm:pt-5 border-t border-base-content/5 mt-auto">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 border border-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm shrink-0">
-                      {t.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-xs sm:text-sm text-base-content truncate">{t.name}</div>
-                      <div className="text-[10px] sm:text-[11px] text-base-content/35 truncate">
-                        {t.role} <span className="text-base-content/15 mx-1">at</span> {t.company}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </GlassCard>
-            </div>
-          ))}
-        </StaggerReveal>
+        {/* FIX: */}
+        <Testimonials />
 
         <ScrollReveal y={20} duration={0.4} delay={0.2}>
           <div className="mt-10 sm:mt-14 grid grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
@@ -1223,34 +1226,9 @@ const HomePage = () => {
             Questions & answers.
           </CharReveal>
         </div>
-
-        <StaggerReveal stagger={0.04} y={15} duration={0.4} className="space-y-2.5 sm:space-y-3 text-left">
-          {[
-            { q: "What does the version numbering look like?", a: "Dead simple: v1, v2, v3, v4, and so on. Every time a writer uploads a new file, it gets the next number. No sub-versions, no v1.0.1 or v2.3-rc nonsense. Just clean, sequential numbers." },
-            { q: "Can I see deleted versions?", a: "Yes — but only if you're the owner. Deleted versions are preserved in the timeline and clearly marked. Writers, reviewers, and viewers cannot see them." },
-            { q: "What file types can I upload?", a: "Documents like .pdf, .doc, .docx, .txt, .md — and all text-based code files like .java, .cpp, .py, .js, .ts, .html, .css, .sql, .json, .xml, .yaml, and more." },
-            { q: "What can a Viewer do?", a: "Viewers can only see and download approved versions. They cannot upload, approve, reject, comment, or see the audit log. They get notified when a new version is approved." },
-            { q: "Can a reviewer also be a writer?", a: "No. Each person has exactly one role per document: Owner, Writer, Reviewer, or Viewer. This keeps permissions clear with no overlap." },
-            { q: "What happens when a reviewer rejects a version?", a: "The version stays in the history marked as 'Rejected' with the reviewer's comment. The writer gets a notification with the feedback and can upload a new version (next number). The rejected version stays visible." },
-            { q: "Who can see the audit log?", a: "Only the owner. The audit log is a complete, immutable record of every action — uploads, approvals, rejections, deletions, role assignments — with exact timestamps and user names." },
-            { q: "How do notifications work?", a: "Writers get notified when their version is reviewed. Reviewers get notified when a new version needs review. Viewers get notified when a new version is approved. Owners get notified about everything." },
-            { q: "Can I remove someone from my document?", a: "Yes. As the owner, remove writers, reviewers, or viewers at any time. They immediately lose access. Their past activity remains in the audit log and timeline." },
-            { q: "Is there a limit on versions?", a: "No. Have as many versions as you need. The timeline and audit log handle it, and you can search and filter to find any version quickly." },
-          ].map((faq, i) => (
-            <details key={i} className="group bg-base-200/30 border border-base-content/5 rounded-xl overflow-hidden">
-              <summary className="flex items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 cursor-pointer font-semibold text-xs sm:text-sm text-base-content/80 hover:text-base-content transition-colors list-none">
-                <span className="flex items-center gap-2 sm:gap-3">
-                  <HelpCircle size={14} className="text-base-content/20 shrink-0" />
-                  {faq.q}
-                </span>
-                <ChevronDown size={14} className="text-base-content/20 shrink-0 transition-transform group-open:rotate-180" />
-              </summary>
-              <div className="px-4 sm:px-5 pb-4 sm:pb-5 text-xs sm:text-sm text-base-content/50 leading-relaxed -mt-1">
-                {faq.a}
-              </div>
-            </details>
-          ))}
-        </StaggerReveal>
+        <MagReveal>
+          <FAQSection />
+        </MagReveal>
       </div>
 
       {/* ══════════════════════════════════════ */}
@@ -1294,16 +1272,17 @@ const HomePage = () => {
               >
                 Create your first document in seconds. Assign your team, upload versions, and let reviewers do their job. It really is that simple.
               </WordReveal>
-
-              <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-7 sm:mb-8">
-                <Link
-                  to="/login"
-                  className="btn btn-primary btn-lg px-8 sm:px-12 rounded-2xl gap-2 shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]"
-                >
-                  Create Your Document
-                  <ArrowRight size={18} />
-                </Link>
-              </div>
+              <MagReveal>
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-7 sm:mb-8">
+                  <Link
+                    to="/login"
+                    className="btn btn-primary btn-lg px-8 sm:px-12 rounded-2xl gap-2 transition-all hover:scale-[1.02]"
+                  >
+                    Create Your Document
+                    <ArrowRight size={18} />
+                  </Link>
+                </div>
+              </MagReveal>
 
               <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-[10px] sm:text-xs text-base-content/30">
                 {["Free forever", "No credit card", "v1, v2, v3 simplicity", "PDFs & code files", "4 roles", "Audit log"].map((t, i) => (

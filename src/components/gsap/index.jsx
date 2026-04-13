@@ -14,23 +14,23 @@ const REDUCED_MOTION =
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ═══════════════════════════════════════════
-// ScrollReveal — Enhanced slide/fade wrapper
-// Tweaked for ~300ms speed feel
+// ScrollReveal — Cinematic slide/fade/scale
+// Richer: Adds subtle scale and rotation for depth
 // ═══════════════════════════════════════════
 export function ScrollReveal({
   children,
   className,
   style,
   as: Tag = "div",
-  y = 30,
+  y = 50,
   x = 0,
-  scale,
+  scale = 0.95, // Slight zoom-in effect
   opacity = 0,
-  rotateX,
-  duration = 0.4, // Slightly faster default
+  rotateX = 5,  // Subtle 3D tilt
+  duration = 0.9, // Slower, cinematic speed
   delay = 0,
   start = "top 90%",
-  ease = "power2.out", // Snappier ease
+  ease = "power3.out", // Smoother deceleration
 }) {
   const ref = useRef(null);
   const ctxRef = useRef(null);
@@ -50,7 +50,7 @@ export function ScrollReveal({
     if (!Object.keys(from).length) return;
 
     ctxRef.current = gsap.context(() => {
-      gsap.set(el, { ...from, force3D: true });
+      gsap.set(el, { ...from, force3D: true, transformPerspective: 1000 });
       gsap.to(el, {
         ...to,
         duration,
@@ -60,14 +60,14 @@ export function ScrollReveal({
         scrollTrigger: {
           trigger: el,
           start,
-          toggleActions: "play none none reverse", // Play once, reverse on scroll up
+          // Play on scroll down, Reverse on scroll up, allowing repeat
+          toggleActions: "play reverse play reverse", 
           invalidateOnRefresh: true,
         },
       });
     }, el);
 
     return () => ctxRef.current?.revert();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -79,16 +79,16 @@ export function ScrollReveal({
 
 // ═══════════════════════════════════════════
 // MagReveal — Magnet / Parallax Reveal
-// Unique: Moves element towards mouse during scroll entry
+// Richer: Enhanced elastic entry + stronger 3D perspective
 // ═══════════════════════════════════════════
 export function MagReveal({
   children,
   className,
   style,
   as: Tag = "div",
-  y = 50,
-  strength = 30, // How much it follows mouse
-  duration = 0.6,
+  y = 60,
+  strength = 40,
+  duration = 0.8,
   start = "top 85%",
 }) {
   const ref = useRef(null);
@@ -99,15 +99,23 @@ export function MagReveal({
     if (!el || REDUCED_MOTION) return;
 
     ctxRef.current = gsap.context(() => {
-      // Initial state
-      gsap.set(el, { y, opacity: 0, scale: 0.95, rotateX: 15 });
+      // Initial state: deeper and more blurred
+      gsap.set(el, { 
+        y, 
+        opacity: 0, 
+        scale: 0.9, 
+        rotateX: 20,
+        filter: "blur(4px)",
+        transformPerspective: 1000,
+        transformStyle: "preserve-3d"
+      });
 
       // Scroll Animation
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: el,
           start,
-          toggleActions: "play none none reverse",
+          toggleActions: "play reverse play reverse",
         },
       });
 
@@ -116,34 +124,35 @@ export function MagReveal({
         opacity: 1,
         scale: 1,
         rotateX: 0,
+        filter: "blur(0px)",
         duration,
-        ease: "elastic.out(1, 0.75)", // Bouncy unique feel
+        ease: "expo.out", // Very smooth, premium ease
       });
 
       // Parallax/Mouse effect (only on desktop)
       const onMouseMove = (e) => {
-        if (window.innerWidth < 768) return;
+        if (window.innerWidth < 1024) return; // Tablet/Desktop only
         const rect = el.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        
+
         const mouseX = e.clientX - centerX;
         const mouseY = e.clientY - centerY;
 
-        // Calculate rotation based on mouse position relative to center
-        const rotateY = (mouseX / window.innerWidth) * strength; 
+        // Calculate rotation based on mouse position
+        const rotateY = (mouseX / window.innerWidth) * strength;
         const rotateX = -(mouseY / window.innerHeight) * strength;
 
         gsap.to(el, {
           rotateY,
           rotateX,
-          duration: 0.5,
-          ease: "power1.out",
+          duration: 1, // Slower, smoother follow
+          ease: "power2.out",
         });
       };
 
       const onMouseLeave = () => {
-        gsap.to(el, { rotateY: 0, rotateX: 0, duration: 0.5 });
+        gsap.to(el, { rotateY: 0, rotateX: 0, duration: 0.8, ease: "elastic.out(1, 0.5)" });
       };
 
       window.addEventListener("mousemove", onMouseMove);
@@ -166,17 +175,18 @@ export function MagReveal({
 }
 
 // ═══════════════════════════════════════════
-// BlurReveal — Lens Blur effect
-// Unique: Transitions from blur(10px) to clear
+// BlurReveal — Soft Lens Blur effect
+// Richer: Higher blur start + Scale
 // ═══════════════════════════════════════════
 export function BlurReveal({
   children,
   className,
   style,
   as: Tag = "div",
-  y = 20,
-  blur = 10,
-  duration = 0.5,
+  y = 30,
+  scale = 0.98, // Subtle shrink to grow
+  blur = 15,
+  duration = 1.0, // Slow transition
   start = "top 85%",
 }) {
   const ref = useRef(null);
@@ -187,17 +197,23 @@ export function BlurReveal({
     if (!el || REDUCED_MOTION) return;
 
     ctxRef.current = gsap.context(() => {
-      gsap.set(el, { y, opacity: 0, filter: `blur(${blur}px)` });
+      gsap.set(el, { 
+        y, 
+        opacity: 0, 
+        scale, 
+        filter: `blur(${blur}px)` 
+      });
       gsap.to(el, {
         y: 0,
         opacity: 1,
+        scale: 1,
         filter: "blur(0px)",
         duration,
-        ease: "power2.out",
+        ease: "power3.inOut", // Smooth ease in and out
         scrollTrigger: {
           trigger: el,
           start,
-          toggleActions: "play none none reverse",
+          toggleActions: "play reverse play reverse",
         },
       });
     }, el);
@@ -214,18 +230,20 @@ export function BlurReveal({
 
 // ═══════════════════════════════════════════
 // StaggerReveal — Enhanced Stagger
+// Richer: Scale from 0.8 to 1 for a "pop" feel
 // ═══════════════════════════════════════════
 export function StaggerReveal({
   children,
   className,
   style,
   as: Tag = "div",
-  y = 30,
+  y = 40,
+  scale = 0.9, // Start smaller
   opacity = 0,
-  duration = 0.35, // Faster stagger
-  stagger = 0.05,
+  duration = 0.6,
+  stagger = 0.1, // Wider gap for luxury feel
   start = "top 85%",
-  ease = "back.out(1.2)", // Pop effect
+  ease = "back.out(1.4)", // Bouncier for fun interaction
 }) {
   const ref = useRef(null);
   const ctxRef = useRef(null);
@@ -237,12 +255,8 @@ export function StaggerReveal({
     const kids = Array.from(el.children);
     if (!kids.length) return;
 
-    const from = {};
-    const to = {};
-    if (y) { from.y = y; to.y = 0; }
-    if (opacity) { from.opacity = opacity; to.opacity = 1; }
-
-    if (!Object.keys(from).length) return;
+    const from = { y, opacity, scale };
+    const to = { y: 0, opacity: 1, scale: 1 };
 
     ctxRef.current = gsap.context(() => {
       gsap.set(kids, { ...from, force3D: true });
@@ -255,7 +269,7 @@ export function StaggerReveal({
         scrollTrigger: {
           trigger: el,
           start,
-          toggleActions: "play none none reverse",
+          toggleActions: "play reverse play reverse",
           invalidateOnRefresh: true,
         },
       });
@@ -273,19 +287,22 @@ export function StaggerReveal({
 
 // ═══════════════════════════════════════════
 // CharReveal — 3D Rotation per character
+// Richer: Added Scale and Blur for a "defrosting" text effect
 // ═══════════════════════════════════════════
 export function CharReveal({
   children,
   className,
   style,
-  as: Tag = "span",
-  stagger = 0.02,
-  y = 40,
-  rotateX = -70,
+  as: Tag = "h2",
+  stagger = 0.03,
+  y = 50,
+  rotateX = -80, // Deeper rotation
+  scale = 0.5, // Start small
+  blur = 5,
   opacity = 0,
-  duration = 0.4,
+  duration = 0.8,
   start = "top 90%",
-  ease = "power3.out",
+  ease = "power4.out", // Very smooth, long ease
   delay = 0,
 }) {
   const containerRef = useRef(null);
@@ -306,7 +323,7 @@ export function CharReveal({
         );
       }
       return (
-        <span key={`w${si}`} className="inline-block overflow-hidden">
+        <span key={`w${si}`} className="inline-block overflow-visible py-2">
           {[...seg].map((ch) => {
             const i = idx++;
             return (
@@ -314,6 +331,7 @@ export function CharReveal({
                 key={`c${i}`}
                 data-char
                 className="inline-block will-change-transform"
+                style={{ display: "inline-block" }}
               >
                 {ch}
               </span>
@@ -332,13 +350,24 @@ export function CharReveal({
       const spans = el.querySelectorAll("[data-char]");
       if (!spans.length) return;
 
-      gsap.set(el, { transformPerspective: 1000 });
-      gsap.set(spans, { opacity, y, rotateX, transformOrigin: "center bottom" });
+      gsap.set(el, { transformPerspective: 1000, transformStyle: "preserve-3d" });
+
+      gsap.set(spans, {
+        opacity,
+        y,
+        scale,
+        rotateX,
+        filter: `blur(${blur}px)`,
+        transformOrigin: "center bottom -50px", // Rotate from below
+        force3D: true
+      });
 
       gsap.to(spans, {
         opacity: 1,
         y: 0,
+        scale: 1,
         rotateX: 0,
+        filter: "blur(0px)",
         duration,
         stagger,
         delay,
@@ -346,13 +375,13 @@ export function CharReveal({
         scrollTrigger: {
           trigger: el,
           start,
-          toggleActions: "play none none reverse",
+          toggleActions: "play reverse play reverse",
         },
       });
     }, el);
 
     return () => ctxRef.current?.revert();
-  }, [text]);
+  }, [text, opacity, y, rotateX, scale, blur, duration, stagger, delay, ease, start]);
 
   if (!text || REDUCED_MOTION) {
     return (
@@ -366,7 +395,12 @@ export function CharReveal({
     <Tag
       ref={containerRef}
       className={className}
-      style={{ display: "inline-block", ...style }}
+      style={{
+        display: "block",
+        perspective: "1000px",
+        transformStyle: "preserve-3d",
+        ...style
+      }}
     >
       {chars}
     </Tag>
@@ -375,16 +409,18 @@ export function CharReveal({
 
 // ═══════════════════════════════════════════
 // WordReveal — Blur Fade per word
+// Richer: Added skew for dynamic motion
 // ═══════════════════════════════════════════
 export function WordReveal({
   children,
   className,
   style,
   as: Tag = "p",
-  stagger = 0.03,
-  y = 20,
+  stagger = 0.05,
+  y = 30,
+  skewX = 10, // Add skew for "speed" look
   opacity = 0,
-  duration = 0.4,
+  duration = 0.7,
   start = "top 90%",
   ease = "power2.out",
   delay = 0,
@@ -401,7 +437,7 @@ export function WordReveal({
         return <span key={`s${i}`}>&nbsp;</span>;
       }
       return (
-        <span key={`w${i}`} data-word className="inline-block will-change-transform">
+        <span key={`w${i}`} data-word className="inline-block will-change-transform mr-[0.25em]">
           {seg}
         </span>
       );
@@ -416,10 +452,16 @@ export function WordReveal({
       const spans = el.querySelectorAll("[data-word]");
       if (!spans.length) return;
 
-      gsap.set(spans, { opacity, y, filter: "blur(5px)" });
+      gsap.set(spans, { 
+        opacity, 
+        y, 
+        skewX, 
+        filter: "blur(6px)" 
+      });
       gsap.to(spans, {
         opacity: 1,
         y: 0,
+        skewX: 0,
         filter: "blur(0px)",
         duration,
         stagger,
@@ -428,7 +470,7 @@ export function WordReveal({
         scrollTrigger: {
           trigger: el,
           start,
-          toggleActions: "play none none reverse",
+          toggleActions: "play reverse play reverse",
         },
       });
     }, el);
@@ -460,7 +502,7 @@ export function WordReveal({
 // ═══════════════════════════════════════════
 export function CounterReveal({
   end,
-  duration = 1.5,
+  duration = 2.5, // Slower count
   start = "top 85%",
   className,
   prefix = "",
@@ -478,12 +520,12 @@ export function CounterReveal({
       gsap.to(obj, {
         val: end,
         duration,
-        ease: "power2.out",
+        ease: "power2.inOut", // Smooth counting
         snap: { val: 1 },
         scrollTrigger: {
           trigger: el,
           start,
-          once: true, // Only count once
+          toggleActions: "play none none reverse", // Reverse on scroll up if not finished
         },
         onUpdate: () => {
           el.textContent = prefix + Math.floor(obj.val) + suffix;
@@ -498,14 +540,15 @@ export function CounterReveal({
 }
 
 // ═══════════════════════════════════════════
-// LineReveal — Width expansion
+// LineReveal — Width expansion + Fade
+// Richer: Added opacity fade for a soft entrance
 // ═══════════════════════════════════════════
 export function LineReveal({
   className,
   style,
-  duration = 0.8,
+  duration = 1.2,
   start = "top 85%",
-  ease = "power2.inOut",
+  ease = "power3.inOut",
 }) {
   const ref = useRef(null);
   const ctxRef = useRef(null);
@@ -515,16 +558,17 @@ export function LineReveal({
     if (!el || REDUCED_MOTION) return;
 
     ctxRef.current = gsap.context(() => {
-      gsap.set(el, { scaleX: 0, transformOrigin: "left center" });
+      gsap.set(el, { scaleX: 0, opacity: 0.5, transformOrigin: "left center" });
       gsap.to(el, {
         scaleX: 1,
+        opacity: 1,
         duration,
         ease,
         force3D: true,
         scrollTrigger: {
           trigger: el,
           start,
-          toggleActions: "play none none reverse",
+          toggleActions: "play reverse play reverse",
         },
       });
     }, el);
@@ -554,23 +598,24 @@ export function useGsapRefresh() {
 }
 
 // ════════════════════════════════════════════════════
-// KineticText - special effect for the first words
+// KineticText - "Hero" text effect
+// Richer: Defaults tuned for a "slow-motion" reveal
 // ════════════════════════════════════════════════════
 export function KineticText({
   children,
   className,
   style,
   as: Tag = "div",
-  stagger = 0.03,
-  y = 50,
-  scale = 1.2,
-  blur = 10,
-  skewX = 10,
-  rotateX = 20,
+  stagger = 0.05,
+  y = 60,
+  scale = 1.1, // Start slightly larger
+  blur = 8,
+  skewX = 15,
+  rotateX = 30,
   opacity = 0,
-  duration = 5.0,
-  delay = 0.5,
-  ease = "power4.out",
+  duration = 1.2, // Slower, more epic
+  delay = 0.2,
+  ease = "power4.inOut", // Very smooth in and out
   triggerOnScroll = false,
 }) {
   const containerRef = useRef(null);
@@ -618,6 +663,7 @@ export function KineticText({
       const spans = el.querySelectorAll("[data-char]");
       if (!spans.length) return;
 
+      // Richer initial state
       gsap.set(spans, {
         opacity,
         y,
@@ -626,6 +672,7 @@ export function KineticText({
         skewX: skewX,
         filter: `blur(${blur}px)`,
         transformOrigin: "center bottom",
+        transformPerspective: 1000,
       });
 
       const tl = gsap.timeline({
@@ -647,7 +694,7 @@ export function KineticText({
         scrollTrigger: triggerOnScroll ? {
           trigger: el,
           start: "top 85%",
-          toggleActions: "play none none reverse",
+          toggleActions: "play reverse play reverse",
         } : null,
       });
 

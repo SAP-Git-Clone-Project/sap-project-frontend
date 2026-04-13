@@ -16,7 +16,7 @@ import useTheme from "@/hooks/useTheme";
 
 // Pages: General
 import HomePage from "@/pages/homepage/HomePage";
-import ProfilePage from "@/pages/profile/ProfilePage";
+import ProfilePage from "@/pages/profile/ProfilePage";;
 
 // Pages: Documents
 import DocumentsPage from "@/pages/documents/DocumentsPage";
