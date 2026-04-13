@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import * as pdfjsLib from 'pdfjs-dist';
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -184,8 +183,6 @@ const VersionDetailsPage = () => {
     return "unknown";
   };
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
   useEffect(() => {
     if (!version?.file_path) return;
     const type = getFileType(version.file_path);
@@ -195,30 +192,6 @@ const VersionDetailsPage = () => {
         .then((res) => res.text())
         .then((data) => setPreviewContent(data.slice(0, 2000)))
         .catch(() => setPreviewContent("Preview unavailable."));
-    } else if (type === "pdf") {
-      const extractPdfText = async () => {
-        try {
-          const loadingTask = pdfjsLib.getDocument(version.file_path);
-          const pdf = await loadingTask.promise;
-          let fullText = "";
-
-          const pagesToRead = Math.min(pdf.numPages, 1);
-
-          for (let i = 1; i <= pagesToRead; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => item.str).join(" ");
-            fullText += pageText + "\n\n";
-          }
-
-          setPreviewContent(fullText.slice(0, 2000) || "No extractable text found.");
-        } catch (err) {
-          console.error("PDF extraction error:", err);
-          setPreviewContent("Failed to extract PDF text preview.");
-        }
-      };
-
-      extractPdfText();
     }
   }, [version]);
 
@@ -228,8 +201,6 @@ const VersionDetailsPage = () => {
       (m) => m.permission_type?.toUpperCase() === "APPROVE",
     );
   }, [members]);
-
-  console.log("Reviewers: ", documentReviewers);
 
   const availableReviewers = useMemo(() => {
     return documentReviewers.filter((r) => {
@@ -974,13 +945,13 @@ const VersionDetailsPage = () => {
             <div className="rounded-[2rem] border border-base-300/20 bg-base-200/10 backdrop-blur-xl p-8 min-h-[400px]">
               {fileType === "pdf" && (
                 <iframe
-                  src={version.file_path}
+                  src={version.signed_file_path}
                   title="PDF Preview"
                   className="w-full h-[700px] rounded-2xl border border-base-300/20 shadow-2xl"
                 />
               )}
 
-              {(fileType === "markdown" || fileType === "text" || fileType === "pdf") && (
+              {(fileType === "markdown" || fileType === "text") && (
                 <div className="bg-base-300/20 p-8 rounded-2xl border border-base-300/10">
                   <pre className="text-xs whitespace-pre-wrap font-mono opacity-80 leading-relaxed">
                     {previewContent || "Loading internal data buffers..."}
