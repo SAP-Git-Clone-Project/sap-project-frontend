@@ -43,21 +43,28 @@ const DocumentsPage = () => {
     const controller = new AbortController();
 
     const fetchDocuments = async () => {
+      // 1. Start loading
       setLoading(true);
+
       try {
         const res = await api.get("/documents/", {
           params: { page: currentPage },
           signal: controller.signal,
         });
-        console.log("res.data:", res.data);
+
         const { results, count, next, previous } = res.data;
+
+        // 2. Set the data FIRST
         setDocuments(results || []);
         setPaginationInfo({ count: count || 0, hasNext: !!next, hasPrev: !!previous });
-      } catch (err) {
-        if (err.name !== "CanceledError")
-          notify.error("Backend Server is Offline (Port 5000)");
-      } finally {
+
+        // 3. Stop loading ONLY after data is set
         setLoading(false);
+      } catch (err) {
+        if (err.name !== "CanceledError") {
+          notify.error("Backend Server is Offline");
+          setLoading(false);
+        }
       }
     };
 
