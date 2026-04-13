@@ -14,16 +14,26 @@ const FAQSection = () => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const faqs = [
-    { q: "What does the version numbering look like?", a: "Dead simple: v1, v2, v3, v4, and so on. Every time a writer uploads a new file, it gets the next number. No sub-versions, no v1.0.1 or v2.3-rc nonsense. Just clean, sequential numbers." },
-    { q: "Can I see deleted versions?", a: "Yes — but only if you're the owner. Deleted versions are preserved in the timeline and clearly marked. Writers, reviewers, and viewers cannot see them." },
-    { q: "What file types can I upload?", a: "Documents like .pdf, .doc, .docx, .txt, .md — and all text-based code files like .java, .cpp, .py, .js, .ts, .html, .css, .sql, .json, .xml, .yaml, and more." },
-    { q: "What can a Viewer do?", a: "Viewers can only see and download approved versions. They cannot upload, approve, reject, comment, or see the audit log. They get notified when a new version is approved." },
-    { q: "Can a reviewer also be a writer?", a: "No. Each person has exactly one role per document: Owner, Writer, Reviewer, or Viewer. This keeps permissions clear with no overlap." },
-    { q: "What happens when a reviewer rejects a version?", a: "The version stays in the history marked as 'Rejected' with the reviewer's comment. The writer gets a notification with the feedback and can upload a new version (next number). The rejected version stays visible." },
-    { q: "Who can see the audit log?", a: "Only the owner. The audit log is a complete, immutable record of every action — uploads, approvals, rejections, deletions, role assignments — with exact timestamps and user names." },
-    { q: "How do notifications work?", a: "Writers get notified when their version is reviewed. Reviewers get notified when a new version needs review. Viewers get notified when a new version is approved. Owners get notified about everything." },
-    { q: "Can I remove someone from my document?", a: "Yes. As the owner, remove writers, reviewers, or viewers at any time. They immediately lose access. Their past activity remains in the audit log and timeline." },
-    { q: "Is there a limit on versions?", a: "No. Have as many versions as you need. The timeline and audit log handle it, and you can search and filter to find any version quickly." },
+    { q: "What does the version numbering look like?", a: "Dead simple: v1, v2, v3, v4, and so on. Every time a writer uploads a new file, it gets the next number. No sub-versions or complex decimals—just clean, sequential numbers." },
+    { q: "Can I see deleted versions?", a: "Yes, but visibility is strictly limited. Deleted versions are preserved in the timeline for the Document Owner and the Superuser only. Writers, reviewers, and viewers cannot see them." },
+    { q: "What file types can I upload?", a: "You can upload documents like .pdf, .doc, .docx, .txt, .md, and all text-based code files (e.g., .java, .py, .js, .ts). Please note that video uploads are not supported." },
+    { q: "What can a Viewer do?", a: "Viewers can only see and download approved versions. They cannot upload, approve, reject, or see the system logs. They simply get notified when a new version is officially approved." },
+    { q: "Can a reviewer also be a writer?", a: "No. To maintain clear boundaries, each person has exactly one role per document: Document Owner, Writer, Reviewer, or Viewer." },
+    { q: "What happens when a reviewer rejects a version?", a: "The version is marked 'Rejected' in the history with the reviewer's feedback. This rejected state is visible to the Document Owner and the writers so they can address the changes." },
+    { q: "Who can see the audit log?", a: "Since the audit log is a comprehensive system-level record, it is only accessible by the Admin or Superuser. It tracks every login, logout, deletion, update, and document creation." },
+    { q: "How do notifications work?", a: "Writers are alerted when their version is reviewed; Reviewers are pinged when a file needs checking; Viewers are notified of approvals; and Document Owners are kept in the loop on everything." },
+    { q: "Can I remove someone from my document?", a: "Yes. Both the Document Owner and the Co-Author have the authority to remove writers, reviewers, or viewers at any time to manage team access effectively." },
+    { q: "Is there a limit on versions?", a: "No. You can have as many versions as the project requires. The timeline and system logs are designed to handle long-term histories without slowing down." },
+    { q: "Can I download older versions?", a: "Yes. Anyone with access (except Viewers) can download previous versions from the timeline. This is helpful for manual comparisons or checking work from earlier stages." },
+    { q: "What happens if a writer uploads the wrong file?", a: "Uploads cannot be edited. The writer must ask the Document Owner to delete that version, or simply upload the correct file as the next sequential version." },
+    { q: "Is there a file size limit?", a: "We support file sizes up to the maximum limit allowed by Cloudinary in a single API call (currently 50MB). This ensures fast processing for documents and code, but specifically excludes video files." },
+    { q: "Can a document have multiple Reviewers?", a: "Yes. Multiple reviewers are allowed per document, enabling diverse feedback and more thorough quality checks before a version is officially approved." },
+    { q: "Does the system support auto-save?", a: "No. This is a version control system, not a live editor. You should finalize your work locally and upload it only when it is ready to be recorded as a formal version." },
+    { q: "What if the Document Owner leaves the company?", a: "Document Ownership can be transferred to any other user currently assigned to the document. This ensures the timeline and records stay intact regardless of team changes." },
+    { q: "What exactly does the audit log track?", a: "It is a total system log. It records logins/logouts, file deletions, metadata updates, document creations, new version uploads, and all review actions with exact timestamps." },
+    { q: "Can I search through old versions?", a: "Yes. You can filter the timeline by version number, uploader, or date, making it easy to find a specific file from months ago in seconds." },
+    { q: "What happens to the timeline if a user is deleted?", a: "The history is permanent. Even if a user is removed, their name remains attached to every version they uploaded or review they performed for accountability." },
+    { q: "Can Viewers see the comments on a rejected version?", a: "No. Viewers only see the final, approved versions. The back-and-forth feedback between writers and reviewers is kept hidden to maintain a clean workspace for stakeholders." }
   ];
 
   return (
@@ -109,7 +119,7 @@ const FAQSection = () => {
         {/* --- PROGRESS BAR FOOTER (Inside Card) --- */}
         <div className="h-1.5 w-full bg-base-content/5 mt-auto">
           <div
-            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out shadow-[0_0_10px_rgba(var(--p),0.5)]"
+            className="h-full bg-gradient-to-r from-primary to-success transition-all duration-500 ease-out "
             style={{ width: `${((activeIndex + 1) / faqs.length) * 100}%` }}
           />
         </div>

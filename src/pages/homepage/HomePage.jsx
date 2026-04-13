@@ -441,7 +441,7 @@ const HomePage = () => {
                 </p>
               </div>
 
-              <ul className="space-y-2 text-xs sm:text-sm text-base-content/55">
+              <ul className="flex flex-col items-center space-y-2 text-xs sm:text-sm text-base-content/55 lg:items-start">
                 {["Create & delete documents", "Assign roles", "View deleted versions", "Remove anyone", "Receive all notifications"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <CheckCircle size={13} className="text-primary/60 shrink-0 mt-0.5" />
@@ -468,7 +468,7 @@ const HomePage = () => {
                 </p>
               </div>
 
-              <ul className="space-y-2 text-xs sm:text-sm text-base-content/55">
+              <ul className="flex flex-col items-center space-y-2 text-xs sm:text-sm text-base-content/55 lg:items-start">
                 {["Upload new versions", "See approved versions", "View own upload status", "Cannot delete versions", "Cannot approve or reject", "Gets upload notifications"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <CheckCircle size={13} className="text-secondary/60 shrink-0 mt-0.5" />
@@ -495,7 +495,7 @@ const HomePage = () => {
                 </p>
               </div>
 
-              <ul className="space-y-2 text-xs sm:text-sm text-base-content/55">
+              <ul className="flex flex-col items-center space-y-2 text-xs sm:text-sm text-base-content/55 lg:items-start">
                 {["Approve or reject versions", "View all uploaded versions", "Add comments", "Cannot upload files", "Cannot delete anything", "Gets review notifications"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <CheckCircle size={13} className="text-success/60 shrink-0 mt-0.5" />
@@ -522,7 +522,7 @@ const HomePage = () => {
                 </p>
               </div>
 
-              <ul className="space-y-2 text-xs sm:text-sm text-base-content/55">
+              <ul className="flex flex-col items-center space-y-2 text-xs sm:text-sm text-base-content/55 lg:items-start">
                 {["View approved versions only", "Download approved files", "See document info", "Cannot upload anything", "Cannot approve or reject", "Gets update notifications"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <CheckCircle size={13} className="text-accent/60 shrink-0 mt-0.5" />
@@ -875,10 +875,18 @@ const HomePage = () => {
             { icon: <Bell size={24} />, title: "Smart Notifications", desc: "Everyone gets notified about what matters to them. Writers, reviewers, viewers, and owners — each gets relevant alerts." },
             { icon: <ClipboardList size={24} />, title: "Owner Audit Log", desc: "As the owner, access a complete, immutable audit log of every action ever taken on your document." },
           ].map((item, idx) => (
-            <div key={idx} className="group p-5 sm:p-6 text-left border border-base-content/5 rounded-2xl hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-300 h-full">
-              <div className="text-primary mb-3 sm:mb-4">{item.icon}</div>
-              <h4 className="font-bold text-base sm:text-lg mb-1.5 sm:mb-2">{item.title}</h4>
-              <p className="text-xs sm:text-sm text-base-content/50 leading-relaxed">{item.desc}</p>
+            <div key={idx} className="group p-5 sm:p-6 border border-base-content/5 rounded-2xl hover:border-primary/60 hover:bg-primary/10 transition-all duration-300 h-full">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="text-primary mb-3 sm:mb-4">
+                  {item.icon}
+                </div>
+                <h4 className="font-bold text-base sm:text-lg mb-1.5 sm:mb-2">
+                  {item.title}
+                </h4>
+              </div>
+              <p className="text-xs sm:text-sm text-base-content/50 leading-relaxed text-center">
+                {item.desc}
+              </p>
             </div>
           ))}
         </StaggerReveal>
@@ -912,9 +920,10 @@ const HomePage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+          {/* Card 1: Without SAP Hub */}
           <BlurReveal x={-30} duration={0.5}>
-            <div className="bg-error/5 border border-error/15 rounded-2xl p-5 sm:p-7 text-left h-full">
-              <h4 className="font-bold text-base sm:text-lg text-error/80 mb-4 sm:mb-5 flex items-center gap-2">
+            <div className="bg-error/5 border border-error/15 rounded-2xl p-5 sm:p-7 text-center h-full hover:bg-error/15 transition-all duration-300 ease-in-out">
+              <h4 className="font-bold text-base sm:text-lg text-error/80 mb-4 sm:mb-5 flex items-center justify-center gap-2">
                 <XCircle size={18} /> Without SAP Hub
               </h4>
               <ul className="space-y-3 sm:space-y-3.5 text-xs sm:text-sm text-base-content/50">
@@ -927,8 +936,9 @@ const HomePage = () => {
                   "\"I don't remember what changed between v2 and v4\"",
                   "\"No idea who viewed or downloaded what\"",
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 sm:gap-2.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-error/30 shrink-0 mt-1.5" />
+                  <li key={i} className="flex items-center justify-center gap-2">
+                    {/* Keeping the dot, but centered with the text line */}
+                    <div className="w-1.5 h-1.5 rounded-full bg-error/30 shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -936,9 +946,10 @@ const HomePage = () => {
             </div>
           </BlurReveal>
 
+          {/* Card 2: With SAP Hub */}
           <BlurReveal x={30} duration={0.5}>
-            <div className="bg-success/5 border border-success/15 rounded-2xl p-5 sm:p-7 text-left h-full">
-              <h4 className="font-bold text-base sm:text-lg text-success/80 mb-4 sm:mb-5 flex items-center gap-2">
+            <div className="bg-success/5 border border-success/15 rounded-2xl p-5 sm:p-7 text-center h-full hover:bg-success/15 transition-all duration-300 ease-in-out">
+              <h4 className="font-bold text-base sm:text-lg text-success/80 mb-4 sm:mb-5 flex items-center justify-center gap-2">
                 <CheckCircle size={18} /> With SAP Hub
               </h4>
               <ul className="space-y-3 sm:space-y-3.5 text-xs sm:text-sm text-base-content/50">
@@ -951,8 +962,8 @@ const HomePage = () => {
                   "Full audit log shows exactly who did what and when",
                   "Notifications keep everyone in the loop automatically",
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 sm:gap-2.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-success/40 shrink-0 mt-1.5" />
+                  <li key={i} className="flex items-center justify-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-success/40 shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -1186,7 +1197,6 @@ const HomePage = () => {
           </ScrollReveal>
         </div>
 
-        {/* FIX: */}
         <Testimonials />
 
         <ScrollReveal y={20} duration={0.4} delay={0.2}>
