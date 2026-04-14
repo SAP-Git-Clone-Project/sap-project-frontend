@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
-import { 
-  Sun, Moon, Zap, Files, ClipboardCheck, House, 
-  UserRound, Menu, X, MonitorCog, LogOut 
+import {
+  Sun, Moon, Zap, Files, ClipboardCheck, House,
+  UserRound, Menu, X, MonitorCog, LogOut
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import notify from "@/components/toaster/notify";
@@ -96,8 +96,7 @@ const Navbar = ({ theme, toggleTheme }) => {
                 to={to}
                 end={to === "/"}
                 className={({ isActive }) =>
-                  `group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-500 hover:bg-primary/20 ${
-                    isActive ? "text-primary bg-primary/5" : "text-base-content/40 hover:text-base-content hover:bg-white/[0.05]"
+                  `group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-500 hover:bg-primary/20 ${isActive ? "text-primary bg-primary/5" : "text-base-content/40 hover:text-base-content hover:bg-white/[0.05]"
                   }`
                 }
               >
@@ -124,19 +123,20 @@ const Navbar = ({ theme, toggleTheme }) => {
               {showLoggedInUI ? (
                 <div className="flex items-center gap-4">
                   <NavLink to="/profile" className="group relative">
-                    <div className="relative w-11 h-11 rounded-full p-[2px] bg-gradient-to-b from-white/20 to-transparent">
+                    <div className="relative w-11 h-11 rounded-full p-[2px] bg-gradient-to-b from-white/20 to-transparent transition-all duration-300 
+                  group-hover:ring-[3px] group-hover:ring-white/30 group-hover:ring-offset-2 group-hover:ring-offset-black">
                       <div className="w-full h-full rounded-full overflow-hidden border border-black/20">
-                        <img 
-                          src={stickyAvatar} 
-                          alt="Profile" 
-                          className="w-full h-full object-cover" 
-                          onError={(e) => { e.target.src = "/avatar.png"; }} 
+                        <img
+                          src={stickyAvatar}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.src = "/avatar.png"; }}
                         />
                       </div>
                     </div>
                   </NavLink>
-                  <button 
-                    onClick={handleLogout} 
+                  <button
+                    onClick={handleLogout}
                     className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-error/20 text-base-content hover:scale-105 hover:bg-error transition-all"
                   >
                     <LogOut size={16} />
@@ -159,28 +159,27 @@ const Navbar = ({ theme, toggleTheme }) => {
       </div>
 
       {/* ── MOBILE MENU OVERLAY ── */}
-      <div 
-        className={`fixed inset-0 z-[99] nav:hidden transition-all duration-500 ${menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} 
-        style={{ 
-          background: theme === "dark" ? "rgba(0, 0, 0, 0.50)" : "rgba(255, 255, 255, 0.1)", 
-          backdropFilter: "blur(20px)" 
+      <div
+        className={`fixed inset-0 z-[99] nav:hidden transition-all duration-500 ${menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        style={{
+          background: theme === "dark" ? "rgba(0, 0, 0, 0.50)" : "rgba(255, 255, 255, 0.1)",
+          backdropFilter: "blur(20px)"
         }}
       >
         <div className="flex flex-col h-full pt-20 px-8 relative overflow-y-auto">
           <button onClick={closeMenu} className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-xl bg-white/10">
             <X size={22} />
           </button>
-          
+
           <div className="flex-1 flex flex-col justify-center gap-2">
             {filteredLinks.map(({ icon: Icon, label, to }) => (
-              <NavLink 
-                key={to} 
-                to={to} 
-                end={to === "/"} 
-                onClick={closeMenu} 
-                className={({ isActive }) => 
-                  `flex items-center gap-4 text-xl font-bold px-4 py-3 rounded-xl transition-all ${
-                    isActive ? "text-primary bg-primary/10" : "text-base-content/50"
+              <NavLink
+                key={to}
+                to={to}
+                end={to === "/"}
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `flex items-center gap-4 text-xl font-bold px-4 py-3 rounded-xl transition-all ${isActive ? "text-primary bg-primary/10" : "text-base-content/50"
                   }`
                 }
               >

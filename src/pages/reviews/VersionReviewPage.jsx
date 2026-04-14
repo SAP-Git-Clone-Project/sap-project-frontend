@@ -10,7 +10,7 @@ import {
   Plus,
   Minus,
   ExternalLink,
-  FileStack,
+  FileCheckCorner,
   FileCheck,
   FileX,
   ShieldCheck,
@@ -72,7 +72,7 @@ const DiffViewer = ({ diffData, rawContent }) => {
             href={diffData.file_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-sm btn-outline gap-2 border-base-content/20 hover:bg-base-content/5 rounded-xl text-[10px] uppercase tracking-widest font-black"
+            className="btn btn-sm bg-primary gap-2 hover:bg-primary/60 text-white rounded-xl text-[10px] uppercase tracking-widest font-black"
           >
             <ExternalLink size={12} /> View File
           </a>
@@ -394,9 +394,9 @@ const VersionReviewPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-base-300/15 pb-3">
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.4em]">
-                <FileStack size={13} /> Version Audit
+                <FileCheckCorner size={13} /> Version Review
               </div>
-              <h1 className="text-2xl md:text-[1.75rem] font-black tracking-tighter truncate max-w-2xl leading-none">
+              <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-base-content leading-[0.9]">
                 {newVersion?.title || newVersion?.name || `Version ${newVersion?.version_number}`}
               </h1>
             </div>
