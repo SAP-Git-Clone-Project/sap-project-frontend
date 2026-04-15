@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 import {
   FileText, ShieldCheck, Users, Zap,
   CheckCircle, Lock, Eye, EyeOff,
   RefreshCw, Search, Code, Braces, Database,
-  ArrowRight, Star, ChevronRight,
-  Upload, UserPlus, UserCheck, Check,
+  ArrowRight, Star,
+  Upload, UserPlus, UserCheck,
   GitCommit, Trash2, History,
   MessageSquare, FileCode, FileType, Clock,
   Quote, Sparkles, XCircle,
@@ -41,8 +42,8 @@ const PartialIcon = () => (
   </span>
 );
 
-
 const HomePage = () => {
+  const { isAuthenticated } = useAuth();
   useGsapRefresh();
 
   const starIcons = Array.from({ length: 5 }).map((_, i) => (
@@ -141,13 +142,13 @@ const HomePage = () => {
         </WordReveal>
 
         <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 pt-2">
-          <Link
+          { (!isAuthenticated) && <Link
             to="/login"
             className="btn btn-primary btn-lg px-8 sm:px-10 rounded-2xl gap-2 shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]"
           >
             Get Started Free
             <ArrowRight size={18} />
-          </Link>
+          </Link>}
           <a
             href="#how-it-works"
             className="btn btn-ghost btn-lg px-8 sm:px-10 rounded-2xl gap-2 border border-base-content/10 hover:border-base-content/25"

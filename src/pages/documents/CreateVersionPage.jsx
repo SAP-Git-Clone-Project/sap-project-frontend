@@ -7,12 +7,14 @@ import {
   Upload,
   FileUp,
   Rocket,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
 import api from "@/components/api/api.js";
 import Loader from "@/components/widgets/Loader.jsx";
+import notify from "@/components/toaster/notify";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 const CreateVersionPage = () => {
@@ -91,40 +93,57 @@ const CreateVersionPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({}); // Clear previous errors
 
+    // 1. Define Protocol Restrictions
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "text/plain", // .txt
+    ];
+
+    // 2. Run Validations
     if (!file) {
-      setErrors({ file: "File is required." });
+      const errorMsg = "Payload missing. File is required.";
+      setErrors({ file: errorMsg });
+      notify.error(errorMsg); // Replace with notify.error if that is your specific function
       return;
     }
 
+    if (!allowedTypes.includes(file.type)) {
+      const errorMsg = "Invalid format. Only PDF, DOC, DOCX and TXT allowed.";
+      setErrors({ file: errorMsg });
+      notify.error(errorMsg);
+      return;
+    }
+
+    // 3. Execution
+    setIsSubmitting?.(true); // Optional: if you have a loading state
     try {
       const formDataToSend = new FormData();
-
       formDataToSend.append("file", file);
       formDataToSend.append("document", id);
       formDataToSend.append("content", formData.content || "");
 
-      await api.post(
-        `/versions/document/${id}/`,
-        formDataToSend,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      await api.post(`/versions/document/${id}/`, formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
+      notify.success("New version committed to archive.");
       navigate(`/documents/${id}`);
-
     } catch (err) {
-      if (err.response) {
-        console.log(err.response.data);
-        setErrors(err.response.data);
-      } else {
-        setErrors({ form: "Upload failed." });
-      }
+      // 4. Error Handling
+      const serverError = err.response?.data?.detail || "Upload failed.";
+      setErrors(err.response?.data || { form: serverError });
+      notify.error(serverError);
+      console.error("Uplink Error:", err.response?.data);
+    } finally {
+      setIsSubmitting?.(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -313,10 +332,16 @@ const CreateVersionPage = () => {
                     {/* HIDDEN INPUT */}
                     <input
                       type="file"
-                      accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,text/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      accept=".doc,.docx,.pdf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                       className="absolute inset-0 opacity-0 cursor-pointer z-20"
                       onChange={handleFileChange}
                     />
+
+                    {errors.file && (
+                      <p className="text-error text-[10px] font-bold uppercase mt-2 text-center">
+                        {errors.file}
+                      </p>
+                    )}
 
                     {/* VISUAL CONTENT */}
                     <div className="relative z-10 h-full flex flex-col items-center justify-center p-6">
@@ -364,8 +389,8 @@ const CreateVersionPage = () => {
                           </div>
 
                           {/* Type Tags */}
-                          <div className="mt-2 flex flex-wrap justify-center gap-2 max-w-[280px]">
-                            {['IMG', 'PDF', 'DOC', 'TXT'].map((type) => (
+                          <div className="mt-4 flex flex-wrap justify-center gap-2 max-w-[280px]">
+                            {['PDF', 'DOC', 'DOCX', 'TXT'].map((type) => (
                               <span key={type} className="px-2 py-1 rounded bg-base-300/[0.03] border border-base-300/5 text-[8px] font-mono opacity-30">
                                 {type}
                               </span>

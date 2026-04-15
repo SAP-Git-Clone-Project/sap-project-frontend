@@ -139,7 +139,7 @@ const VersionDetailsPage = () => {
         );
         setLockedReaderIds(inherited);
 
-        const allUsersRes = await api.get("/users/search/");
+        const allUsersRes = await api.get("/users/search/?role=reader");
         setAllUsers(allUsersRes.data);
 
         const reviewsRes = await api.get("/reviews/inbox/?all=true");

@@ -97,9 +97,15 @@ const DocumentDetailsPage = () => {
   useEffect(() => {
     const delay = setTimeout(async () => {
       try {
+        const roleByPermissionType = {
+          WRITE: "author",
+          APPROVE: "reviewer",
+          READ: "reader",
+        };
+        const requiredRole = roleByPermissionType[permissionType] || "";
         const url = search
-          ? `/users/search/?search=${search}`
-          : `/users/search/`;
+          ? `/users/search/?search=${search}${requiredRole ? `&role=${requiredRole}` : ""}`
+          : `/users/search/${requiredRole ? `?role=${requiredRole}` : ""}`;
 
         const res = await api.get(url);
         setUsers(res.data.results || res.data);
@@ -109,7 +115,7 @@ const DocumentDetailsPage = () => {
     }, 300);
 
     return () => clearTimeout(delay);
-  }, [search]);
+  }, [search, permissionType]);
 
   const openModal = (type) => {
     setPermissionType(type);
@@ -191,7 +197,7 @@ const DocumentDetailsPage = () => {
           // Determine which reviewers are locked (have been assigned to a version)
           await fetchLockedReviewers(fetchedVersions);
         }
-      } catch (err) {
+      } catch {
         setError("Database Linkage Failure.");
       } finally {
         setLoading(false);
@@ -215,7 +221,7 @@ const DocumentDetailsPage = () => {
     setRemoveLoading(true);
     setRemoveError(null);
 
-    if (removeTarget.member.id in lockedReviewerUserIds) {
+    if (lockedReviewerUserIds.has(removeTarget.member.user)) {
       return;
     }
 
@@ -355,7 +361,7 @@ const DocumentDetailsPage = () => {
                       return;
 
                     try {
-                      const res = await api.post(`/documents/${id}/request-delete/`);
+                      await api.post(`/documents/${id}/request-delete/`);
                       window.location.href = "/documents";
                     } catch (err) {
                       console.error(err);

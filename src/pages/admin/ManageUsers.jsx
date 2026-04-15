@@ -35,6 +35,9 @@ const ManageUsers = () => {
   const [staffPassword, setStaffPassword] = useState("");
   const [isTogglingStaff, setIsTogglingStaff] = useState(false);
   const staffModalRef = useRef(null);
+  const [availableRoles, setAvailableRoles] = useState([]);
+  const [userRoleMap, setUserRoleMap] = useState({});
+  const [pendingRoleByUser, setPendingRoleByUser] = useState({});
 
   const pageSize = 10;
   const totalPages = Math.ceil(paginationInfo.count / pageSize) || 1;
@@ -77,12 +80,33 @@ const ManageUsers = () => {
         hasNext: !!res.data.next,
         hasPrev: !!res.data.previous
       });
-    } catch (err) {
+    } catch {
       notify.error("Unauthorized Access");
     } finally {
       setLoading(false);
     }
   }, [currentPage, searchTerm, startDate, endDate, statusFilter]);
+
+  const fetchRolesData = useCallback(async () => {
+    if (!currentUser?.is_staff && !currentUser?.is_superuser) return;
+    try {
+      const [rolesRes, userRolesRes] = await Promise.all([
+        api.get("/roles/roles/"),
+        api.get("/roles/user-roles/"),
+      ]);
+      setAvailableRoles(rolesRes.data || []);
+      const map = {};
+      (userRolesRes.data || []).forEach((entry) => {
+        const key = entry?.user?.id || entry?.user;
+        if (!key) return;
+        if (!map[key]) map[key] = [];
+        map[key].push(entry.role?.role_name);
+      });
+      setUserRoleMap(map);
+    } catch {
+      notify.error("Failed to load role mappings");
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -90,6 +114,44 @@ const ManageUsers = () => {
     }, 400);
     return () => clearTimeout(delayDebounceFn);
   }, [fetchUsers]);
+
+  useEffect(() => {
+    fetchRolesData();
+  }, [fetchRolesData]);
+
+  const handleAssignRole = async (targetUser) => {
+    const roleName = pendingRoleByUser[targetUser.id];
+    if (!roleName) return notify.error("Select a role first");
+    try {
+      await api.post("/roles/manage/", {
+        user: targetUser.id,
+        role_name: roleName,
+      });
+      notify.success("Role added");
+      await fetchRolesData();
+      await fetchUsers();
+    } catch (err) {
+      notify.error(err.response?.data?.detail || "Failed to add role");
+    }
+  };
+
+  const handleRemoveRole = async (targetUser) => {
+    const roleName = pendingRoleByUser[targetUser.id];
+    if (!roleName) return notify.error("Select a role first");
+    try {
+      await api.delete("/roles/manage/", {
+        data: {
+          user: targetUser.id,
+          role_name: roleName,
+        },
+      });
+      notify.success("Role removed");
+      await fetchRolesData();
+      await fetchUsers();
+    } catch (err) {
+      notify.error(err.response?.data?.detail || "Failed to remove role");
+    }
+  };
 
   const handleToggle = async (id) => {
     try {
@@ -522,12 +584,48 @@ const ManageUsers = () => {
                                       : "Standard Platform Access"
                                 }
                               </div>
+                              <div className="text-[10px] font-mono opacity-70 text-center px-2 break-words">
+                                Roles: {(userRoleMap[user.id] || user.global_roles || []).join(", ") || "none"}
+                              </div>
                             </div>
                           </td>
 
                           <td className="p-4 text-center align-middle">
                             {isManageable ? (
                               <div className="flex flex-col items-center gap-2">
+                                {(currentUser?.is_staff || currentUser?.is_superuser) && (
+                                  <div className="flex flex-col gap-2 w-36">
+                                    <select
+                                      className="select select-xs rounded-lg"
+                                      value={pendingRoleByUser[user.id] || ""}
+                                      onChange={(e) =>
+                                        setPendingRoleByUser((prev) => ({
+                                          ...prev,
+                                          [user.id]: e.target.value,
+                                        }))
+                                      }
+                                    >
+                                      <option value="">Select role</option>
+                                      {availableRoles.map((role) => (
+                                        <option key={role.id} value={role.role_name}>
+                                          {role.role_name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <button
+                                      onClick={() => handleAssignRole(user)}
+                                      className="btn btn-xs h-8 rounded-lg bg-info text-white border-none"
+                                    >
+                                      Add Role
+                                    </button>
+                                    <button
+                                      onClick={() => handleRemoveRole(user)}
+                                      className="btn btn-xs h-8 rounded-lg bg-base-300 text-base-content border-none"
+                                    >
+                                      Remove Role
+                                    </button>
+                                  </div>
+                                )}
 
                                 {/* 1. Staff Toggle Button (Superuser only) */}
                                 {currentUser?.is_superuser && (

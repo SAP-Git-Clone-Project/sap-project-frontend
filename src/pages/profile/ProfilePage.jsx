@@ -31,6 +31,7 @@ const mapUser = (data) => ({
   versions_count: data.versions_count || 0,
   first_name: data.first_name || data.firstName || data.profile?.first_name || "",
   last_name: data.last_name || data.lastName || data.profile?.last_name || "",
+  global_roles: data.global_roles || [],
 });
 
 // MAIN COMPONENT
@@ -46,6 +47,9 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [deletePassword, setDeletePassword] = useState("");
   const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState([]);
+  const [selectedRole, setSelectedRole] = useState("");
+  const [userRoles, setUserRoles] = useState([]);
 
   const [formData, setFormData] = useState({
     first_name: "", last_name: "", username: "",
@@ -103,6 +107,52 @@ const ProfilePage = () => {
 
     fetchProfile();
   }, [id]); 
+
+  useEffect(() => {
+    const canManageRoles = authUser?.is_staff || authUser?.is_superuser;
+    if (!canManageRoles || isOwnProfile || !id) return;
+    const loadRoles = async () => {
+      try {
+        const [rolesRes, userRolesRes] = await Promise.all([
+          api.get("/roles/roles/"),
+          api.get("/roles/user-roles/"),
+        ]);
+        setAvailableRoles(rolesRes.data || []);
+        const targetRoles = (userRolesRes.data || [])
+          .filter((item) => (item?.user?.id || item?.user) === id)
+          .map((item) => item?.role?.role_name)
+          .filter(Boolean);
+        setUserRoles(targetRoles);
+      } catch {
+        notify.error("Failed to load role data");
+      }
+    };
+    loadRoles();
+  }, [authUser, id, isOwnProfile]);
+
+  const handleAssignRole = async () => {
+    if (!selectedRole || !id) return notify.error("Select a role first");
+    try {
+      await api.post("/roles/manage/", { user: id, role_name: selectedRole });
+      setUserRoles((prev) => Array.from(new Set([...prev, selectedRole])));
+      notify.success("Role added");
+    } catch (err) {
+      notify.error(err.response?.data?.detail || "Failed to add role");
+    }
+  };
+
+  const handleRemoveRole = async () => {
+    if (!selectedRole || !id) return notify.error("Select a role first");
+    try {
+      await api.delete("/roles/manage/", {
+        data: { user: id, role_name: selectedRole },
+      });
+      setUserRoles((prev) => prev.filter((roleName) => roleName !== selectedRole));
+      notify.success("Role removed");
+    } catch (err) {
+      notify.error(err.response?.data?.detail || "Failed to remove role");
+    }
+  };
 
   // Handlers (own profile only)
   const handleLogOut = async () => {
@@ -348,6 +398,20 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
+                <div className="card bg-warning/10 backdrop-blur-md border-warning/20 p-4 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-warning/20">
+                      <ShieldCheck size={20} className="text-warning" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-base-content/50">Global Roles</p>
+                      <p className="text-sm font-semibold text-base-content break-words">
+                        {((isOwnProfile ? profile?.global_roles : userRoles) || []).join(", ") || "No roles assigned"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </Animate>
 
@@ -396,6 +460,35 @@ const ProfilePage = () => {
                     </div>
                   </div>
                 </div>
+                {(authUser?.is_staff || authUser?.is_superuser) && (
+                  <div className="card bg-base-200/40 backdrop-blur-xl border border-white/10 mt-4">
+                    <div className="card-body">
+                      <p className="text-xs font-bold uppercase tracking-widest opacity-60">
+                        Role Management
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <select
+                          className="select select-bordered w-full"
+                          value={selectedRole}
+                          onChange={(e) => setSelectedRole(e.target.value)}
+                        >
+                          <option value="">Select role</option>
+                          {availableRoles.map((role) => (
+                            <option key={role.id} value={role.role_name}>
+                              {role.role_name}
+                            </option>
+                          ))}
+                        </select>
+                        <button onClick={handleAssignRole} className="btn btn-primary">
+                          Add Role
+                        </button>
+                        <button onClick={handleRemoveRole} className="btn btn-outline">
+                          Remove Role
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </Animate>
             )}
 
