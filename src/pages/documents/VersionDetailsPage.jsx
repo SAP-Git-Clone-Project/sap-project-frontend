@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import {
   Users,
   UserPlus,
   Trash2,
+  GitCompare,
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
@@ -28,6 +29,7 @@ import Loader from "@/components/widgets/Loader.jsx";
 import MissingArtifact from "@/components/widgets/MissingArtifact.jsx";
 import api from "@/components/api/api.js";
 import { useAuth } from "@/context/AuthContext.jsx";
+import DiffViewer from "@/components/diff/DiffViewer.jsx";
 
 const STATUS_CONFIG = {
   approved: {
@@ -92,6 +94,11 @@ const VersionDetailsPage = () => {
   const [members, setMembers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [documentVersions, setDocumentVersions] = useState([]);
+  const [compareVersionId, setCompareVersionId] = useState("");
+  const [diffData, setDiffData] = useState(null);
+  const [diffLoading, setDiffLoading] = useState(false);
+  const [diffError, setDiffError] = useState("");
 
   const [readerSearch, setReaderSearch] = useState("");
   const [showReaderDropdown, setShowReaderDropdown] = useState(false);
@@ -115,6 +122,13 @@ const VersionDetailsPage = () => {
 
         const docRes = await api.get(`/documents/${versionData.document}/`);
         setDocument(docRes.data);
+        const versionsRes = await api.get(`/versions/document/${versionData.document}/`);
+        const versionsData = versionsRes.data || [];
+        setDocumentVersions(versionsData);
+        const firstComparable = versionsData.find(
+          (v) => String(v.id) !== String(versionData.id),
+        );
+        setCompareVersionId(firstComparable?.id || "");
 
         const membersRes1 = await api.get(
           `/permissions/${versionData.document}/members/`,
@@ -289,8 +303,8 @@ const VersionDetailsPage = () => {
   };
 
   const statusInfo = getStatusDetails(version?.status);
-  const isOwner =
-    document?.created_by_username === user?.username || user?.is_superuser;
+  const isDocumentOwner = document?.created_by_username === user?.username;
+  const isOwner = isDocumentOwner || user?.is_superuser;
   const isCoAuthor = useMemo(() => {
     if (!user || !members.length) return false;
     return members.some(
@@ -300,6 +314,38 @@ const VersionDetailsPage = () => {
 
   const isDeleted = document?.is_deleted;
   const isSuperUser = user?.is_superuser;
+  const isReviewer = useMemo(() => {
+    if (!user || !members.length) return false;
+    return members.some(
+      (m) =>
+        m.user === user.id &&
+        m.permission_type?.toUpperCase() === "APPROVE",
+    );
+  }, [members, user]);
+  const canCompareVersions = isSuperUser || isDocumentOwner || isReviewer;
+  const comparableVersions = useMemo(
+    () => documentVersions.filter((v) => String(v.id) !== String(version?.id)),
+    [documentVersions, version?.id],
+  );
+
+  const loadDiff = async () => {
+    if (!compareVersionId) return;
+    setDiffLoading(true);
+    setDiffError("");
+    try {
+      const res = await api.get(
+        `/versions/${id}/diff/?compare_to=${compareVersionId}`,
+      );
+      setDiffData(res.data);
+    } catch (err) {
+      setDiffData(null);
+      setDiffError(
+        err.response?.data?.detail || "Failed to load version difference.",
+      );
+    } finally {
+      setDiffLoading(false);
+    }
+  };
 
   const readers = useMemo(() => {
     return members.filter((m) => m.permission_type?.toUpperCase() === "READ");
@@ -986,6 +1032,49 @@ const VersionDetailsPage = () => {
         {/* PREVIEW SECTION */}
         <Animate delay={0.2}>
           <div className="mt-16 space-y-8">
+            {canCompareVersions && (
+              <div className="rounded-[2rem] border border-base-300/20 bg-base-200/10 backdrop-blur-xl p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <GitCompare className="text-primary" size={18} />
+                  <h2 className="text-lg font-black uppercase tracking-[0.2em]">
+                    Compare Versions
+                  </h2>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-3">
+                  <select
+                    className="select select-bordered w-full"
+                    value={compareVersionId}
+                    onChange={(e) => setCompareVersionId(e.target.value)}
+                  >
+                    <option value="">Select version to compare</option>
+                    {comparableVersions.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        v{v.version_number}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="btn btn-primary"
+                    onClick={loadDiff}
+                    disabled={!compareVersionId || diffLoading}
+                  >
+                    {diffLoading ? "Comparing..." : "Show Difference"}
+                  </button>
+                </div>
+
+                {diffError && (
+                  <div className="text-error text-sm font-semibold">{diffError}</div>
+                )}
+
+                {diffData && (
+                  <div className="rounded-xl border border-base-300/20 bg-base-100/50 p-4 h-[420px] overflow-hidden">
+                    <DiffViewer diffData={diffData} />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
               <Eye className="text-primary" size={18} />
               <h2 className="text-xl font-black uppercase tracking-[0.2em]">
