@@ -52,6 +52,25 @@ const ManageUsers = () => {
     return false;
   };
 
+  const getDisplayRoles = (targetUser) => {
+    const explicitRoles = userRoleMap[targetUser.id] || targetUser.global_roles || [];
+    const merged = [...explicitRoles];
+    if (targetUser.is_superuser && !merged.includes("superuser")) merged.unshift("superuser");
+    else if (targetUser.is_staff && !merged.includes("staff")) merged.unshift("staff");
+    return Array.from(new Set(merged));
+  };
+
+  const roleBadgeClass = (roleName) => {
+    const role = (roleName || "").toLowerCase();
+    if (role === "superuser") return "bg-purple text-white";
+    if (role === "staff") return "bg-warning text-white";
+    if (role === "author") return "bg-primary text-white";
+    if (role === "reviewer") return "bg-info text-white";
+    if (role === "writer") return "bg-secondary text-white";
+    if (role === "reader") return "bg-base-300 text-base-content";
+    return "bg-slate-500 text-white";
+  };
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -100,7 +119,7 @@ const ManageUsers = () => {
         const key = entry?.user?.id || entry?.user;
         if (!key) return;
         if (!map[key]) map[key] = [];
-        map[key].push(entry.role?.role_name);
+        if (entry.role_name) map[key].push(entry.role_name);
       });
       setUserRoleMap(map);
     } catch {
@@ -559,33 +578,31 @@ const ManageUsers = () => {
 
                           <td className="py-6">
                             <div className="flex flex-col gap-2 items-center">
-                              <div className="flex items-center gap-2">
-                                {user.is_superuser && <span className="badge bg-purple font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm">SUPERUSER</span>}
-                                {user.is_staff && <span className="badge badge-warning font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm">ADMIN STAFF</span>}
-                                {!user.is_staff && !user.is_superuser && (
-                                  <span
-                                    className={`badge font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm ${user.is_active ? 'bg-primary' : 'bg-error'
-                                      }`}
-                                  >
-                                    {user.is_active ? 'STANDARD' : 'BANNED'}
+                              <div className="flex flex-wrap items-center justify-center gap-2 max-w-[240px]">
+                                {getDisplayRoles(user).length > 0 ? (
+                                  getDisplayRoles(user).map((roleName) => (
+                                    <span
+                                      key={`${user.id}-${roleName}`}
+                                      className={`badge font-black py-3 px-3 uppercase text-[9px] border-none shadow-sm ${roleBadgeClass(roleName)}`}
+                                    >
+                                      {roleName === "superuser"
+                                        ? "SUPER USER"
+                                        : roleName === "staff"
+                                          ? "STAFF"
+                                          : roleName}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="badge bg-base-300 text-base-content font-black py-3 px-3 uppercase text-[9px] border-none shadow-sm">
+                                    NO ROLE
                                   </span>
                                 )}
                               </div>
-                              <div className={`p-3 rounded-xl border text-[11px] font-bold uppercase tracking-tight max-w-[200px] text-center ${!user.is_active
+                              <div className={`p-3 rounded-xl border text-[11px] font-bold uppercase tracking-tight max-w-[240px] text-center ${!user.is_active
                                 ? "bg-error/10 border-error/20 text-error"
-                                : "bg-base-300/10 border-base-300/20 text-base-content/70"
+                                : "bg-success/10 border-success/20 text-success"
                                 }`}>
-                                {!user.is_active
-                                  ? "Account Deactivated — Access Denied"
-                                  : user.is_superuser
-                                    ? "Full System Access"
-                                    : user.is_staff
-                                      ? "Management Access"
-                                      : "Standard Platform Access"
-                                }
-                              </div>
-                              <div className="text-[10px] font-mono opacity-70 text-center px-2 break-words">
-                                Roles: {(userRoleMap[user.id] || user.global_roles || []).join(", ") || "none"}
+                                {!user.is_active ? "BANNED" : "ACTIVE"}
                               </div>
                             </div>
                           </td>
@@ -594,7 +611,10 @@ const ManageUsers = () => {
                             {isManageable ? (
                               <div className="flex flex-col items-center gap-2">
                                 {(currentUser?.is_staff || currentUser?.is_superuser) && (
-                                  <div className="flex flex-col gap-2 w-36">
+                                  <div className="flex flex-col gap-2 w-44 p-2 rounded-xl border border-base-300/30 bg-base-100/40">
+                                    <div className="text-[9px] font-black uppercase tracking-widest opacity-50 text-left">
+                                      Role Control
+                                    </div>
                                     <select
                                       className="select select-xs rounded-lg"
                                       value={pendingRoleByUser[user.id] || ""}
@@ -612,6 +632,13 @@ const ManageUsers = () => {
                                         </option>
                                       ))}
                                     </select>
+                                    <div className="text-[9px] opacity-60 text-left">
+                                      Can add:{" "}
+                                      {availableRoles
+                                        .filter((role) => !getDisplayRoles(user).includes(role.role_name))
+                                        .map((role) => role.role_name)
+                                        .join(", ") || "none"}
+                                    </div>
                                     <button
                                       onClick={() => handleAssignRole(user)}
                                       className="btn btn-xs h-8 rounded-lg bg-info text-white border-none"
@@ -621,6 +648,7 @@ const ManageUsers = () => {
                                     <button
                                       onClick={() => handleRemoveRole(user)}
                                       className="btn btn-xs h-8 rounded-lg bg-base-300 text-base-content border-none"
+                                      disabled={!pendingRoleByUser[user.id]}
                                     >
                                       Remove Role
                                     </button>

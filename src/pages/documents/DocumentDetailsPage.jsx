@@ -374,6 +374,23 @@ const DocumentDetailsPage = () => {
                 </button>
               )}
 
+              {(document?.is_deleted && (isOwner || isSuperUser || user?.is_staff)) && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.post(`/documents/${id}/restore/`);
+                      window.location.reload();
+                    } catch (err) {
+                      console.error(err);
+                      alert("Failed to restore document.");
+                    }
+                  }}
+                  className="btn bg-success/70 hover:bg-success hover:scale-105 transition-all btn-sm rounded-xl text-white"
+                >
+                  Restore Document
+                </button>
+              )}
+
               {(isOwner || isSuperUser || isCoAuthor) && (
                 <Link
                   to={`/documents/${id}/create-version`}

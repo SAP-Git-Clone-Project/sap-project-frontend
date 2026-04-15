@@ -120,7 +120,7 @@ const ProfilePage = () => {
         setAvailableRoles(rolesRes.data || []);
         const targetRoles = (userRolesRes.data || [])
           .filter((item) => (item?.user?.id || item?.user) === id)
-          .map((item) => item?.role?.role_name)
+          .map((item) => item?.role_name)
           .filter(Boolean);
         setUserRoles(targetRoles);
       } catch {
@@ -398,19 +398,21 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-                <div className="card bg-warning/10 backdrop-blur-md border-warning/20 p-4 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-warning/20">
-                      <ShieldCheck size={20} className="text-warning" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-base-content/50">Global Roles</p>
-                      <p className="text-sm font-semibold text-base-content break-words">
-                        {((isOwnProfile ? profile?.global_roles : userRoles) || []).join(", ") || "No roles assigned"}
-                      </p>
+                {(!isOwnProfile || !(profile?.is_superuser || profile?.is_staff)) && (
+                  <div className="card bg-warning/10 backdrop-blur-md border-warning/20 p-4 rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-warning/20">
+                        <ShieldCheck size={20} className="text-warning" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-base-content/50">Global Roles</p>
+                        <p className="text-sm font-semibold text-base-content break-words">
+                          {((isOwnProfile ? profile?.global_roles : userRoles) || []).join(", ") || "No roles assigned"}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
               </div>
             </Animate>
