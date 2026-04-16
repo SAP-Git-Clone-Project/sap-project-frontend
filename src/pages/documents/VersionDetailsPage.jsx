@@ -156,11 +156,10 @@ const VersionDetailsPage = () => {
         const allUsersRes = await api.get("/users/search/?role=reader");
         setAllUsers(allUsersRes.data);
 
-        const reviewsRes = await api.get("/reviews/inbox/?all=true");
-        const versionReviews = (reviewsRes.data || []).filter(
-          (r) => String(r.version) === String(id),
-        );
-        setReviews(versionReviews);
+        const reviewsRes = await api.get("/reviews/inbox/?all=true", {
+          params: { version: id },
+        });
+        setReviews(reviewsRes.data || []);
       } catch (err) {
         console.error(err);
         setError("Version retrieval failure.");
@@ -287,11 +286,10 @@ const VersionDetailsPage = () => {
 
       const updated = await api.get(`/versions/${version.id}/`);
       setVersion(updated.data);
-      const reviewsRes = await api.get(`/reviews/inbox/?all=true`);
-      const versionReviews = (reviewsRes.data || []).filter(
-        (r) => String(r.version) === String(id),
-      );
-      setReviews(versionReviews);
+      const reviewsRes = await api.get(`/reviews/inbox/?all=true`, {
+        params: { version: id },
+      });
+      setReviews(reviewsRes.data || []);
 
       setSelectedReviewers([]);
       setReviewerSearch("");

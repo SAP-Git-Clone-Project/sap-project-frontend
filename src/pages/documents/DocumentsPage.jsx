@@ -86,7 +86,6 @@
         }
 
         try {
-          // 1. ALWAYS fetch Table Data (Documents)
           const res = await api.get("/documents/", {
             params: {
               page: currentPage,
@@ -106,14 +105,13 @@
             hasPrev: !!previous,
           });
 
-          // 2. ONLY fetch Stats Data on the very first mount
+          // Only fetch Stats Data on the very first mount
           if (isInitialMount.current) {
             const allDocumentsRes = await api.get("/documents/all/");
             setAllDocuments(allDocumentsRes.data || []);
 
-            // CRITICAL FIX: 
-            // We ONLY turn off the full page loader here, inside the try block, 
-            // AFTER the stats data has been successfully fetched and set.
+            // Only turn off the full page loader here, inside the try block, 
+            // after the stats data has been successfully fetched and set.
             // This prevents the "0 stats" bug caused by errors or aborts.
             isInitialMount.current = false;
             setIsInitialLoading(false);
