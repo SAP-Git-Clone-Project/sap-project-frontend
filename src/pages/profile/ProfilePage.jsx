@@ -38,9 +38,9 @@ const mapUser = (data) => ({
 const ProfilePage = () => {
   const { user: authUser, logout, setUser } = useAuth();
   const navigate = useNavigate();
-  const { id } = useParams(); 
+  const { id } = useParams();
 
-  const isOwnProfile = !id; 
+  const isOwnProfile = !id;
 
   // States
   const [profileData, setProfileData] = useState(null);
@@ -106,7 +106,7 @@ const ProfilePage = () => {
     };
 
     fetchProfile();
-  }, [id]); 
+  }, [id]);
 
   useEffect(() => {
     const canManageRoles = authUser?.is_staff || authUser?.is_superuser;
@@ -354,7 +354,7 @@ const ProfilePage = () => {
             {/* INFO DIVS (Glassy /5) */}
             <Animate variant="fade-up">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
+
                 {/* Email - Purple */}
                 {(profile?.email) && (
                   <div className="card bg-glass-purple/20 backdrop-blur-md border-purple/20 p-4 rounded-2xl hover:bg-glass-purple/30 transition-all shadow-sm">
@@ -400,9 +400,9 @@ const ProfilePage = () => {
 
                 {/* Status - Dynamic */}
                 <div className={`card backdrop-blur-md border p-4 rounded-2xl hover:opacity-90 transition-all shadow-sm ${profile?.is_active
-                      ? "bg-success/5 border-success/20 hover:bg-success/20"
-                      : "bg-error/5 border-error/20 hover:bg-error/20"
-                    }`}>
+                  ? "bg-success/5 border-success/20 hover:bg-success/20"
+                  : "bg-error/5 border-error/20 hover:bg-error/20"
+                  }`}>
                   <div className="flex items-center gap-3 h-full">
                     <div className={`p-2 rounded-full ${profile?.is_active ? 'bg-success/10' : 'bg-error/10'}`}>
                       {profile?.is_active ? <CircleCheck size={20} className="text-success" /> : <CircleX size={20} className="text-error animate-pulse" />}
@@ -424,7 +424,7 @@ const ProfilePage = () => {
                       </div>
                       <div>
                         <p className="text-[10px] uppercase font-bold text-base-content/50">Global Roles</p>
-                        <p className="text-sm font-semibold text-base-content break-words">
+                        <p className="text-sm font-semibold text-base-content break-words capitalize">
                           {(visibleGlobalRoles || []).join(", ") || "No roles assigned"}
                         </p>
                       </div>

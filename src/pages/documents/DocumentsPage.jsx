@@ -199,6 +199,8 @@
       return <Loader message="Loading documents..." />;
     }
 
+    console.log("%cDocuments", "color: blue; font-size: 20px;", documents);
+
     let notStaff = !user?.is_staff;
 
     return (
@@ -422,8 +424,7 @@
                                   </div>
                                 </div>
                                 <span className="text-[11px] font-bold opacity-70">
-                                  {doc.active_version?.creator_name ||
-                                    doc.created_by_username}
+                                  {doc.created_by_username}
                                 </span>
                               </Link>
                             </td>

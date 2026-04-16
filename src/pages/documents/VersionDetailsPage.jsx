@@ -297,10 +297,13 @@ const VersionDetailsPage = () => {
 
       const blob = new Blob([res.data]);
       const url = window.URL.createObjectURL(blob);
+      const contentDisposition = res.headers?.["content-disposition"] || "";
+      const fileNameFromHeader = contentDisposition.match(/filename="?([^"]+)"?/i)?.[1];
+      const fallbackName = `${documentData?.title || "version"} v${version.version_number}.${format}`;
 
       const a = window.document.createElement("a"); // extra safety
       a.href = url;
-      a.download = `version-${version.version_number}.${format}`;
+      a.download = fileNameFromHeader || fallbackName;
       a.click();
 
       window.URL.revokeObjectURL(url);
@@ -606,7 +609,7 @@ const VersionDetailsPage = () => {
                       </span>
                     </div>
                     <span className="text-xs font-mono font-bold">
-                      {(version.file_size / 1024).toFixed(2)} KB
+                      {(version.file_size / 1000).toFixed(2)} KB
                     </span>
                   </div>
 

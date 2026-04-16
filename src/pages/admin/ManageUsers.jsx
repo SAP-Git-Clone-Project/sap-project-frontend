@@ -53,11 +53,9 @@ const ManageUsers = () => {
   };
 
   const getDisplayRoles = (targetUser) => {
-    const explicitRoles = userRoleMap[targetUser.id] || targetUser.global_roles || [];
-    const merged = [...explicitRoles];
-    if (targetUser.is_superuser && !merged.includes("superuser")) merged.unshift("superuser");
-    else if (targetUser.is_staff && !merged.includes("staff")) merged.unshift("staff");
-    return Array.from(new Set(merged));
+    if (targetUser.is_superuser) return ["superuser"];
+    if (targetUser.is_staff) return ["staff"];
+    return Array.from(new Set(userRoleMap[targetUser.id] || targetUser.global_roles || []));
   };
 
   const roleBadgeClass = (roleName) => {
@@ -65,8 +63,8 @@ const ManageUsers = () => {
     if (role === "superuser") return "bg-purple text-white";
     if (role === "staff") return "bg-warning text-white";
     if (role === "author") return "bg-primary text-white";
-    if (role === "reviewer") return "bg-info text-white";
-    if (role === "writer") return "bg-secondary text-white";
+    if (role === "reviewer") return "bg-success text-white";
+    if (role === "writer") return "bg-[#b34b02] text-white";
     if (role === "reader") return "bg-base-300 text-base-content";
     return "bg-slate-500 text-white";
   };
@@ -215,8 +213,6 @@ const ManageUsers = () => {
       setIsDeleting(false);
     }
   };
-
-  console.log(users)
 
   // Staff Toggle Modal Functions
   const openStaffToggleModal = (user) => {
@@ -525,9 +521,22 @@ const ManageUsers = () => {
                   {users.length > 0 ? (
                     users.map((user) => {
                       const isManageable = canModify(user);
+                      const isBanned = !user.is_active;
+                      const selectedRole = pendingRoleByUser[user.id] || "";
+                      const assignedGeneralRoles = Array.from(
+                        new Set(userRoleMap[user.id] || user.global_roles || [])
+                      );
+                      const selectedRoleAlreadyAssigned =
+                        selectedRole && assignedGeneralRoles.includes(selectedRole);
 
                       return (
-                        <tr key={user.id} className="hover:bg-primary/5 transition-colors group">
+                        <tr
+                          key={user.id}
+                          className={`transition-colors group ${isBanned
+                            ? "bg-error/10 hover:bg-error/15"
+                            : "hover:bg-primary/5"
+                            }`}
+                        >
                           <td className="py-6 px-10">
                             <div className="flex flex-col gap-3 min-w-0">
                               <Link to={`/profile/${user.id}`}>
@@ -588,7 +597,7 @@ const ManageUsers = () => {
                                       {roleName === "superuser"
                                         ? "SUPER USER"
                                         : roleName === "staff"
-                                          ? "STAFF"
+                                          ? "ADMIN"
                                           : roleName}
                                     </span>
                                   ))
@@ -609,21 +618,22 @@ const ManageUsers = () => {
 
                           <td className="p-4 text-center align-middle">
                             {isManageable ? (
-                              <div className="flex flex-col items-center gap-2">
+                              <div className="flex flex-row items-start justify-center gap-2">
                                 {(currentUser?.is_staff || currentUser?.is_superuser) && (
-                                  <div className="flex flex-col gap-2 w-44 p-2 rounded-xl border border-base-300/30 bg-base-100/40">
-                                    <div className="text-[9px] font-black uppercase tracking-widest opacity-50 text-left">
+                                  <div className={`glasscard w-52 p-2 rounded-xl border ${isBanned ? "opacity-70 border-error/30" : "border-base-300/30"}`}>
+                                    <div className="text-[9px] font-black uppercase tracking-widest opacity-50 text-center mb-1">
                                       Role Control
                                     </div>
                                     <select
-                                      className="select select-xs rounded-lg"
-                                      value={pendingRoleByUser[user.id] || ""}
+                                      className="select select-xs rounded-lg mb-1"
+                                      value={selectedRole}
                                       onChange={(e) =>
                                         setPendingRoleByUser((prev) => ({
                                           ...prev,
                                           [user.id]: e.target.value,
                                         }))
                                       }
+                                      disabled={isBanned}
                                     >
                                       <option value="">Select role</option>
                                       {availableRoles.map((role) => (
@@ -632,70 +642,77 @@ const ManageUsers = () => {
                                         </option>
                                       ))}
                                     </select>
-                                    <div className="text-[9px] opacity-60 text-left">
+                                    <div className="text-[9px] opacity-60 text-center truncate">
                                       Can add:{" "}
                                       {availableRoles
                                         .filter((role) => !getDisplayRoles(user).includes(role.role_name))
                                         .map((role) => role.role_name)
                                         .join(", ") || "none"}
                                     </div>
-                                    <button
-                                      onClick={() => handleAssignRole(user)}
-                                      className="btn btn-xs h-8 rounded-lg bg-info text-white border-none"
-                                    >
-                                      Add Role
-                                    </button>
-                                    <button
-                                      onClick={() => handleRemoveRole(user)}
-                                      className="btn btn-xs h-8 rounded-lg bg-base-300 text-base-content border-none"
-                                      disabled={!pendingRoleByUser[user.id]}
-                                    >
-                                      Remove Role
-                                    </button>
+                                    <div className="flex gap-1 mt-1">
+                                      <button
+                                        onClick={() => handleAssignRole(user)}
+                                        className="btn btn-xs h-7 min-h-7 rounded-lg bg-info text-white border-none flex-1"
+                                        disabled={isBanned || !selectedRole || selectedRoleAlreadyAssigned}
+                                      >
+                                        {selectedRoleAlreadyAssigned ? "Has Role" : "Add"}
+                                      </button>
+                                      <button
+                                        onClick={() => handleRemoveRole(user)}
+                                        className={`btn btn-xs h-7 min-h-7 rounded-lg border-none flex-1 ${selectedRoleAlreadyAssigned
+                                          ? "bg-warning text-white"
+                                          : "bg-base-300 text-base-content"
+                                          }`}
+                                        disabled={isBanned || !selectedRole || !selectedRoleAlreadyAssigned}
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
                                   </div>
                                 )}
 
-                                {/* 1. Staff Toggle Button (Superuser only) */}
-                                {currentUser?.is_superuser && (
-                                  <button
-                                    onClick={() => openStaffToggleModal(user)}
-                                    disabled={!user.is_active}
-                                    className={`btn btn-xs h-9 rounded-xl border-none font-bold uppercase text-[10px] gap-2 px-4 shadow-sm w-36 transition-all 
+                                <div className="flex flex-col items-center gap-2">
+                                  {/* 1. Staff Toggle Button (Superuser only) */}
+                                  {currentUser?.is_superuser && (
+                                    <button
+                                      onClick={() => openStaffToggleModal(user)}
+                                      disabled={!user.is_active}
+                                      className={`btn btn-xs h-9 rounded-xl border-none font-bold uppercase text-[10px] gap-2 px-4 shadow-sm w-36 transition-all 
             active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-500/20 disabled:text-slate-500
             ${user.is_staff
-                                        ? 'bg-warning text-white hover:bg-warning/80'
-                                        : 'bg-primary text-white hover:bg-primary/80'
+                                          ? 'bg-warning text-white hover:bg-warning/80'
+                                          : 'bg-primary text-white hover:bg-primary/80'
+                                        }`}
+                                    >
+                                      {!user.is_active ? <Lock size={14} /> : <UserCog size={14} />}
+                                      <span className="truncate">
+                                        {!user.is_active ? 'User Banned' : user.is_staff ? 'Revoke Admin' : 'Make Admin'}
+                                      </span>
+                                    </button>
+                                  )}
+
+                                  {/* 2. Active/Ban Toggle Button */}
+                                  <button
+                                    onClick={() => handleToggle(user.id)}
+                                    className={`btn btn-xs h-9 rounded-xl border-none font-bold uppercase text-[10px] gap-2 px-4 shadow-sm w-36 transition-all active:scale-95 
+          ${user.is_active
+                                        ? 'bg-success text-white hover:bg-success/80'
+                                        : 'bg-error text-white hover:bg-error/80'
                                       }`}
                                   >
-                                    {!user.is_active ? <Lock size={14} /> : <UserCog size={14} />}
-                                    <span className="truncate">
-                                      {!user.is_active ? 'User Banned' : user.is_staff ? 'Revoke Admin' : 'Make Admin'}
-                                    </span>
+                                    {user.is_active ? <UserCheck size={14} /> : <UserMinus size={14} />}
+                                    <span>{user.is_active ? 'Active' : 'Banned'}</span>
                                   </button>
-                                )}
 
-                                {/* 2. Active/Ban Toggle Button */}
-                                <button
-                                  onClick={() => handleToggle(user.id)}
-                                  className={`btn btn-xs h-9 rounded-xl border-none font-bold uppercase text-[10px] gap-2 px-4 shadow-sm w-36 transition-all active:scale-95 
-          ${user.is_active
-                                      ? 'bg-success text-white hover:bg-success/80'
-                                      : 'bg-error text-white hover:bg-error/80'
-                                    }`}
-                                >
-                                  {user.is_active ? <UserCheck size={14} /> : <UserMinus size={14} />}
-                                  <span>{user.is_active ? 'Active' : 'Banned'}</span>
-                                </button>
-
-                                {/* 3. Terminate Button */}
-                                <button
-                                  onClick={() => openDeleteModal(user)}
-                                  className="btn btn-xs h-9 rounded-xl bg-error/10 text-error border border-error/20 hover:bg-error hover:text-white font-bold uppercase text-[10px] gap-2 px-4 w-36 transition-all active:scale-95 shadow-sm"
-                                >
-                                  <Trash2 size={14} />
-                                  <span>Terminate</span>
-                                </button>
-
+                                  {/* 3. Terminate Button */}
+                                  <button
+                                    onClick={() => openDeleteModal(user)}
+                                    className="btn btn-xs h-9 rounded-xl bg-error/10 text-error border border-error/20 hover:bg-error hover:text-white font-bold uppercase text-[10px] gap-2 px-4 w-36 transition-all active:scale-95 shadow-sm"
+                                  >
+                                    <Trash2 size={14} />
+                                    <span>Terminate</span>
+                                  </button>
+                                </div>
                               </div>
                             ) : (
                               /* Protected State */
