@@ -226,7 +226,9 @@ const ProfilePage = () => {
   const canManageTargetRoles = !isOwnProfile && viewerCanManageRoles && !targetIsPrivileged;
   const canSeePrivilegedBadges =
     isOwnProfile || viewerIsSuperuser || (viewerIsAdmin && !targetIsPrivileged);
-  const canSeeGlobalRoles = isOwnProfile || !targetIsPrivileged;
+  const canSeeGlobalRoles = isOwnProfile
+    ? (!profile?.is_staff && !profile?.is_superuser)
+    : !targetIsPrivileged;
   const visibleGlobalRoles = isOwnProfile
     ? profile?.global_roles
     : viewerCanManageRoles
