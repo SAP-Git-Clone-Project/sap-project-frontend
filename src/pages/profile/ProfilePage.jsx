@@ -131,6 +131,9 @@ const ProfilePage = () => {
   }, [authUser, id, isOwnProfile]);
 
   const handleAssignRole = async () => {
+    const targetIsPrivileged = Boolean(profileData?.is_superuser || profileData?.is_staff);
+    const canManageTarget = Boolean((authUser?.is_staff || authUser?.is_superuser) && id && !targetIsPrivileged);
+    if (!canManageTarget) return notify.error("You cannot manage roles for this user");
     if (!selectedRole || !id) return notify.error("Select a role first");
     try {
       await api.post("/roles/manage/", { user: id, role_name: selectedRole });
@@ -142,6 +145,9 @@ const ProfilePage = () => {
   };
 
   const handleRemoveRole = async () => {
+    const targetIsPrivileged = Boolean(profileData?.is_superuser || profileData?.is_staff);
+    const canManageTarget = Boolean((authUser?.is_staff || authUser?.is_superuser) && id && !targetIsPrivileged);
+    if (!canManageTarget) return notify.error("You cannot manage roles for this user");
     if (!selectedRole || !id) return notify.error("Select a role first");
     try {
       await api.delete("/roles/manage/", {
@@ -213,7 +219,19 @@ const ProfilePage = () => {
 
   // Render 
   const profile = profileData;
-  console.log(profile)
+  const viewerIsSuperuser = Boolean(authUser?.is_superuser);
+  const viewerIsAdmin = Boolean(authUser?.is_staff);
+  const viewerCanManageRoles = viewerIsSuperuser || viewerIsAdmin;
+  const targetIsPrivileged = Boolean(profile?.is_superuser || profile?.is_staff);
+  const canManageTargetRoles = !isOwnProfile && viewerCanManageRoles && !targetIsPrivileged;
+  const canSeePrivilegedBadges =
+    isOwnProfile || viewerIsSuperuser || (viewerIsAdmin && !targetIsPrivileged);
+  const canSeeGlobalRoles = isOwnProfile || !targetIsPrivileged;
+  const visibleGlobalRoles = isOwnProfile
+    ? profile?.global_roles
+    : viewerCanManageRoles
+      ? userRoles
+      : profile?.global_roles;
 
   return (
     <FluidBackground blobCount={6}>
@@ -290,7 +308,7 @@ const ProfilePage = () => {
                   {/* BADGES (Admin/Superuser) - Kept as requested */}
                   <div className="mt-6 space-y-3 w-full">
                     {/* Superuser badge */}
-                    {((isOwnProfile || authUser?.is_superuser) && profile?.is_superuser) && (
+                    {(canSeePrivilegedBadges && profile?.is_superuser) && (
                       <div className="flex items-center justify-center gap-3 px-4 py-2 bg-amber-500/10 rounded-xl text-sm border border-amber-500/30 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)] backdrop-blur-md">
                         <Crown size={16} className="text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.6)]" />
                         <span className="font-bold tracking-wide uppercase text-[11px]">
@@ -300,7 +318,7 @@ const ProfilePage = () => {
                     )}
 
                     {/* Admin (Staff) badge */}
-                    {((isOwnProfile || authUser?.is_superuser) && profile?.is_staff) && (
+                    {(canSeePrivilegedBadges && profile?.is_staff) && (
                       <div className="flex items-center justify-center gap-3 px-4 py-2 bg-glass-purple rounded-xl text-sm border border-purple/20 text-purple">
                         <ShieldCheck size={16} />
                         <span className="font-medium">Administrator Access</span>
@@ -398,7 +416,7 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-                {(!isOwnProfile || !(profile?.is_superuser || profile?.is_staff)) && (
+                {canSeeGlobalRoles && (
                   <div className="card bg-warning/10 backdrop-blur-md border-warning/20 p-4 rounded-2xl">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-full bg-warning/20">
@@ -407,7 +425,7 @@ const ProfilePage = () => {
                       <div>
                         <p className="text-[10px] uppercase font-bold text-base-content/50">Global Roles</p>
                         <p className="text-sm font-semibold text-base-content break-words">
-                          {((isOwnProfile ? profile?.global_roles : userRoles) || []).join(", ") || "No roles assigned"}
+                          {(visibleGlobalRoles || []).join(", ") || "No roles assigned"}
                         </p>
                       </div>
                     </div>
@@ -462,7 +480,7 @@ const ProfilePage = () => {
                     </div>
                   </div>
                 </div>
-                {(authUser?.is_staff || authUser?.is_superuser) && (
+                {canManageTargetRoles && (
                   <div className="card bg-base-200/40 backdrop-blur-xl border border-white/10 mt-4">
                     <div className="card-body">
                       <p className="text-xs font-bold uppercase tracking-widest opacity-60">

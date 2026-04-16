@@ -131,11 +131,11 @@ const DiffViewer = ({ diffData, rawContent }) => {
       <div className="flex flex-wrap items-center gap-3 mb-3 p-2 bg-base-950/20 rounded-lg border border-base-300/10 text-[10px] font-bold uppercase tracking-tight">
         <div className="flex items-center gap-2 flex-1">
           <span className="px-1.5 py-0.5 rounded bg-error/20 text-error border border-error/20">OLD</span>
-          <span className="text-base-content/40 truncate">{oldName} ({formatBytes(getSize(diffData?.old_size))})</span>
+          <span className="text-base-content/40 normal-case text-sm">{oldName} <span className="text-base-content/40 text-xs font-black">({formatBytes(getSize(diffData?.old_size))})</span></span>
         </div>
         <div className="flex items-center gap-2 flex-1">
           <span className="px-1.5 py-0.5 rounded bg-success/20 text-success border border-success/20">NEW</span>
-          <span className="text-base-content/40 truncate">{newName} ({formatBytes(getSize(diffData?.new_size))})</span>
+          <span className="text-base-content/40 normal-case text-sm">{newName} <span className="text-base-content/40 text-xs font-black">({formatBytes(getSize(diffData?.new_size))})</span></span>
         </div>
       </div>
 
