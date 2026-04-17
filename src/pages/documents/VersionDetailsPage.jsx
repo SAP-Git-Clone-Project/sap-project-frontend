@@ -379,6 +379,16 @@ const VersionDetailsPage = () => {
     });
   }, [allUsers, members, readerSearch]);
 
+  const hasPendingReviewForVersion = useMemo(() => {
+    if (!reviews.length || !version?.id) return false;
+
+    return reviews.some(
+      (r) =>
+        String(r.version) === String(version.id) &&
+        r.review_status?.toLowerCase() === "pending"
+    );
+  }, [reviews, version?.id]);
+
   const handleAddReader = async (userId) => {
     try {
       await api.post("/permissions/request/", {
@@ -825,7 +835,7 @@ const VersionDetailsPage = () => {
         <Animate delay={0.1}>
           <div className="w-full mt-8">
             {(isOwner || isCoAuthor) &&
-              version.status !== "pending_approval" ? (
+              version.status !== "pending" ? (
               <GlassCard className="w-full p-10 border-primary/5 shadow-2xl overflow-visible relative">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-warning/5 rounded-full blur-[120px] -mr-32 -mt-32 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-24 -mb-24 pointer-events-none" />
@@ -953,7 +963,8 @@ const VersionDetailsPage = () => {
                       className={`btn h-14 px-8 rounded-2xl border-none transition-all duration-300 w-full font-black uppercase text-[12px] tracking-widest relative z-10
                 ${selectedReviewers.length === 0 ||
                           submitting ||
-                          documentReviewers.length === 0
+                          documentReviewers.length === 0 ||
+                          hasPendingReviewForVersion
                           ? "bg-base-300/50 text-base-content/30 cursor-not-allowed"
                           : "bg-warning text-warning-content hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.5)] shadow-xl shadow-warning/20 hover:scale-[1.01]"
                         }`}
@@ -964,7 +975,8 @@ const VersionDetailsPage = () => {
                       disabled={
                         selectedReviewers.length === 0 ||
                         submitting ||
-                        isDeleted
+                        isDeleted ||
+                        hasPendingReviewForVersion
                       }
                     >
                       {submitting ? (

@@ -83,6 +83,7 @@ const DocumentDetailsPage = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [members, setMembers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
 
   const [versionPermissions, setVersionPermissions] = useState({});
 
@@ -96,21 +97,29 @@ const DocumentDetailsPage = () => {
 
   useEffect(() => {
     const delay = setTimeout(async () => {
+      setUsersLoading(true);
+
       try {
         const roleByPermissionType = {
           WRITE: "author",
           APPROVE: "reviewer",
           READ: "reader",
         };
+
         const requiredRole = roleByPermissionType[permissionType] || "";
+
         const url = search
           ? `/users/search/?search=${search}${requiredRole ? `&role=${requiredRole}` : ""}`
           : `/users/search/${requiredRole ? `?role=${requiredRole}` : ""}`;
 
         const res = await api.get(url);
+
         setUsers(res.data.results || res.data);
       } catch (err) {
         console.error(err);
+        setUsers([]);
+      } finally {
+        setUsersLoading(false);
       }
     }, 300);
 
@@ -1016,7 +1025,14 @@ const DocumentDetailsPage = () => {
 
             {/* Results List */}
             <div className="max-h-48 overflow-y-auto border border-base-content/5 rounded-2xl bg-base-200/30 custom-scrollbar">
-              {users.length > 0 ? (
+              {usersLoading ? (
+                <div className="p-10 flex flex-col items-center justify-center gap-3">
+                  <span className="loading loading-dots loading-md text-primary" />
+                  <p className="text-[10px] uppercase tracking-widest opacity-40">
+                    Loading users...
+                  </p>
+                </div>
+              ) : users.length > 0 ? (
                 users.map((u) => (
                   <div
                     key={u.id}
