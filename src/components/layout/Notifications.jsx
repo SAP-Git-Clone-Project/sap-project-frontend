@@ -208,8 +208,17 @@ const Notifications = () => {
                       </div>
 
                       <p className="text-xs font-bold leading-relaxed text-base-content/80">
-                        <span className="opacity-60">{n.verb}</span>{" "}
-                        <span className="text-base-content font-black group-hover:text-primary transition-colors">"{n.target_document_title}"</span>
+                        <span className="opacity-60">{n.verb}</span>
+
+                        {/* Only render the quotes and title if the notification actually has a document */}
+                        {n.target_document_title && (
+                          <>
+                            {" "}
+                            <span className="text-base-content font-black group-hover:text-primary transition-colors">
+                              "{n.target_document_title}"
+                            </span>
+                          </>
+                        )}
                       </p>
 
                       {/* --- UPDATED BUTTONS --- */}

@@ -314,13 +314,13 @@ export function CharReveal({
   as: Tag = "h2",
   stagger = 0.03,
   y = 50,
-  rotateX = -80, // Deeper rotation
-  scale = 0.5, // Start small
+  rotateX = -80,
+  scale = 0.5,
   blur = 5,
   opacity = 0,
   duration = 0.8,
   start = "top 90%",
-  ease = "power4.out", // Very smooth, long ease
+  ease = "power4.out",
   delay = 0,
 }) {
   const containerRef = useRef(null);
@@ -330,31 +330,36 @@ export function CharReveal({
 
   const chars = useMemo(() => {
     if (!text || REDUCED_MOTION) return null;
-    const segments = text.split(/(\s+)/);
-    let idx = 0;
-    return segments.map((seg, si) => {
-      if (/^\s+$/.test(seg)) {
+
+    // PERFORMANCE FIX: Flatten the DOM structure. 
+    // We map characters directly without a "Word" wrapper span.
+    return [...text].map((char, index) => {
+      // Handle spaces to prevent them from collapsing
+      if (char === " ") {
         return (
-          <span key={`s${si}`} className="inline-block">
+          <span
+            key={`space_${index}`}
+            className="inline-block"
+            style={{ width: "0.25em" }} // Minimal width for space
+          >
             &nbsp;
           </span>
         );
       }
+
       return (
-        <span key={`w${si}`} className="inline-block overflow-visible py-2">
-          {[...seg].map((ch) => {
-            const i = idx++;
-            return (
-              <span
-                key={`c${i}`}
-                data-char
-                className="inline-block will-change-transform"
-                style={{ display: "inline-block" }}
-              >
-                {ch}
-              </span>
-            );
-          })}
+        <span
+          key={`char_${index}`}
+          data-char
+          className="inline-block"
+          style={{ 
+            display: "inline-block",
+            willChange: "transform, opacity, filter", // Performance Hint
+            transformStyle: "preserve-3d",
+            backfaceVisibility: "hidden" // GPU optimization
+          }}
+        >
+          {char}
         </span>
       );
     });
@@ -368,18 +373,18 @@ export function CharReveal({
       const spans = el.querySelectorAll("[data-char]");
       if (!spans.length) return;
 
-      gsap.set(el, { transformPerspective: 1000, transformStyle: "preserve-3d" });
-
+      // Set initial state immediately
       gsap.set(spans, {
         opacity,
         y,
         scale,
         rotateX,
         filter: `blur(${blur}px)`,
-        transformOrigin: "center bottom -50px", // Rotate from below
-        force3D: true
+        transformOrigin: "center bottom -50px",
+        force3D: true, // Promote to GPU layer immediately
       });
 
+      // Animation
       gsap.to(spans, {
         opacity: 1,
         y: 0,
@@ -393,7 +398,9 @@ export function CharReveal({
         scrollTrigger: {
           trigger: el,
           start,
-          toggleActions: "play reverse play reverse",
+          // PERFORMANCE FIX: Changed "play reverse play reverse" to "play none none reverse"
+          // This prevents the animation from restarting constantly while you scroll slowly.
+          toggleActions: "play none none reverse",
         },
       });
     }, el);
@@ -416,7 +423,6 @@ export function CharReveal({
       style={{
         display: "block",
         perspective: "1000px",
-        transformStyle: "preserve-3d",
         ...style
       }}
     >

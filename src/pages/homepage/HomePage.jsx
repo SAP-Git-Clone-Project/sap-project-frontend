@@ -71,7 +71,7 @@ const HomePage = () => {
   return (
     <div className="relative min-h-screen flex flex-col items-center px-4 sm:px-6 text-center overflow-hidden bg-base-100">
 
-      <BackgroundEffects length={isMobile ? 35 : 75} />
+      <BackgroundEffects length={isMobile ? 35 : 65} />
 
       {/* ══════════════════════════════════════ */}
       {/* ANNOUNCEMENT BADGE */}
