@@ -184,8 +184,7 @@ const Login = () => {
                 autoComplete="current-password"
                 isPassword
                 showPass={showPass}
-                togglePass={() => setShowPass((prev) => !prev)}
-                hasForgot
+                togglePass={() => setShowPass((prev) => !prev)} 
               />
 
               <div className="pt-4">
