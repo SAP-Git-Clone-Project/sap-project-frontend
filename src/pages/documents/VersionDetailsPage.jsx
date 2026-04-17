@@ -361,6 +361,14 @@ const VersionDetailsPage = () => {
     return members.filter((m) => m.permission_type?.toUpperCase() === "READ");
   }, [members]);
 
+  const isReader = useMemo(() => {
+    const isInReaders = readers.some(
+      (r) => r.user?.id === user?.id
+    );
+
+    return isInReaders || version?.is_active;
+  }, [readers, user, version]);
+
   const availablePotentialReaders = useMemo(() => {
     return allUsers.filter((u) => {
       const isAlreadyMember = members.some((m) => m.user === u.id);
@@ -447,7 +455,7 @@ const VersionDetailsPage = () => {
               </span>
             </Link>
 
-            {isOwner && (
+            {(isOwner || isCoAuthor || isReviewer || isReader) && (
               <div className="flex items-center gap-2">
                 {/* Download original file */}
                 <a
