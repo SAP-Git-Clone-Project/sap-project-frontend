@@ -12,6 +12,7 @@ import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
 import ProtectedRoute from "@/components/protected-route/ProtectedRoute";
 import RoleProtectedRoute from "@/components/protected-route/RoleProtectedRoute";
+import ReviewsProtectedRoute from "@/components/protected-route/ReviewsProtectedRoute";
 import NotStaffRoute from "@/components/protected-route/NotStaffRoute";
 
 // Hooks
@@ -143,15 +144,19 @@ export default function App() {
               </ProtectedRoute>
             } />
 
-            {/* --- STAFF / REVIEW PROTECTED --- */}
+            {/* --- REVIEWS: not reader-only (staff / elevated global roles / superuser) --- */}
             <Route path="/reviews" element={
-              <ProtectedRoute><ReviewPage /></ProtectedRoute>
+              <ProtectedRoute>
+                <ReviewsProtectedRoute><ReviewPage /></ReviewsProtectedRoute>
+              </ProtectedRoute>
             } />
             <Route path="/version-review/:id" element={
-              <ProtectedRoute><VersionReviewPage /></ProtectedRoute>
+              <ProtectedRoute>
+                <ReviewsProtectedRoute><VersionReviewPage /></ReviewsProtectedRoute>
+              </ProtectedRoute>
             } />
 
-            {/* --- ADMIN ONLY --- */}
+            {/* --- ADMIN ONLY (is_staff & is_superuser) --- */}
             <Route path="/manage-users" element={
               <RoleProtectedRoute roleRequired="admin">
                 <ManageUsers />

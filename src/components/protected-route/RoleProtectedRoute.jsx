@@ -5,8 +5,10 @@ const RoleProtectedRoute = ({ children, roleRequired }) => {
   const { user, isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" />;
 
-  // Logic: Only allow access if user is admin
-  if (roleRequired === "admin" && !user?.is_superuser && user?.role !== "admin") {
+  // Django staff/superuser — we store is_staff / is_superuser, not user.role
+  const isAdmin =
+    Boolean(user?.is_superuser || user?.is_staff || user?.role === "admin");
+  if (roleRequired === "admin" && !isAdmin) {
     return <Navigate to="/forbidden" />;
   }
   return children;

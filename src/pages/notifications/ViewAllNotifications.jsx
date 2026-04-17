@@ -10,6 +10,7 @@ import Animate from "@/components/animation/Animate.jsx";
 import Loader from "@/components/widgets/Loader.jsx";
 import notify from "@/components/toaster/notify";
 import GetGreeting from "@/components/greetings/GetGreeting";
+import LoadingTableData from "@/components/widgets/LoadingTableData"; // NEW IMPORT
 
 import api from "@/components/api/api.js";
 import { useAuth } from "@/context/AuthContext";
@@ -60,44 +61,6 @@ const ViewAllNotifications = () => {
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  // Fetch Logic (Memoized to prevent unnecessary re-renders)
-  // const fetchNotifications = useCallback(async (isSilent = false) => {
-  //   // isSilent=true means don't show the big loading spinner (used for live updates)
-  //   if (!isSilent) setLoading(true);
-
-  //   try {
-  //     const res = await api.get("/notifications/", {
-  //       params: {
-  //         page: currentPage,
-  //         status: filter,
-  //         q: debouncedSearch,
-  //         page_size: 50
-  //       }
-  //     });
-
-  //     setNotifications(res.data?.notifications || []);
-  //     setUnreadCount(res.data?.unread_count || 0);
-  //     setPaginationInfo(res.data?.pagination || { count: 0, totalPages: 1 });
-  //   } catch (err) {
-  //     console.error("Fetch failed", err);
-  //     // We don't notify.error here to avoid spamming the user during live background refreshes
-  //   } finally {
-  //     if (!isSilent) setLoading(false);
-  //   }
-  // }, [currentPage, filter, debouncedSearch]);
-
-  // // Initial Load & Live Update Interval
-  // useEffect(() => {
-  //   fetchNotifications();
-
-  //   // Set up polling (Live Update every 25 seconds)
-  //   const interval = setInterval(() => {
-  //     fetchNotifications(true); 
-  //   }, 25000);
-
-  //   return () => clearInterval(interval);
-  // }, [fetchNotifications]);
-
   const fetchNotifications = useCallback(async (isSilent = false) => {
 
     // Cancel previous request (avoid stale responses)
@@ -144,36 +107,6 @@ const ViewAllNotifications = () => {
 
 
   // Initial Load & Live Update Interval
-  // useEffect(() => {
-  //   fetchNotifications();
-
-  //   // 👁️ Refetch instantly when tab becomes active
-  //   const handleVisibilityChange = () => {
-  //     if (document.visibilityState === "visible") {
-  //       fetchNotifications(true);
-  //     }
-  //   };
-
-  //   document.addEventListener("visibilitychange", handleVisibilityChange);
-
-  //   // 🔁 Polling every 25s (only if visible)
-  //   const interval = setInterval(() => {
-  //     if (document.visibilityState === "visible") {
-  //       fetchNotifications(true);
-  //     }
-  //   }, 25000);
-
-  //   return () => {
-  //     clearInterval(interval);
-  //     document.removeEventListener("visibilitychange", handleVisibilityChange);
-
-  //     // 🧹 Cancel any in-flight request on unmount
-  //     if (abortControllerRef.current) {
-  //       abortControllerRef.current.abort();
-  //     }
-  //   };
-  // }, [fetchNotifications]);
-
   const [actionLoading, setActionLoading] = useState(null);
 
   useEffect(() => {
@@ -309,8 +242,6 @@ const ViewAllNotifications = () => {
     }
   };
 
-  if (loading && notifications.length === 0) return <Loader message="Accessing Registry..." />;
-
   return (
     <div className="min-h-screen bg-base-100 px-6 pb-20 pt-20 overflow-hidden">
       {/* Header */}
@@ -368,7 +299,11 @@ const ViewAllNotifications = () => {
       <Animate variant="fade-up">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="relative rounded-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
-            <div className="overflow-x-auto overflow-y-auto max-h-[75vh]">
+            
+            {/* Overlay Loader */}
+            {loading && <LoadingTableData />}
+
+            <div className="overflow-x-auto overflow-y-auto h-[75vh]">
               <table className="table w-full border-separate border-spacing-0">
                 <thead className="sticky top-0 z-20">
                   <tr className="bg-base-300/90 backdrop-blur-md text-secondary uppercase text-[11px] font-black">
@@ -403,7 +338,15 @@ const ViewAllNotifications = () => {
                         <td className="py-6">
                           <div className="flex flex-col gap-1">
                             <div className={`text-sm ${n.is_read ? 'font-normal text-base-content/60' : 'font-bold text-base-content'}`}>
-                              {n.verb} <span className="italic underline decoration-primary/30">"{n.target_document_title}"</span>
+                              {n.verb}
+
+                              {/* Only show the quotes and underline if a document exists */}
+                              {n.target_document_title && (
+                                <>
+                                  {" "}
+                                  <span className="italic underline decoration-primary/30">"{n.target_document_title}"</span>
+                                </>
+                              )}
                             </div>
                             {n.target_document_id && (
                               <Link to={`/documents/${n.target_document_id}`} className="text-[10px] text-primary font-black uppercase flex items-center gap-1 hover:gap-2 transition-all">

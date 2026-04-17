@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
 import api from "@/components/api/api";
 import Loader from "@/components/widgets/Loader";
+import { mapApiUserToAuthUser } from "@/utils/mapApiUserToAuthUser";
 
 const AuthContext = createContext();
 
@@ -48,6 +49,19 @@ export const AuthProvider = ({ children }) => {
       return nextUser;
     });
   }, []);
+
+  /** Re-fetch `/users/me/` and update context + localStorage (roles, is_staff, etc.). */
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem("access");
+    if (!token || isTokenExpired(token)) return;
+    try {
+      const { data } = await api.get("/users/me/");
+      const next = mapApiUserToAuthUser(data);
+      if (next) setUser(next);
+    } catch {
+      // Ignore: offline or session invalid; other flows handle logout.
+    }
+  }, [setUser]);
 
   // --- REFRESH LOGIC ---
   const refreshAccessToken = async () => {
@@ -144,6 +158,30 @@ export const AuthProvider = ({ children }) => {
     init();
   }, [clearLocalAuth]);
 
+  // After restore from localStorage, sync permissions from server (staff, roles).
+  useEffect(() => {
+    if (!ready || !isAuthenticated) return;
+    refreshUser();
+  }, [ready, isAuthenticated, refreshUser]);
+
+  // When user returns to the tab, refresh in case an admin changed their account elsewhere.
+  const visibilityRefreshTimer = useRef(null);
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      if (visibilityRefreshTimer.current) clearTimeout(visibilityRefreshTimer.current);
+      visibilityRefreshTimer.current = setTimeout(() => {
+        visibilityRefreshTimer.current = null;
+        if (localStorage.getItem("access")) refreshUser();
+      }, 400);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (visibilityRefreshTimer.current) clearTimeout(visibilityRefreshTimer.current);
+    };
+  }, [refreshUser]);
+
   const login = (tokens, userData) => {
     localStorage.setItem("access", tokens.access);
     localStorage.setItem("refresh", tokens.refresh);
@@ -184,6 +222,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         user,
         setUser,
+        refreshUser,
         login,
         logout,
         ready,

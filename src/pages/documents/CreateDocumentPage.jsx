@@ -15,6 +15,8 @@ import {
 
 import Animate from "@/components/animation/Animate.jsx";
 import api from "@/components/api/api.js";
+import notify from "@/components/toaster/notify";
+
 
 const CreateDocumentPage = () => {
   const navigate = useNavigate();
@@ -40,12 +42,30 @@ const CreateDocumentPage = () => {
     return newErrors;
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validateForm();
-    if (!file) validationErrors.file = "Payload missing.";
+
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+    ];
+
+    if (!file) {
+      validationErrors.file = "Payload missing.";
+    }
+
+    else if (!allowedTypes.includes(file.type)) {
+      validationErrors.file = "Invalid format. Only PDF, DOC, DOCX and TXT allowed.";
+    }
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      const firstErrorMessage = Object.values(validationErrors)[0];
+      notify.error(firstErrorMessage);
       return;
     }
 
@@ -68,9 +88,13 @@ const CreateDocumentPage = () => {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
+
+      notify.success("Protocol initiated. Document created.");
       navigate("/documents/" + response.data.id);
     } catch (err) {
-      setErrors(err.response?.data || { form: "Upload failed." });
+      const serverError = err.response?.data?.detail || "Upload failed.";
+      setErrors(err.response?.data || { form: serverError });
+      notify.error(serverError);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,7 +103,6 @@ const CreateDocumentPage = () => {
   return (
     <div className="min-h-screen bg-base-100 px-6 pb-12 pt-20 overflow-hidden font-sans">
 
-      {/* HEADER - MATCHES AUDIT LOG SCALE */}
       <Animate variant="fade-down">
         <div className="max-w-7xl mx-auto flex flex-col gap-4 mb-12">
 
@@ -195,9 +218,15 @@ const CreateDocumentPage = () => {
               <input
                 type="file"
                 className="absolute inset-0 opacity-0 cursor-pointer z-20"
-                accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,text/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept=".doc,.docx,.pdf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                 onChange={(e) => setFile(e.target.files[0])}
               />
+
+              {errors.file && (
+                <p className="text-error text-[10px] font-bold uppercase mt-2 text-center">
+                  {errors.file}
+                </p>
+              )}
 
               {file ? (
                 <div className="flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-300">
@@ -230,9 +259,8 @@ const CreateDocumentPage = () => {
                     </div>
                   </div>
 
-                  {/* Type Tags - The "Cool" Additional Info */}
                   <div className="mt-4 flex flex-wrap justify-center gap-2 max-w-[280px]">
-                    {['IMG', 'PDF', 'DOC', 'TXT'].map((type) => (
+                    {['PDF', 'DOC', 'DOCX', 'TXT'].map((type) => (
                       <span key={type} className="px-2 py-1 rounded bg-base-300/[0.03] border border-base-300/5 text-[8px] font-mono opacity-30">
                         {type}
                       </span>

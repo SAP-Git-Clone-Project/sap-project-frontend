@@ -15,6 +15,7 @@ import BackgroundEffects from "@/components/background/BackgroundEffects";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/components/api/api";
 import notify from "@/components/toaster/notify";
+import { mapApiUserToAuthUser } from "@/utils/mapApiUserToAuthUser";
 import InputField from "./components/InputField";
 
 
@@ -124,19 +125,7 @@ const Login = () => {
       });
 
       const { user: apiUser, access, refresh } = res.data;
-
-      const userData = {
-        id: apiUser?.id,
-        name: `${apiUser?.first_name || ""} ${apiUser?.last_name || ""}`.trim() || apiUser?.username,
-        username: apiUser?.username,
-        email: apiUser?.email,
-        avatar: apiUser?.avatar ?? null,
-        is_superuser: apiUser?.is_superuser ?? false,
-        is_staff: apiUser?.is_staff ?? false,
-        is_active: apiUser?.is_active ?? false,
-        first_name: apiUser?.first_name ?? "",
-        last_name: apiUser?.last_name ?? "",
-      };
+      const userData = mapApiUserToAuthUser(apiUser);
 
       login({ access, refresh }, userData);
       notify.success("Welcome back!");
@@ -195,8 +184,7 @@ const Login = () => {
                 autoComplete="current-password"
                 isPassword
                 showPass={showPass}
-                togglePass={() => setShowPass((prev) => !prev)}
-                hasForgot
+                togglePass={() => setShowPass((prev) => !prev)} 
               />
 
               <div className="pt-4">

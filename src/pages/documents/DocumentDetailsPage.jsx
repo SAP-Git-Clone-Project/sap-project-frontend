@@ -83,6 +83,7 @@ const DocumentDetailsPage = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [members, setMembers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
 
   const [versionPermissions, setVersionPermissions] = useState({});
 
@@ -96,20 +97,34 @@ const DocumentDetailsPage = () => {
 
   useEffect(() => {
     const delay = setTimeout(async () => {
+      setUsersLoading(true);
+
       try {
+        const roleByPermissionType = {
+          WRITE: "author",
+          APPROVE: "reviewer",
+          READ: "reader",
+        };
+
+        const requiredRole = roleByPermissionType[permissionType] || "";
+
         const url = search
-          ? `/users/search/?search=${search}`
-          : `/users/search/`;
+          ? `/users/search/?search=${search}${requiredRole ? `&role=${requiredRole}` : ""}`
+          : `/users/search/${requiredRole ? `?role=${requiredRole}` : ""}`;
 
         const res = await api.get(url);
+
         setUsers(res.data.results || res.data);
       } catch (err) {
         console.error(err);
+        setUsers([]);
+      } finally {
+        setUsersLoading(false);
       }
     }, 300);
 
     return () => clearTimeout(delay);
-  }, [search]);
+  }, [search, permissionType]);
 
   const openModal = (type) => {
     setPermissionType(type);
@@ -168,30 +183,68 @@ const DocumentDetailsPage = () => {
           api.get(`/permissions/${id}/members/`),
         ]);
 
-        setDocument(docRes.data);
-        setVersions(versionsRes.data);
-        setMembers(membersRes.data);
+        const doc = docRes.data;
+        const allVersions = versionsRes.data;
+        const docMembers = membersRes.data;
 
-        const fetchedVersions = versionsRes.data;
-        if (fetchedVersions.length > 0) {
-          const permissionResults = await Promise.all(
-            fetchedVersions.map((v) =>
-              api
-                .get(`/permissions/${v.id}/members/`)
-                .then((r) => ({ id: v.id, members: r.data }))
-                .catch(() => ({ id: v.id, members: [] })),
-            ),
-          );
-          const permMap = {};
-          permissionResults.forEach(({ id: vId, members: vMembers }) => {
-            permMap[vId] = vMembers;
-          });
-          setVersionPermissions(permMap);
+        setDocument(doc);
+        setMembers(docMembers);
 
-          // Determine which reviewers are locked (have been assigned to a version)
-          await fetchLockedReviewers(fetchedVersions);
+        // --- ROLE DETECTION EARLY ---
+        const currentUserId = user?.id;
+
+        const isOwnerLocal =
+          user && doc.created_by_username === user.username;
+
+        const isSuperUserLocal = user?.is_superuser;
+
+        const isCoAuthorLocal = docMembers.some(
+          (m) => m.user === currentUserId && m.permission_type === "WRITE",
+        );
+
+        const isReaderLocal = docMembers.some(
+          (m) =>
+            m.user === currentUserId &&
+            m.permission_type?.toUpperCase() === "READ",
+        );
+
+        // --- FILTER VERSIONS BEFORE SETTING STATE ---
+        let filteredVersions = allVersions;
+
+        if (!isOwnerLocal && !isSuperUserLocal && !isCoAuthorLocal) {
+          if (isReaderLocal) {
+            filteredVersions = allVersions.filter((v) => v.is_active);
+          } else {
+            filteredVersions = [];
+          }
         }
-      } catch (err) {
+
+        setVersions(filteredVersions);
+
+        // --- ONLY FETCH EXTRA DATA FOR PRIVILEGED USERS ---
+        if (isOwnerLocal || isSuperUserLocal || isCoAuthorLocal) {
+          if (filteredVersions.length > 0) {
+            const permissionResults = await Promise.all(
+              filteredVersions.map((v) =>
+                api
+                  .get(`/permissions/${v.id}/members/`)
+                  .then((r) => ({ id: v.id, members: r.data }))
+                  .catch(() => ({ id: v.id, members: [] })),
+              ),
+            );
+
+            const permMap = {};
+            permissionResults.forEach(({ id: vId, members: vMembers }) => {
+              permMap[vId] = vMembers;
+            });
+
+            setVersionPermissions(permMap);
+
+            // Fetch locked reviewers ONLY for privileged users
+            await fetchLockedReviewers(filteredVersions);
+          }
+        }
+      } catch {
         setError("Database Linkage Failure.");
       } finally {
         setLoading(false);
@@ -199,7 +252,7 @@ const DocumentDetailsPage = () => {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, user]);
 
   const refetchMembers = async () => {
     try {
@@ -215,7 +268,7 @@ const DocumentDetailsPage = () => {
     setRemoveLoading(true);
     setRemoveError(null);
 
-    if (removeTarget.member.id in lockedReviewerUserIds) {
+    if (lockedReviewerUserIds.has(removeTarget.member.user)) {
       return;
     }
 
@@ -232,17 +285,17 @@ const DocumentDetailsPage = () => {
     }
   };
 
-  const isReader = useMemo(() => {
-    if (!user || !members.length) return false;
-    return members.some(
-      (m) => m.user === user.id && m.permission_type?.toUpperCase() === "READ",
-    );
-  }, [members, user]);
-
   const activeVersion = useMemo(
     () => document?.active_version || (versions.length ? versions[0] : null),
     [document, versions],
   );
+
+  const isReader = useMemo(() => {
+    if (!user || !members.length) return false;
+    return members.some(
+      (m) => m.user === user.id && m.permission_type?.toUpperCase() === "READ",
+    ) || document?.active_version.is_active;
+  }, [members, user]);
 
   const statusInfo = getStatusDetails(activeVersion?.status);
   const isSuperUser = user?.is_superuser;
@@ -266,23 +319,19 @@ const DocumentDetailsPage = () => {
   }, [members]);
 
   const visibleVersions = useMemo(() => {
-    if (!isReader || isOwner || isSuperUser || isCoAuthor) return versions;
-    return versions.filter((v) => {
-      const vMembers = versionPermissions[v.id] || [];
-      return vMembers.some(
-        (m) =>
-          m.user === user?.id && m.permission_type?.toUpperCase() === "READ",
-      );
-    });
-  }, [
-    versions,
-    versionPermissions,
-    isReader,
-    isOwner,
-    isSuperUser,
-    isCoAuthor,
-    user,
-  ]);
+    // Full access roles → see everything
+    if (isOwner || isSuperUser || isCoAuthor) {
+      return versions;
+    }
+
+    // Reader → ONLY active version
+    if (isReader) {
+      return [document?.active_version];
+    }
+
+    // Fallback (no access)
+    return [];
+  }, [versions, isReader, isOwner, isSuperUser, isCoAuthor]);
 
   const displayContent =
     versions[0]?.content ||
@@ -355,7 +404,7 @@ const DocumentDetailsPage = () => {
                       return;
 
                     try {
-                      const res = await api.post(`/documents/${id}/request-delete/`);
+                      await api.post(`/documents/${id}/request-delete/`);
                       window.location.href = "/documents";
                     } catch (err) {
                       console.error(err);
@@ -365,6 +414,23 @@ const DocumentDetailsPage = () => {
                   className="btn bg-error/60 hover:bg-error hover:scale-105 transition-all btn-sm rounded-xl text-white"
                 >
                   Delete Document
+                </button>
+              )}
+
+              {(document?.is_deleted && (isOwner || isSuperUser || user?.is_staff)) && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.post(`/documents/${id}/restore/`);
+                      window.location.reload();
+                    } catch (err) {
+                      console.error(err);
+                      alert("Failed to restore document.");
+                    }
+                  }}
+                  className="btn bg-success/70 hover:bg-success hover:scale-105 transition-all btn-sm rounded-xl text-white"
+                >
+                  Restore Document
                 </button>
               )}
 
@@ -959,7 +1025,14 @@ const DocumentDetailsPage = () => {
 
             {/* Results List */}
             <div className="max-h-48 overflow-y-auto border border-base-content/5 rounded-2xl bg-base-200/30 custom-scrollbar">
-              {users.length > 0 ? (
+              {usersLoading ? (
+                <div className="p-10 flex flex-col items-center justify-center gap-3">
+                  <span className="loading loading-dots loading-md text-primary" />
+                  <p className="text-[10px] uppercase tracking-widest opacity-40">
+                    Loading users...
+                  </p>
+                </div>
+              ) : users.length > 0 ? (
                 users.map((u) => (
                   <div
                     key={u.id}

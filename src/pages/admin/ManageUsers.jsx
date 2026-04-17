@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import LoadingTableData from "@/components/widgets/LoadingTableData"; // NEW IMPORT
 
 const ManageUsers = () => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,10 +35,14 @@ const ManageUsers = () => {
   const [staffPassword, setStaffPassword] = useState("");
   const [isTogglingStaff, setIsTogglingStaff] = useState(false);
   const staffModalRef = useRef(null);
+  const [availableRoles, setAvailableRoles] = useState([]);
+  const [userRoleMap, setUserRoleMap] = useState({});
+  const [pendingRoleByUser, setPendingRoleByUser] = useState({});
 
   const pageSize = 10;
   const totalPages = Math.ceil(paginationInfo.count / pageSize) || 1;
 
+  /** Roles, staff toggle, terminate: same rules — no self, no targeting superusers (for superuser viewer: can target admins + normal users). */
   const canModify = (targetUser) => {
     if (!currentUser || !targetUser) return false;
     if (currentUser.id === targetUser.id) return false;
@@ -47,6 +51,38 @@ const ManageUsers = () => {
       return !targetUser.is_superuser && !targetUser.is_staff;
     }
     return false;
+  };
+
+  /**
+   * Ban / activate (toggle active): superuser can affect any non–super-user (including admins).
+   * Staff (non–super-user) can only ban/activate normal users — not other admins or superusers.
+   */
+  const canToggleBan = (targetUser) => {
+    if (!currentUser || !targetUser) return false;
+    if (currentUser.id === targetUser.id) return false;
+    if (targetUser.is_superuser) return false;
+    if (currentUser.is_superuser) return true;
+    if (currentUser.is_staff) {
+      return !targetUser.is_superuser && !targetUser.is_staff;
+    }
+    return false;
+  };
+
+  const getDisplayRoles = (targetUser) => {
+    if (targetUser.is_superuser) return ["superuser"];
+    if (targetUser.is_staff) return ["staff"];
+    return Array.from(new Set(userRoleMap[targetUser.id] || targetUser.global_roles || []));
+  };
+
+  const roleBadgeClass = (roleName) => {
+    const role = (roleName || "").toLowerCase();
+    if (role === "superuser") return "bg-purple text-white";
+    if (role === "staff") return "bg-warning text-white";
+    if (role === "author") return "bg-primary text-white";
+    if (role === "reviewer") return "bg-success text-white";
+    if (role === "writer") return "bg-[#b34b02] text-white";
+    if (role === "reader") return "bg-base-300 text-base-content";
+    return "bg-slate-500 text-white";
   };
 
   const fetchUsers = useCallback(async () => {
@@ -77,12 +113,33 @@ const ManageUsers = () => {
         hasNext: !!res.data.next,
         hasPrev: !!res.data.previous
       });
-    } catch (err) {
+    } catch {
       notify.error("Unauthorized Access");
     } finally {
       setLoading(false);
     }
   }, [currentPage, searchTerm, startDate, endDate, statusFilter]);
+
+  const fetchRolesData = useCallback(async () => {
+    if (!currentUser?.is_staff && !currentUser?.is_superuser) return;
+    try {
+      const [rolesRes, userRolesRes] = await Promise.all([
+        api.get("/roles/roles/"),
+        api.get("/roles/user-roles/"),
+      ]);
+      setAvailableRoles(rolesRes.data || []);
+      const map = {};
+      (userRolesRes.data || []).forEach((entry) => {
+        const key = entry?.user?.id || entry?.user;
+        if (!key) return;
+        if (!map[key]) map[key] = [];
+        if (entry.role_name) map[key].push(entry.role_name);
+      });
+      setUserRoleMap(map);
+    } catch {
+      notify.error("Failed to load role mappings");
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -91,11 +148,58 @@ const ManageUsers = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [fetchUsers]);
 
-  const handleToggle = async (id) => {
+  useEffect(() => {
+    fetchRolesData();
+  }, [fetchRolesData]);
+
+  const handleAssignRole = async (targetUser) => {
+    const roleName = pendingRoleByUser[targetUser.id];
+    if (!roleName) return notify.error("Select a role first");
     try {
-      const res = await api.patch(`/users/${id}/toggle/`);
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, is_active: res.data.is_active } : u));
-      notify.success(`User ${res.data.is_active ? "Activated" : "Banned"} successfully`);
+      await api.post("/roles/manage/", {
+        user: targetUser.id,
+        role_name: roleName,
+      });
+      notify.success("Role added");
+      await fetchRolesData();
+      await fetchUsers();
+    } catch (err) {
+      notify.error(err.response?.data?.detail || "Failed to add role");
+    }
+  };
+
+  const handleRemoveRole = async (targetUser) => {
+    const roleName = pendingRoleByUser[targetUser.id];
+    if (!roleName) return notify.error("Select a role first");
+    try {
+      await api.delete("/roles/manage/", {
+        data: {
+          user: targetUser.id,
+          role_name: roleName,
+        },
+      });
+      notify.success("Role removed");
+      await fetchRolesData();
+      await fetchUsers();
+    } catch (err) {
+      notify.error(err.response?.data?.detail || "Failed to remove role");
+    }
+  };
+
+  const handleToggle = async (targetUser) => {
+    // Safety check: ensure targetUser is an object with an ID
+    if (!targetUser || !targetUser.id) return notify.error("Invalid target user");
+
+    if (!canToggleBan(targetUser)) {
+      notify.error("You cannot change this account status");
+      return;
+    }
+    try {
+      const res = await api.patch(`/users/${targetUser.id}/toggle/`);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === targetUser.id ? { ...u, is_active: res.data.is_active } : u)),
+      );
+      notify.success(`User ${res.data.is_active ? "activated" : "banned"} successfully`);
     } catch (err) {
       notify.error(err.response?.data?.detail || "Authorization denied");
     }
@@ -135,8 +239,6 @@ const ManageUsers = () => {
     }
   };
 
-  console.log(users)
-
   // Staff Toggle Modal Functions
   const openStaffToggleModal = (user) => {
     setUserToToggleStaff(user);
@@ -154,17 +256,19 @@ const ManageUsers = () => {
     if (!staffPassword) return notify.error("Superuser credentials required");
 
     setIsTogglingStaff(true);
+    const toggledUserId = userToToggleStaff.id;
     try {
       const res = await api.post(
-        `/users/${userToToggleStaff.id}/toggle-admin/`,
+        `/users/${toggledUserId}/toggle-admin/`,
         { password: staffPassword },
         {
           headers: { "Content-Type": "application/json" },
         }
       );
-      setUsers(prev => prev.map(u => u.id === userToToggleStaff.id ? { ...u, is_staff: res.data.is_staff } : u));
+      setUsers(prev => prev.map(u => u.id === toggledUserId ? { ...u, is_staff: res.data.is_staff } : u));
       notify.success(res.data.message || `User permissions updated: ${res.data.is_staff ? "Granted Admin" : "Revoked Admin"}`);
       closeStaffToggleModal();
+      if (currentUser?.id === toggledUserId) await refreshUser();
     } catch (err) {
       console.error("Staff toggle error:", err.response?.data, err.response?.status);
 
@@ -444,20 +548,39 @@ const ManageUsers = () => {
                   {users.length > 0 ? (
                     users.map((user) => {
                       const isManageable = canModify(user);
+                      const isBanned = !user.is_active;
+                      const selectedRole = pendingRoleByUser[user.id] || "";
+                      const assignedGeneralRoles = Array.from(
+                        new Set(userRoleMap[user.id] || user.global_roles || [])
+                      );
+                      const selectedRoleAlreadyAssigned =
+                        selectedRole && assignedGeneralRoles.includes(selectedRole);
 
                       return (
-                        <tr key={user.id} className="hover:bg-primary/5 transition-colors group">
+                        <tr
+                          key={user.id}
+                          className={`transition-colors group ${isBanned
+                            ? "bg-error/10 hover:bg-error/15"
+                            : "hover:bg-primary/5"
+                            }`}
+                        >
                           <td className="py-6 px-10">
                             <div className="flex flex-col gap-3 min-w-0">
-                              <Link to={`/profile/${user.id}`}>
+
+                              {/* ONLY THE AVATAR AND NAME ARE LINKED */}
+                              <Link to={`/profile/${user.id}`} className="group transition-all duration-300">
                                 <div className="flex items-center gap-3 justify-center">
                                   <div className="avatar">
                                     <div className="w-10 h-10 rounded-full ring-2 ring-primary/10 group-hover:ring-primary/40 group-hover:scale-110 transition-all duration-300 overflow-hidden bg-base-300">
-                                      <img src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random`} alt="avatar" />
+                                      <img
+                                        src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random`}
+                                        alt="avatar"
+                                      />
                                     </div>
                                   </div>
+
                                   <div className="flex flex-col justify-center items-center">
-                                    <p className="font-bold text-sm tracking-tight">
+                                    <p className="font-bold text-sm tracking-tight text-base-content group-hover:text-primary transition-colors">
                                       {user.first_name + " " + user.last_name}
                                       {currentUser?.id === user.id && (
                                         <span className="badge badge-soft bg-primary/60 text-[13px] ml-1 text-white">
@@ -466,10 +589,10 @@ const ManageUsers = () => {
                                       )}
                                     </p>
                                   </div>
-
                                 </div>
                               </Link>
 
+                              {/* INFO BOXES (NOT LINKED) */}
                               <div className="flex flex-col gap-1.5 w-full">
                                 <div className="flex items-center w-full border border-accent/20 bg-accent/5 rounded-[0.6rem] p-1 py-1.5 shadow-sm">
                                   <div className="bg-accent px-2 flex justify-center py-0.5 rounded-[0.5rem] ml-1 shrink-0">
@@ -483,93 +606,154 @@ const ManageUsers = () => {
                                     </span>
                                   </div>
                                 </div>
+
                                 <div className="flex items-center w-full border border-blue-500/20 bg-blue-500/5 rounded-[0.6rem] p-1 py-1.5 shadow-sm">
-                                  <div className="bg-blue-500 w-12 flex justify-center py-0.5 rounded-[0.5rem] ml-1 shrink-0"><span className="text-[9px] font-black uppercase tracking-tight text-white">E-mail</span></div>
+                                  <div className="bg-blue-500 w-12 flex justify-center py-0.5 rounded-[0.5rem] ml-1 shrink-0">
+                                    <span className="text-[9px] font-black uppercase tracking-tight text-white">E-mail</span>
+                                  </div>
                                   <span className="px-3 text-[10px] font-mono font-medium text-blue-600 truncate">{user.email}</span>
                                 </div>
+
                                 <div className="flex items-center w-full border border-slate-500/20 bg-slate-500/5 rounded-[0.6rem] p-1 py-1.5 shadow-sm">
-                                  <div className="bg-slate-500 w-12 flex justify-center py-0.5 rounded-[0.5rem] ml-1 shrink-0"><span className="text-[9px] font-black uppercase tracking-tight text-white">ID</span></div>
+                                  <div className="bg-slate-500 w-12 flex justify-center py-0.5 rounded-[0.5rem] ml-1 shrink-0">
+                                    <span className="text-[9px] font-black uppercase tracking-tight text-white">ID</span>
+                                  </div>
                                   <span className="px-3 text-[10px] font-mono font-medium text-slate-600 truncate">{user.id}</span>
                                 </div>
                               </div>
+
                             </div>
                           </td>
 
-                          <td className="py-6">
+                          <td className="py-6 px-1">
                             <div className="flex flex-col gap-2 items-center">
-                              <div className="flex items-center gap-2">
-                                {user.is_superuser && <span className="badge bg-purple font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm">SUPERUSER</span>}
-                                {user.is_staff && <span className="badge badge-warning font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm">ADMIN STAFF</span>}
-                                {!user.is_staff && !user.is_superuser && (
-                                  <span
-                                    className={`badge font-black py-3 px-3 uppercase text-[9px] text-white border-none shadow-sm ${user.is_active ? 'bg-primary' : 'bg-error'
-                                      }`}
-                                  >
-                                    {user.is_active ? 'STANDARD' : 'BANNED'}
+                              <div className="flex flex-wrap items-center justify-center gap-2 max-w-[240px]">
+                                {getDisplayRoles(user).length > 0 ? (
+                                  getDisplayRoles(user).map((roleName) => (
+                                    <span
+                                      key={`${user.id}-${roleName}`}
+                                      className={`badge font-black py-3 px-3 uppercase text-[9px] border-none shadow-sm ${roleBadgeClass(roleName)}`}
+                                    >
+                                      {roleName === "superuser"
+                                        ? "SUPER USER"
+                                        : roleName === "staff"
+                                          ? "ADMIN"
+                                          : roleName}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="badge bg-base-300 text-base-content font-black py-3 px-3 uppercase text-[9px] border-none shadow-sm">
+                                    NO ROLE
                                   </span>
                                 )}
                               </div>
-                              <div className={`p-3 rounded-xl border text-[11px] font-bold uppercase tracking-tight max-w-[200px] text-center ${!user.is_active
+                              <div className={`p-3 rounded-xl border text-[11px] font-bold uppercase tracking-tight max-w-[240px] text-center ${!user.is_active
                                 ? "bg-error/10 border-error/20 text-error"
-                                : "bg-base-300/10 border-base-300/20 text-base-content/70"
+                                : "bg-success/10 border-success/20 text-success"
                                 }`}>
-                                {!user.is_active
-                                  ? "Account Deactivated — Access Denied"
-                                  : user.is_superuser
-                                    ? "Full System Access"
-                                    : user.is_staff
-                                      ? "Management Access"
-                                      : "Standard Platform Access"
-                                }
+                                {!user.is_active ? "BANNED" : "ACTIVE"}
                               </div>
                             </div>
                           </td>
 
                           <td className="p-4 text-center align-middle">
                             {isManageable ? (
-                              <div className="flex flex-col items-center gap-2">
-
-                                {/* 1. Staff Toggle Button (Superuser only) */}
-                                {currentUser?.is_superuser && (
-                                  <button
-                                    onClick={() => openStaffToggleModal(user)}
-                                    disabled={!user.is_active}
-                                    className={`btn btn-xs h-9 rounded-xl border-none font-bold uppercase text-[10px] gap-2 px-4 shadow-sm w-36 transition-all 
-            active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-500/20 disabled:text-slate-500
-            ${user.is_staff
-                                        ? 'bg-warning text-white hover:bg-warning/80'
-                                        : 'bg-primary text-white hover:bg-primary/80'
-                                      }`}
-                                  >
-                                    {!user.is_active ? <Lock size={14} /> : <UserCog size={14} />}
-                                    <span className="truncate">
-                                      {!user.is_active ? 'User Banned' : user.is_staff ? 'Revoke Admin' : 'Make Admin'}
-                                    </span>
-                                  </button>
+                              <div className="flex flex-row items-start justify-center gap-2">
+                                {/* Role Control (Keep as is) */}
+                                {/* Added check: !(currentUser.is_superuser && user.is_staff) */}
+                                {(currentUser?.is_staff || currentUser?.is_superuser) && !(currentUser?.is_superuser && user?.is_staff) && (
+                                  <div className={`glasscard w-52 p-2 rounded-xl border ${isBanned ? "opacity-70 border-error/30" : "border-base-300/30"}`}>
+                                    <div className="text-[9px] font-black uppercase tracking-widest opacity-50 text-center mb-1">
+                                      Role Control
+                                    </div>
+                                    <select
+                                      className="select select-xs rounded-lg mb-1"
+                                      value={selectedRole}
+                                      onChange={(e) =>
+                                        setPendingRoleByUser((prev) => ({
+                                          ...prev,
+                                          [user.id]: e.target.value,
+                                        }))
+                                      }
+                                      disabled={isBanned}
+                                    >
+                                      <option value="">Select role</option>
+                                      {availableRoles.map((role) => (
+                                        <option key={role.id} value={role.role_name}>
+                                          {role.role_name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <div className="text-[9px] opacity-60 text-center truncate">
+                                      Can add:{" "}
+                                      {availableRoles
+                                        .filter((role) => !getDisplayRoles(user).includes(role.role_name))
+                                        .map((role) => role.role_name)
+                                        .join(", ") || "none"}
+                                    </div>
+                                    <div className="flex gap-1 mt-1">
+                                      <button
+                                        onClick={() => handleAssignRole(user)}
+                                        className="btn btn-xs h-7 min-h-7 rounded-lg bg-info text-white border-none flex-1"
+                                        disabled={isBanned || !selectedRole || selectedRoleAlreadyAssigned}
+                                      >
+                                        {selectedRoleAlreadyAssigned ? "Has Role" : "Add"}
+                                      </button>
+                                      <button
+                                        onClick={() => handleRemoveRole(user)}
+                                        className={`btn btn-xs h-7 min-h-7 rounded-lg border-none flex-1 ${selectedRoleAlreadyAssigned
+                                            ? "bg-warning text-white"
+                                            : "bg-base-300 text-base-content"
+                                          }`}
+                                        disabled={isBanned || !selectedRole || !selectedRoleAlreadyAssigned}
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                  </div>
                                 )}
 
-                                {/* 2. Active/Ban Toggle Button */}
-                                <button
-                                  onClick={() => handleToggle(user.id)}
-                                  className={`btn btn-xs h-9 rounded-xl border-none font-bold uppercase text-[10px] gap-2 px-4 shadow-sm w-36 transition-all active:scale-95 
-          ${user.is_active
-                                      ? 'bg-success text-white hover:bg-success/80'
-                                      : 'bg-error text-white hover:bg-error/80'
-                                    }`}
-                                >
-                                  {user.is_active ? <UserCheck size={14} /> : <UserMinus size={14} />}
-                                  <span>{user.is_active ? 'Active' : 'Banned'}</span>
-                                </button>
+                                <div className="flex flex-col items-center gap-2">
+                                  {currentUser?.is_superuser && (
+                                    <button
+                                      onClick={() => openStaffToggleModal(user)}
+                                      disabled={!user.is_active}
+                                      className={`btn btn-xs h-9 rounded-xl border-none font-bold uppercase text-[10px] gap-2 px-4 shadow-sm w-36 transition-all 
+                                        active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-500/20 disabled:text-slate-500
+                                        ${user.is_staff
+                                          ? 'bg-warning text-white hover:bg-warning/80'
+                                          : 'bg-primary text-white hover:bg-primary/80'
+                                        }`}
+                                    >
+                                      {!user.is_active ? <Lock size={14} /> : <UserCog size={14} />}
+                                      <span className="truncate">
+                                        {!user.is_active ? 'User Banned' : user.is_staff ? 'Revoke Admin' : 'Make Admin'}
+                                      </span>
+                                    </button>
+                                  )}
 
-                                {/* 3. Terminate Button */}
-                                <button
-                                  onClick={() => openDeleteModal(user)}
-                                  className="btn btn-xs h-9 rounded-xl bg-error/10 text-error border border-error/20 hover:bg-error hover:text-white font-bold uppercase text-[10px] gap-2 px-4 w-36 transition-all active:scale-95 shadow-sm"
-                                >
-                                  <Trash2 size={14} />
-                                  <span>Terminate</span>
-                                </button>
+                                  {/* 2. Active/Ban Toggle Button - FIXED CLICK HANDLER */}
+                                  <button
+                                    onClick={() => handleToggle(user)} // FIXED: Passing 'user' object instead of 'user.id'
+                                    className={`btn btn-xs h-9 rounded-xl border-none font-bold uppercase text-[10px] gap-2 px-4 shadow-sm w-36 transition-all active:scale-95 
+                                      ${user.is_active
+                                        ? 'bg-success text-white hover:bg-success/80'
+                                        : 'bg-error text-white hover:bg-error/80'
+                                      }`}
+                                  >
+                                    {user.is_active ? <UserCheck size={14} /> : <UserMinus size={14} />}
+                                    <span>{user.is_active ? 'Active' : 'Banned'}</span>
+                                  </button>
 
+                                  {/* 3. Terminate Button */}
+                                  <button
+                                    onClick={() => openDeleteModal(user)}
+                                    className="btn btn-xs h-9 rounded-xl bg-error/10 text-error border border-error/20 hover:bg-error hover:text-white font-bold uppercase text-[10px] gap-2 px-4 w-36 transition-all active:scale-95 shadow-sm"
+                                  >
+                                    <Trash2 size={14} />
+                                    <span>Terminate</span>
+                                  </button>
+                                </div>
                               </div>
                             ) : (
                               /* Protected State */

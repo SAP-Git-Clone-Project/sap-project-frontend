@@ -208,8 +208,17 @@ const Notifications = () => {
                       </div>
 
                       <p className="text-xs font-bold leading-relaxed text-base-content/80">
-                        <span className="opacity-60">{n.verb}</span>{" "}
-                        <span className="text-base-content font-black group-hover:text-primary transition-colors">"{n.target_document_title}"</span>
+                        <span className="opacity-60">{n.verb}</span>
+
+                        {/* Only render the quotes and title if the notification actually has a document */}
+                        {n.target_document_title && (
+                          <>
+                            {" "}
+                            <span className="text-base-content font-black group-hover:text-primary transition-colors">
+                              "{n.target_document_title}"
+                            </span>
+                          </>
+                        )}
                       </p>
 
                       {/* --- UPDATED BUTTONS --- */}
@@ -267,13 +276,6 @@ const Notifications = () => {
           </div>
         </>
       )}
-
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--p), 0.2); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--p); }
-      `}</style>
     </div>
   );
 };

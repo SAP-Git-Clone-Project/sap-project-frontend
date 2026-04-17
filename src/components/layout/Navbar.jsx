@@ -5,13 +5,14 @@ import {
   UserRound, Menu, X, MonitorCog, LogOut
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { canAccessReviews } from "@/utils/canAccessReviews";
 import notify from "@/components/toaster/notify";
 import Notifications from "./Notifications";
 
 const NAV_LINKS = [
   { icon: House, label: "Home", to: "/", public: true },
   { icon: Files, label: "Documents", to: "/documents", protected: true },
-  { icon: ClipboardCheck, label: "Reviews", to: "/reviews", protected: true, hideForStaff: true },
+  { icon: ClipboardCheck, label: "Reviews", to: "/reviews", protected: true, reviewsOnly: true },
   { icon: UserRound, label: "Users", to: "/manage-users", adminOnly: true },
   { icon: MonitorCog, label: "Audit", to: "/audit-log", adminOnly: true },
 ];
@@ -38,11 +39,11 @@ const Navbar = ({ theme, toggleTheme }) => {
     // 1. If not logged in, only show public links
     if (!isAuthenticated) return link.public;
 
-    // 2. "Users" and "Audit" (adminOnly) only for superusers
-    if (link.adminOnly && !user?.is_superuser) return false;
+    // 2. "Users" and "Audit" (adminOnly) for staff or superuser (Django is_staff / is_superuser)
+    if (link.adminOnly && !user?.is_superuser && !user?.is_staff) return false;
 
-    // 3. "Reviews" (hideForStaff) hidden if user is staff (and not superuser)
-    if (link.hideForStaff && user?.is_staff && !user?.is_superuser) return false;
+    // 3. "Reviews" — reader-only users (no staff / not superuser) cannot see the link
+    if (link.reviewsOnly && !canAccessReviews(user)) return false;
 
     return true;
   });

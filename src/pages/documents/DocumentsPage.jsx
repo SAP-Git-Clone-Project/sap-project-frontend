@@ -1,538 +1,541 @@
-  import React, { useMemo, useState, useEffect, useRef } from "react";
-  import {
-    FileText,
-    Plus,
-    Search,
-    FileStack,
-    Clock3,
-    CheckCircle2,
-    PencilLine,
-    FileBadge,
-    FileLock2,
-    AlertCircle,
-    ChevronLeft,
-    ChevronRight,
-    FilterX,
-  } from "lucide-react";
-  import { Link } from "react-router-dom";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import {
+  FileText,
+  Plus,
+  Search,
+  FileStack,
+  Clock3,
+  CheckCircle2,
+  PencilLine,
+  FileBadge,
+  FileLock2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  FilterX,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
-  // Internal Components/Hooks
-  import Animate from "@/components/animation/Animate.jsx";
-  import GlassCard from "@/components/widgets/GlassCard.jsx";
-  import FileStatus from "@/components/widgets/FileStatus.jsx";
-  import notify from "@/components/toaster/notify";
-  import Loader from "@/components/widgets/Loader.jsx";
-  import GetGreeting from "@/components/greetings/GetGreeting";
-  import LoadingTableData from "@/components/widgets/LoadingTableData";
+// Internal Components/Hooks
+import Animate from "@/components/animation/Animate.jsx";
+import GlassCard from "@/components/widgets/GlassCard.jsx";
+import FileStatus from "@/components/widgets/FileStatus.jsx";
+import notify from "@/components/toaster/notify";
+import Loader from "@/components/widgets/Loader.jsx";
+import GetGreeting from "@/components/greetings/GetGreeting";
+import LoadingTableData from "@/components/widgets/LoadingTableData";
 
-  import api from "@/components/api/api";
-  import { useAuth } from "@/context/AuthContext";
+import api from "@/components/api/api";
+import { useAuth } from "@/context/AuthContext";
 
-  const FILTERS = ["all", "approved", "pending", "rejected", "draft"];
+const FILTERS = ["all", "approved", "pending", "rejected", "draft"];
 
-  const ICON_MAP = {
-    policy: <FileBadge size={20} />,
-    security: <FileLock2 size={20} />,
-    contract: <FileText size={20} />,
-    planning: <PencilLine size={20} />,
-    default: <FileText size={20} />,
+const ICON_MAP = {
+  policy: <FileBadge size={20} />,
+  security: <FileLock2 size={20} />,
+  contract: <FileText size={20} />,
+  planning: <PencilLine size={20} />,
+  default: <FileText size={20} />,
+};
+
+const getDocumentIcon = (type) => ICON_MAP[type] || ICON_MAP.default;
+
+const DocumentsPage = () => {
+  const { user } = useAuth();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [documents, setDocuments] = useState([]);
+  const [allDocuments, setAllDocuments] = useState([]);
+
+  // 1. isInitialLoading: Controls the Full Page Loader.
+  //    Stays true until the VERY FIRST fetch completes successfully.
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // 2. isTableUpdating: Controls the Table Overlay.
+  //    Only true for filter/search/page changes AFTER the initial load.
+  const [isTableUpdating, setIsTableUpdating] = useState(false);
+
+  // UseRef to track if this is the absolute first mount.
+  const isInitialMount = useRef(true);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginationInfo, setPaginationInfo] = useState({
+    count: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  const PAGE_SIZE = 30;
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchData = async () => {
+      // If this is NOT the first mount (e.g. user clicked a filter), show the table overlay.
+      // If it IS the first mount, we keep isInitialLoading true (so the full page loader stays).
+      if (!isInitialMount.current) {
+        setIsTableUpdating(true);
+      }
+
+      try {
+        const res = await api.get("/documents/", {
+          params: {
+            page: currentPage,
+            status: filter === "all" ? null : filter,
+            search: debouncedSearch || null,
+          },
+          signal: controller.signal,
+        });
+
+        const { results, count, next, previous } = res.data;
+
+        // Set Table Data
+        setDocuments(results || []);
+        setPaginationInfo({
+          count: count || 0,
+          hasNext: !!next,
+          hasPrev: !!previous,
+        });
+
+        // Only fetch Stats Data on the very first mount
+        if (isInitialMount.current) {
+          const allDocumentsRes = await api.get("/documents/all/");
+          setAllDocuments(allDocumentsRes.data || []);
+
+          // Only turn off the full page loader here, inside the try block, 
+          // after the stats data has been successfully fetched and set.
+          // This prevents the "0 stats" bug caused by errors or aborts.
+          isInitialMount.current = false;
+          setIsInitialLoading(false);
+        } else {
+          // If it's not the initial mount, we finish the table update here
+          setIsTableUpdating(false);
+        }
+
+      } catch (err) {
+        if (err.name !== "CanceledError") {
+          notify.error("Backend Server is Offline");
+        }
+
+        // ERROR HANDLING:
+        // If this is an update (filter/page), we want to stop the spinner so the UI isn't frozen.
+        if (!isInitialMount.current) {
+          setIsTableUpdating(false);
+        }
+        // If this is the Initial Mount and it fails, we do NOT set isInitialLoading to false.
+        // The user stays on the Full Page Loader (or you could implement an error screen here).
+        // This ensures they don't see the "0 stats" empty state.
+      }
+
+      // We removed the 'finally' block for the Initial Loading logic 
+      // to prevent it from running on errors/aborts.
+    };
+
+    fetchData();
+    return () => controller.abort();
+  }, [currentPage, filter, debouncedSearch]);
+
+  const handleFilterChange = (f) => {
+    setFilter(f);
+    setCurrentPage(1);
   };
 
-  const getDocumentIcon = (type) => ICON_MAP[type] || ICON_MAP.default;
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
-  const DocumentsPage = () => {
-    const { user } = useAuth();
-    const [search, setSearch] = useState("");
-    const [filter, setFilter] = useState("all");
-    const [documents, setDocuments] = useState([]);
-    const [allDocuments, setAllDocuments] = useState([]);
+  const filteredDocuments = documents;
 
-    // 1. isInitialLoading: Controls the Full Page Loader.
-    //    Stays true until the VERY FIRST fetch completes successfully.
-    const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const statsData = useMemo(
+    () => [
+      {
+        label: "Total Assets",
+        val: allDocuments.length,
+        icon: FileText,
+        color: "primary",
+        glass: "bg-primary/10",
+      },
+      {
+        label: "Approved",
+        val: allDocuments.filter((d) => d.active_version?.status === "approved")
+          .length,
+        icon: CheckCircle2,
+        color: "success",
+        glass: "bg-success/10",
+      },
+      {
+        label: "Pending",
+        val: allDocuments.filter(
+          (d) => d.active_version?.status === "pending",
+        ).length,
+        icon: Clock3,
+        color: "warning",
+        glass: "bg-warning/10",
+      },
+      {
+        label: "Drafts",
+        val: allDocuments.filter((d) => d.active_version?.status === "draft")
+          .length,
+        icon: PencilLine,
+        color: "purple",
+        glass: "bg-purple/10",
+      },
+    ],
+    [allDocuments],
+  );
 
-    // 2. isTableUpdating: Controls the Table Overlay.
-    //    Only true for filter/search/page changes AFTER the initial load.
-    const [isTableUpdating, setIsTableUpdating] = useState(false);
+  // LOGIC: 
+  // Show Full Page Loader ONLY if it is the initial load.
+  if (isInitialLoading) {
+    return <Loader message="Loading documents..." />;
+  }
 
-    // UseRef to track if this is the absolute first mount.
-    const isInitialMount = useRef(true);
+  let notStaff = !user?.is_staff;
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const [paginationInfo, setPaginationInfo] = useState({
-      count: 0,
-      hasNext: false,
-      hasPrev: false,
-    });
-    const [debouncedSearch, setDebouncedSearch] = useState(search);
-
-    const PAGE_SIZE = 30;
-
-    useEffect(() => {
-      const handler = setTimeout(() => {
-        setDebouncedSearch(search);
-      }, 500);
-      return () => clearTimeout(handler);
-    }, [search]);
-
-    useEffect(() => {
-      const controller = new AbortController();
-
-      const fetchData = async () => {
-        // If this is NOT the first mount (e.g. user clicked a filter), show the table overlay.
-        // If it IS the first mount, we keep isInitialLoading true (so the full page loader stays).
-        if (!isInitialMount.current) {
-          setIsTableUpdating(true);
-        }
-
-        try {
-          // 1. ALWAYS fetch Table Data (Documents)
-          const res = await api.get("/documents/", {
-            params: {
-              page: currentPage,
-              status: filter === "all" ? null : filter,
-              search: debouncedSearch || null,
-            },
-            signal: controller.signal,
-          });
-
-          const { results, count, next, previous } = res.data;
-
-          // Set Table Data
-          setDocuments(results || []);
-          setPaginationInfo({
-            count: count || 0,
-            hasNext: !!next,
-            hasPrev: !!previous,
-          });
-
-          // 2. ONLY fetch Stats Data on the very first mount
-          if (isInitialMount.current) {
-            const allDocumentsRes = await api.get("/documents/all/");
-            setAllDocuments(allDocumentsRes.data || []);
-
-            // CRITICAL FIX: 
-            // We ONLY turn off the full page loader here, inside the try block, 
-            // AFTER the stats data has been successfully fetched and set.
-            // This prevents the "0 stats" bug caused by errors or aborts.
-            isInitialMount.current = false;
-            setIsInitialLoading(false);
-          } else {
-            // If it's not the initial mount, we finish the table update here
-            setIsTableUpdating(false);
-          }
-
-        } catch (err) {
-          if (err.name !== "CanceledError") {
-            notify.error("Backend Server is Offline");
-          }
-
-          // ERROR HANDLING:
-          // If this is an update (filter/page), we want to stop the spinner so the UI isn't frozen.
-          if (!isInitialMount.current) {
-            setIsTableUpdating(false);
-          }
-          // If this is the Initial Mount and it fails, we do NOT set isInitialLoading to false.
-          // The user stays on the Full Page Loader (or you could implement an error screen here).
-          // This ensures they don't see the "0 stats" empty state.
-        }
-
-        // We removed the 'finally' block for the Initial Loading logic 
-        // to prevent it from running on errors/aborts.
-      };
-
-      fetchData();
-      return () => controller.abort();
-    }, [currentPage, filter, debouncedSearch]);
-
-    const handleFilterChange = (f) => {
-      setFilter(f);
-      setCurrentPage(1);
-    };
-
-    const handleSearchChange = (e) => {
-      setSearch(e.target.value);
-      setCurrentPage(1);
-    };
-
-    const filteredDocuments = documents;
-
-    const statsData = useMemo(
-      () => [
-        {
-          label: "Total Assets",
-          val: allDocuments.length,
-          icon: FileText,
-          color: "primary",
-          glass: "bg-primary/10",
-        },
-        {
-          label: "Approved",
-          val: allDocuments.filter((d) => d.active_version?.status === "approved")
-            .length,
-          icon: CheckCircle2,
-          color: "success",
-          glass: "bg-success/10",
-        },
-        {
-          label: "Pending",
-          val: allDocuments.filter(
-            (d) => d.active_version?.status === "pending",
-          ).length,
-          icon: Clock3,
-          color: "warning",
-          glass: "bg-warning/10",
-        },
-        {
-          label: "Drafts",
-          val: allDocuments.filter((d) => d.active_version?.status === "draft")
-            .length,
-          icon: PencilLine,
-          color: "purple",
-          glass: "bg-purple/10",
-        },
-      ],
-      [allDocuments],
+  const canCreateDocument =
+    user?.is_superuser ||
+    (user?.global_roles ?? []).some(
+      role => role.toLowerCase() === 'author'
     );
 
-    // LOGIC: 
-    // Show Full Page Loader ONLY if it is the initial load.
-    if (isInitialLoading) {
-      return <Loader message="Loading documents..." />;
-    }
-
-    let notStaff = !user?.is_staff;
-
-    return (
-      <div className="min-h-[230vh] md:min-h-[200vh] bg-base-100 px-6 pb-12 pt-20 overflow-hidden">
-        {/* Header Section */}
-        <Animate variant="fade-down" className="overflow-hidden">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3 text-primary mb-3 group">
-                <FileStack size={18} />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em]">
-                  Documents
-                </span>
-              </div>
-              <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-base-content leading-[0.9]">
-                <GetGreeting />{" "}
-                <span className="text-primary">
-                  {user?.first_name || "Agent"}
-                </span>{" "}
-                <span className="text-primary">{user?.last_name || "Agent"}</span>
-              </h1>
-              <p className="text-secondary font-medium max-w-md opacity-60">
-                Interface for managing high-integrity assets and documentation.
-              </p>
-            </div>
-
-            {notStaff && (
-              <Link
-                to="/documents/create"
-                className="btn btn-primary rounded-2xl border-none px-8 hover:scale-105 transition-all"
-              >
-                <Plus size={20} /> New Document
-              </Link>
-            )}
-          </div>
-        </Animate>
-
-        {/* Stats Grid */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12 items-stretch">
-          {statsData.map((stat) => (
-            <Animate key={stat.label} className="h-full">
-              <GlassCard
-                bg={stat.glass}
-                border={`border-${stat.color}/20`}
-                className="h-full hover:translate-y-[-6px] transition-all duration-500 group"
-              >
-                <div className="py-6 lg:py-12 px-4 flex flex-col items-center justify-center text-center relative overflow-hidden h-full">
-                  <div
-                    className={`p-3 lg:p-5 rounded-2xl lg:rounded-[2rem] bg-base-100/50 text-${stat.color} mb-3 lg:mb-6 shadow-xl border border-base-300/50 group-hover:scale-110 transition-transform duration-500`}
-                  >
-                    <stat.icon
-                      size={22}
-                      className="lg:w-8 lg:h-8"
-                      strokeWidth={2}
-                    />
-                  </div>
-
-                  <span className="text-3xl lg:text-5xl font-black tracking-tighter text-base-content">
-                    {stat.val}
-                  </span>
-
-                  <span className="text-[9px] lg:text-[10px] font-black uppercase opacity-40 tracking-[0.2em] lg:tracking-[0.4em] mt-1 lg:mt-2">
-                    {stat.label}
-                  </span>
-                </div>
-              </GlassCard>
-            </Animate>
-          ))}
-        </div>
-
-        {/* Toolbar */}
-        <Animate>
-          <div className="max-w-7xl mx-auto px-6 py-4 bg-base-200/40 border border-base-300/30 rounded-[1.5rem] p-6 lg:p-10 backdrop-blur-xl shadow-2xl flex flex-col gap-10 mb-10">
-            {/* Filter Section */}
-            <div className="space-y-4">
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-base-content/50 flex items-center gap-2">
-                <FilterX size={14} className="text-primary" /> Status Filters
+  return (
+    <div className="min-h-[230vh] md:min-h-[200vh] bg-base-100 px-6 pb-12 pt-20 overflow-hidden">
+      {/* Header Section */}
+      <Animate variant="fade-down" className="overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3 text-primary mb-3 group">
+              <FileStack size={18} />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em]">
+                Documents
               </span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-base-content leading-[0.9]">
+              <GetGreeting />{" "}
+              <span className="text-primary">
+                {user?.first_name || "Agent"}
+              </span>{" "}
+              <span className="text-primary">{user?.last_name || "Agent"}</span>
+            </h1>
+            <p className="text-secondary font-medium max-w-md opacity-60">
+              Interface for managing high-integrity assets and documentation.
+            </p>
+          </div>
 
-              {/* Responsive Container: Row on Desktop, Column on Mobile */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {canCreateDocument && (
+            <Link
+              to="/documents/create"
+              className="btn btn-primary rounded-2xl border-none px-8 hover:scale-105 transition-all"
+            >
+              <Plus size={20} /> New Document
+            </Link>
+          )}
+        </div>
+      </Animate>
 
-                {/* Buttons Group */}
-                <div className="flex flex-wrap gap-3">
-                  {FILTERS.map((f) => {
-                    let color = "bg-slate-500";
-                    if (f === "approved") color = "bg-success";
-                    if (f === "pending") color = "bg-accent";
-                    if (f === "rejected") color = "bg-error";
-                    if (f === "draft") color = "bg-primary";
-
-                    return (
-                      <button
-                        key={f}
-                        onClick={() => handleFilterChange(f)}
-                        className={`btn btn-md rounded-2xl font-bold uppercase text-[11px] transition-all px-6 border-0 ${filter === f
-                          ? `${color} text-white shadow-lg scale-105`
-                          : "bg-base-100 text-base-content/60 hover:bg-base-300 shadow-sm"
-                          }`}
-                      >
-                        {f.replace("_", " ")}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Search Input Group - Pushed to right on LG screens */}
-                <div className="relative w-full lg:max-w-xs shadow-md border border-base-300/30 rounded-2xl overflow-hidden bg-base-100">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">
-                    <Search size={16} />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search by title..."
-                    value={search}
-                    onChange={handleSearchChange}
-                    className="input w-full pl-12 bg-base-100 focus:outline-none border-none font-bold text-xs h-12 placeholder:text-base-content/30"
+      {/* Stats Grid */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12 items-stretch">
+        {statsData.map((stat) => (
+          <Animate key={stat.label} className="h-full">
+            <GlassCard
+              bg={stat.glass}
+              border={`border-${stat.color}/20`}
+              className="h-full hover:translate-y-[-6px] transition-all duration-500 group"
+            >
+              <div className="py-6 lg:py-12 px-4 flex flex-col items-center justify-center text-center relative overflow-hidden h-full">
+                <div
+                  className={`p-3 lg:p-5 rounded-2xl lg:rounded-[2rem] bg-base-100/50 text-${stat.color} mb-3 lg:mb-6 shadow-xl border border-base-300/50 group-hover:scale-110 transition-transform duration-500`}
+                >
+                  <stat.icon
+                    size={22}
+                    className="lg:w-8 lg:h-8"
+                    strokeWidth={2}
                   />
                 </div>
 
-              </div>
-            </div>
-          </div>
-        </Animate>
+                <span className="text-3xl lg:text-5xl font-black tracking-tighter text-base-content">
+                  {stat.val}
+                </span>
 
-        <Animate className="overflow-hidden" variant="fade-up">
-          {/* Legend Header */}
-          <div className="max-w-7xl mx-auto px-6 py-4 rounded-t-[1.25rem] border border-white/5 border-b-0 bg-base-200/20 backdrop-blur-3xl shadow-xl">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-y-6">
-              <div className="flex items-center gap-3">
-                <div className="h-4 w-[2px] bg-primary/40 rounded-full" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-base-content/30">
-                  Index Metadata
+                <span className="text-[9px] lg:text-[10px] font-black uppercase opacity-40 tracking-[0.2em] lg:tracking-[0.4em] mt-1 lg:mt-2">
+                  {stat.label}
                 </span>
               </div>
-
-              <div className="grid grid-cols-2 xs:grid-cols-3 md:flex items-center justify-center justify-items-center gap-x-8 gap-y-4 md:gap-x-12 text-center">
-                {[
-                  { label: "Approved", status: "approved", desc: "Verified" },
-                  { label: "Pending", status: "pending", desc: "Awaiting" },
-                  { label: "Rejected", status: "rejected", desc: "Declined" },
-                  { label: "Draft", status: "draft", desc: "Draft" },
-                  { label: "Default", status: "default", desc: "No Status" },
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 transition-opacity hover:opacity-80"
-                  >
-                    <FileStatus status={item.status} />
-                    <div className="flex flex-col leading-none">
-                      <span className="text-[11px] font-black text-base-content/80 tracking-tight">
-                        {item.label}
-                      </span>
-                      <span className="text-[7px] font-bold text-base-content/20 uppercase tracking-widest mt-1">
-                        {item.desc}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Main Table Container */}
-          <div className="max-w-7xl mx-auto">
-            <div className="relative rounded-b-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
-              <div className="relative rounded-b-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden h-[70vh]">
-
-                {/* Table Overlay Loader - Shows only when isTableUpdating is true */}
-                {isTableUpdating && <LoadingTableData />}
-
-                <div className="w-full overflow-x-auto overflow-y-auto h-[70vh] scrollbar-custom">
-                  {filteredDocuments.length > 0 ? (
-                    <table className="table w-full border-separate border-spacing-0">
-                      <thead className="sticky top-0 z-20">
-                        <tr className="bg-base-300/90 backdrop-blur-md text-secondary uppercase text-[11px] font-black">
-                          <th className="py-6 px-10">Asset Name & Description</th>
-                          <th>Owner</th>
-                          <th className="text-center">Status</th>
-                          <th className="text-center">Version</th>
-                          <th className="text-right px-10">Modified</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-base-300/5">
-                        {filteredDocuments.map((doc) => (
-                          <tr
-                            key={doc.id}
-                            className={`transition-colors group ${doc.is_deleted ? "bg-error/15 hover:bg-error/25" : "hover:bg-primary/5"}`}
-                          >
-                            <td className="py-6 px-10">
-                              <Link
-                                to={`/documents/${doc.id}`}
-                                className="flex items-center gap-4 outline-none"
-                              >
-                                <div className="p-3 bg-base-300/30 rounded-xl group-hover:text-primary group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
-                                  {getDocumentIcon(doc.type)}
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-base-content leading-tight group-hover:text-primary transition-colors text-base">
-                                    {doc.title}
-                                  </span>
-                                  <span className="text-[10px] opacity-40 font-mono italic truncate max-w-[300px]">
-                                    {doc.active_version?.content ||
-                                      "No description provided"}
-                                  </span>
-                                </div>
-                              </Link>
-                            </td>
-                            <td>
-                              <Link
-                                to={`/profile/${doc.created_by}`}
-                                className="flex items-center gap-3 hover:text-primary transition-colors"
-                              >
-                                <div className="avatar group">
-                                  <div className="w-7 h-7 rounded-full ring ring-primary/10 ring-offset-base-100 ring-offset-1 group-hover:ring-primary/40 group-hover:scale-110 transition-all duration-300 overflow-hidden bg-base-300">
-                                    <img
-                                      src={doc.created_by_avatar_url}
-                                      alt={doc.created_by_username}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                </div>
-                                <span className="text-[11px] font-bold opacity-70">
-                                  {doc.active_version?.creator_name ||
-                                    doc.created_by_username}
-                                </span>
-                              </Link>
-                            </td>
-                            <td className="text-center">
-                              <div className="flex justify-center scale-90">
-                                <FileStatus
-                                  status={doc.active_version?.status || "no_active"}
-                                />
-                              </div>
-                            </td>
-                            <td className="text-center">
-                              <span className="badge badge-sm border-none bg-primary/10 text-primary font-mono font-black px-3">
-                                v{doc.active_version?.version_number || "1"}
-                              </span>
-                            </td>
-                            <td className="text-right px-10 text-[11px] opacity-60">
-                              <div className="flex flex-col items-end">
-                                <span className="font-bold text-base-content/80">
-                                  {new Date(doc.updated_at).toLocaleDateString(
-                                    "en-GB",
-                                    {
-                                      day: "numeric",
-                                      month: "short",
-                                    },
-                                  ) +
-                                    ", " +
-                                    new Date(doc.updated_at).getFullYear()}
-                                </span>
-                                <span className="text-[9px] opacity-50 font-mono uppercase">
-                                  {new Date(doc.updated_at).toLocaleTimeString(
-                                    undefined,
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      second: "2-digit",
-                                      hour12: true,
-                                    },
-                                  )}
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    /* SINGLE EMPTY STATE UI */
-                    !isTableUpdating && (
-                      <div className="flex flex-col items-center justify-center py-40 opacity-20 gap-4">
-                        <AlertCircle size={80} strokeWidth={1} />
-                        <div className="text-center">
-                          <p className="text-xl font-black uppercase tracking-[0.3em]">
-                            Accessing Empty Index
-                          </p>
-                          <p className="text-[10px] font-bold uppercase tracking-widest mt-2">
-                            No documents match the current criteria
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pagination */}
-          <div className="max-w-7xl mx-auto mt-6 flex flex-col md:flex-row items-center justify-between gap-6 pb-10">
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
-              Matches Found: {paginationInfo.count}
-            </div>
-            <div className="join border border-base-300/30 bg-base-200/50 rounded-2xl p-1 shadow-lg">
-              <button
-                className="join-item btn btn-sm btn-ghost hover:bg-base-300/70"
-                onClick={() => {
-                  setCurrentPage((p) => Math.max(p - 1, 1));
-                  window.scrollTo(0, 0);
-                }}
-                disabled={!paginationInfo.hasPrev || isTableUpdating}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button className="join-item px-4 no-animation cursor-default">
-                <span className="opacity-40 mr-2 uppercase text-[10px] font-black">
-                  Page
-                </span>
-                <span className="text-primary font-black">{currentPage}</span>
-                <span className="mx-2 opacity-20">/</span>
-                <span className="opacity-40 font-bold">
-                  {Math.ceil(paginationInfo.count / PAGE_SIZE) || 1}
-                </span>
-              </button>
-              <button
-                className="join-item btn btn-sm btn-ghost hover:bg-base-300/70"
-                onClick={() => {
-                  setCurrentPage((p) => p + 1);
-                  window.scrollTo(0, 0);
-                }}
-                disabled={!paginationInfo.hasNext || isTableUpdating}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        </Animate>
+            </GlassCard>
+          </Animate>
+        ))}
       </div>
-    );
-  };
 
-  export default DocumentsPage;
+      {/* Toolbar */}
+      <Animate>
+        <div className="max-w-7xl mx-auto px-6 py-4 bg-base-200/40 border border-base-300/30 rounded-[1.5rem] p-6 lg:p-10 backdrop-blur-xl shadow-2xl flex flex-col gap-10 mb-10">
+          {/* Filter Section */}
+          <div className="space-y-4">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-base-content/50 flex items-center gap-2">
+              <FilterX size={14} className="text-primary" /> Status Filters
+            </span>
+
+            {/* Responsive Container: Row on Desktop, Column on Mobile */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+
+              {/* Buttons Group */}
+              <div className="flex flex-wrap gap-3">
+                {FILTERS.map((f) => {
+                  let color = "bg-slate-500";
+                  if (f === "approved") color = "bg-success";
+                  if (f === "pending") color = "bg-accent";
+                  if (f === "rejected") color = "bg-error";
+                  if (f === "draft") color = "bg-primary";
+
+                  return (
+                    <button
+                      key={f}
+                      onClick={() => handleFilterChange(f)}
+                      className={`btn btn-md rounded-2xl font-bold uppercase text-[11px] transition-all px-6 border-0 ${filter === f
+                        ? `${color} text-white shadow-lg scale-105`
+                        : "bg-base-100 text-base-content/60 hover:bg-base-300 shadow-sm"
+                        }`}
+                    >
+                      {f.replace("_", " ")}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Search Input Group - Pushed to right on LG screens */}
+              <div className="relative w-full lg:max-w-xs shadow-md border border-base-300/30 rounded-2xl overflow-hidden bg-base-100">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">
+                  <Search size={16} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by title..."
+                  value={search}
+                  onChange={handleSearchChange}
+                  className="input w-full pl-12 bg-base-100 focus:outline-none border-none font-bold text-xs h-12 placeholder:text-base-content/30"
+                />
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </Animate>
+
+      <Animate className="overflow-hidden" variant="fade-up">
+        {/* Legend Header */}
+        <div className="max-w-7xl mx-auto px-6 py-4 rounded-t-[1.25rem] border border-white/5 border-b-0 bg-base-200/20 backdrop-blur-3xl shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-y-6">
+            <div className="flex items-center gap-3">
+              <div className="h-4 w-[2px] bg-primary/40 rounded-full" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-base-content/30">
+                Index Metadata
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 xs:grid-cols-3 md:flex items-center justify-center justify-items-center gap-x-8 gap-y-4 md:gap-x-12 text-center">
+              {[
+                { label: "Approved", status: "approved", desc: "Verified" },
+                { label: "Pending", status: "pending", desc: "Awaiting" },
+                { label: "Rejected", status: "rejected", desc: "Declined" },
+                { label: "Draft", status: "draft", desc: "Draft" },
+                { label: "Default", status: "default", desc: "No Status" },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 transition-opacity hover:opacity-80"
+                >
+                  <FileStatus status={item.status} />
+                  <div className="flex flex-col leading-none">
+                    <span className="text-[11px] font-black text-base-content/80 tracking-tight">
+                      {item.label}
+                    </span>
+                    <span className="text-[7px] font-bold text-base-content/20 uppercase tracking-widest mt-1">
+                      {item.desc}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Table Container */}
+        <div className="max-w-7xl mx-auto">
+          <div className="relative rounded-b-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden">
+            <div className="relative rounded-b-[1rem] border border-base-300/30 bg-base-200/20 backdrop-blur-2xl shadow-2xl overflow-hidden h-[70vh]">
+
+              {/* Table Overlay Loader - Shows only when isTableUpdating is true */}
+              {isTableUpdating && <LoadingTableData />}
+
+              <div className="w-full overflow-x-auto overflow-y-auto h-[70vh] scrollbar-custom">
+                {filteredDocuments.length > 0 ? (
+                  <table className="table w-full border-separate border-spacing-0">
+                    <thead className="sticky top-0 z-20">
+                      <tr className="bg-base-300/90 backdrop-blur-md text-secondary uppercase text-[11px] font-black">
+                        <th className="py-6 px-10">Asset Name & Description</th>
+                        <th>Owner</th>
+                        <th className="text-center">Status</th>
+                        <th className="text-center">Version</th>
+                        <th className="text-right px-10">Modified</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-base-300/5">
+                      {filteredDocuments.map((doc) => (
+                        <tr
+                          key={doc.id}
+                          className={`transition-colors group ${doc.is_deleted ? "bg-error/15 hover:bg-error/25" : "hover:bg-primary/5"}`}
+                        >
+                          <td className="py-6 px-10">
+                            <Link
+                              to={`/documents/${doc.id}`}
+                              className="flex items-center gap-4 outline-none"
+                            >
+                              <div className="p-3 bg-base-300/30 rounded-xl group-hover:text-primary group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
+                                {getDocumentIcon(doc.type)}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-base-content leading-tight group-hover:text-primary transition-colors text-base">
+                                  {doc.title}
+                                </span>
+                                <span className="text-[10px] opacity-40 font-mono italic truncate max-w-[300px]">
+                                  {doc.active_version?.content ||
+                                    "No description provided"}
+                                </span>
+                              </div>
+                            </Link>
+                          </td>
+                          <td>
+                            <Link
+                              to={`/profile/${doc.created_by}`}
+                              className="flex items-center gap-3 hover:text-primary transition-colors"
+                            >
+                              <div className="avatar group">
+                                <div className="w-7 h-7 rounded-full ring ring-primary/10 ring-offset-base-100 ring-offset-1 group-hover:ring-primary/40 group-hover:scale-110 transition-all duration-300 overflow-hidden bg-base-300">
+                                  <img
+                                    src={doc.created_by_avatar_url}
+                                    alt={doc.created_by_username}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-bold opacity-70">
+                                {doc.created_by_username}
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="text-center">
+                            <div className="flex justify-center scale-90">
+                              <FileStatus
+                                status={doc.active_version?.status || "no_active"}
+                              />
+                            </div>
+                          </td>
+                          <td className="text-center">
+                            <span className="badge badge-sm border-none bg-primary/10 text-primary font-mono font-black px-3">
+                              v{doc.active_version?.version_number || "1"}
+                            </span>
+                          </td>
+                          <td className="text-right px-10 text-[11px] opacity-60">
+                            <div className="flex flex-col items-end">
+                              <span className="font-bold text-base-content/80">
+                                {new Date(doc.updated_at).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                  },
+                                ) +
+                                  ", " +
+                                  new Date(doc.updated_at).getFullYear()}
+                              </span>
+                              <span className="text-[9px] opacity-50 font-mono uppercase">
+                                {new Date(doc.updated_at).toLocaleTimeString(
+                                  undefined,
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                    hour12: true,
+                                  },
+                                )}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  /* SINGLE EMPTY STATE UI */
+                  !isTableUpdating && (
+                    <div className="flex flex-col items-center justify-center py-40 opacity-20 gap-4">
+                      <AlertCircle size={80} strokeWidth={1} />
+                      <div className="text-center">
+                        <p className="text-xl font-black uppercase tracking-[0.3em]">
+                          Accessing Empty Index
+                        </p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest mt-2">
+                          No documents match the current criteria
+                        </p>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pagination */}
+        <div className="max-w-7xl mx-auto mt-6 flex flex-col md:flex-row items-center justify-between gap-6 pb-10">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
+            Matches Found: {paginationInfo.count}
+          </div>
+          <div className="join border border-base-300/30 bg-base-200/50 rounded-2xl p-1 shadow-lg">
+            <button
+              className="join-item btn btn-sm btn-ghost hover:bg-base-300/70"
+              onClick={() => {
+                setCurrentPage((p) => Math.max(p - 1, 1));
+                window.scrollTo(0, 0);
+              }}
+              disabled={!paginationInfo.hasPrev || isTableUpdating}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button className="join-item px-4 no-animation cursor-default">
+              <span className="opacity-40 mr-2 uppercase text-[10px] font-black">
+                Page
+              </span>
+              <span className="text-primary font-black">{currentPage}</span>
+              <span className="mx-2 opacity-20">/</span>
+              <span className="opacity-40 font-bold">
+                {Math.ceil(paginationInfo.count / PAGE_SIZE) || 1}
+              </span>
+            </button>
+            <button
+              className="join-item btn btn-sm btn-ghost hover:bg-base-300/70"
+              onClick={() => {
+                setCurrentPage((p) => p + 1);
+                window.scrollTo(0, 0);
+              }}
+              disabled={!paginationInfo.hasNext || isTableUpdating}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      </Animate>
+    </div>
+  );
+};
+
+export default DocumentsPage;

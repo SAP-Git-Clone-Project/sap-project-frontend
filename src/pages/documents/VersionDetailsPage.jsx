@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import {
   Users,
   UserPlus,
   Trash2,
+  GitCompare,
 } from "lucide-react";
 
 import Animate from "@/components/animation/Animate.jsx";
@@ -28,6 +29,7 @@ import Loader from "@/components/widgets/Loader.jsx";
 import MissingArtifact from "@/components/widgets/MissingArtifact.jsx";
 import api from "@/components/api/api.js";
 import { useAuth } from "@/context/AuthContext.jsx";
+import DiffViewer from "@/components/diff/DiffViewer.jsx";
 
 const STATUS_CONFIG = {
   approved: {
@@ -77,7 +79,7 @@ const VersionDetailsPage = () => {
   const { user } = useAuth();
 
   const [version, setVersion] = useState(null);
-  const [document, setDocument] = useState(null);
+  const [documentData, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -92,6 +94,11 @@ const VersionDetailsPage = () => {
   const [members, setMembers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [documentVersions, setDocumentVersions] = useState([]);
+  const [compareVersionId, setCompareVersionId] = useState("");
+  const [diffData, setDiffData] = useState(null);
+  const [diffLoading, setDiffLoading] = useState(false);
+  const [diffError, setDiffError] = useState("");
 
   const [readerSearch, setReaderSearch] = useState("");
   const [showReaderDropdown, setShowReaderDropdown] = useState(false);
@@ -115,6 +122,13 @@ const VersionDetailsPage = () => {
 
         const docRes = await api.get(`/documents/${versionData.document}/`);
         setDocument(docRes.data);
+        const versionsRes = await api.get(`/versions/document/${versionData.document}/`);
+        const versionsData = versionsRes.data || [];
+        setDocumentVersions(versionsData);
+        const firstComparable = versionsData.find(
+          (v) => String(v.id) !== String(versionData.id),
+        );
+        setCompareVersionId(firstComparable?.id || "");
 
         const membersRes1 = await api.get(
           `/permissions/${versionData.document}/members/`,
@@ -139,14 +153,13 @@ const VersionDetailsPage = () => {
         );
         setLockedReaderIds(inherited);
 
-        const allUsersRes = await api.get("/users/search/");
+        const allUsersRes = await api.get("/users/search/?role=reader");
         setAllUsers(allUsersRes.data);
 
-        const reviewsRes = await api.get("/reviews/inbox/?all=true");
-        const versionReviews = (reviewsRes.data || []).filter(
-          (r) => String(r.version) === String(id),
-        );
-        setReviews(versionReviews);
+        const reviewsRes = await api.get("/reviews/inbox/?all=true", {
+          params: { version: id },
+        });
+        setReviews(reviewsRes.data || []);
       } catch (err) {
         console.error(err);
         setError("Version retrieval failure.");
@@ -183,18 +196,6 @@ const VersionDetailsPage = () => {
     if (url.endsWith(".txt")) return "text";
     return "unknown";
   };
-
-  // useEffect(() => {
-  //   if (!version?.file_path) return;
-  //   const type = getFileType(version.file_path);
-  //   setFileType(type);
-  //   if (type === "markdown" || type === "text") {
-  //     fetch(version.file_path)
-  //       .then((res) => res.text())
-  //       .then((data) => setPreviewContent(data.slice(0, 2000)))
-  //       .catch(() => setPreviewContent("Preview unavailable."));
-  //   }
-  // }, [version]);
 
   useEffect(() => {
     if (!version?.signed_file_path) return;
@@ -273,11 +274,10 @@ const VersionDetailsPage = () => {
 
       const updated = await api.get(`/versions/${version.id}/`);
       setVersion(updated.data);
-      const reviewsRes = await api.get(`/reviews/inbox/?all=true`);
-      const versionReviews = (reviewsRes.data || []).filter(
-        (r) => String(r.version) === String(id),
-      );
-      setReviews(versionReviews);
+      const reviewsRes = await api.get(`/reviews/inbox/?all=true`, {
+        params: { version: id },
+      });
+      setReviews(reviewsRes.data || []);
 
       setSelectedReviewers([]);
       setReviewerSearch("");
@@ -288,9 +288,33 @@ const VersionDetailsPage = () => {
     }
   };
 
+  const handleExport = async (format) => {
+    try {
+      const res = await api.get(
+        `/versions/${version.id}/export/${format}/`,
+        { responseType: "blob" }
+      );
+
+      const blob = new Blob([res.data]);
+      const url = window.URL.createObjectURL(blob);
+      const contentDisposition = res.headers?.["content-disposition"] || "";
+      const fileNameFromHeader = contentDisposition.match(/filename="?([^"]+)"?/i)?.[1];
+      const fallbackName = `${documentData?.title || "version"} v${version.version_number}.${format}`;
+
+      const a = window.document.createElement("a"); // extra safety
+      a.href = url;
+      a.download = fileNameFromHeader || fallbackName;
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed", err);
+    }
+  };
+
   const statusInfo = getStatusDetails(version?.status);
-  const isOwner =
-    document?.created_by_username === user?.username || user?.is_superuser;
+  const isDocumentOwner = documentData?.created_by_username === user?.username;
+  const isOwner = isDocumentOwner || user?.is_superuser;
   const isCoAuthor = useMemo(() => {
     if (!user || !members.length) return false;
     return members.some(
@@ -298,12 +322,52 @@ const VersionDetailsPage = () => {
     );
   }, [members, user]);
 
-  const isDeleted = document?.is_deleted;
+  const isDeleted = documentData?.is_deleted;
   const isSuperUser = user?.is_superuser;
+  const isReviewer = useMemo(() => {
+    if (!user || !members.length) return false;
+    return members.some(
+      (m) =>
+        m.user === user.id &&
+        m.permission_type?.toUpperCase() === "APPROVE",
+    );
+  }, [members, user]);
+  const canCompareVersions = isSuperUser || isDocumentOwner || isReviewer;
+  const comparableVersions = useMemo(
+    () => documentVersions.filter((v) => String(v.id) !== String(version?.id)),
+    [documentVersions, version?.id],
+  );
+
+  const loadDiff = async () => {
+    if (!compareVersionId) return;
+    setDiffLoading(true);
+    setDiffError("");
+    try {
+      const res = await api.get(
+        `/versions/${id}/diff/?compare_to=${compareVersionId}`,
+      );
+      setDiffData(res.data);
+    } catch (err) {
+      setDiffData(null);
+      setDiffError(
+        err.response?.data?.detail || "Failed to load version difference.",
+      );
+    } finally {
+      setDiffLoading(false);
+    }
+  };
 
   const readers = useMemo(() => {
     return members.filter((m) => m.permission_type?.toUpperCase() === "READ");
   }, [members]);
+
+  const isReader = useMemo(() => {
+    const isInReaders = readers.some(
+      (r) => r.user?.id === user?.id
+    );
+
+    return isInReaders || version?.is_active;
+  }, [readers, user, version]);
 
   const availablePotentialReaders = useMemo(() => {
     return allUsers.filter((u) => {
@@ -314,6 +378,16 @@ const VersionDetailsPage = () => {
       return !isAlreadyMember && matchesSearch;
     });
   }, [allUsers, members, readerSearch]);
+
+  const hasPendingReviewForVersion = useMemo(() => {
+    if (!reviews.length || !version?.id) return false;
+
+    return reviews.some(
+      (r) =>
+        String(r.version) === String(version.id) &&
+        r.review_status?.toLowerCase() === "pending"
+    );
+  }, [reviews, version?.id]);
 
   const handleAddReader = async (userId) => {
     try {
@@ -379,7 +453,7 @@ const VersionDetailsPage = () => {
         <Animate variant="fade-down">
           <div className="flex flex-col sm:flex-row items-center justify-between w-full border-b border-base-300/10 pb-8 gap-4">
             <Link
-              to={`/documents/${document?.id}`}
+              to={`/documents/${documentData?.id}`}
               className="group btn btn-ghost btn-sm gap-2 rounded-xl border border-base-300/50 hover:bg-base-300/50 transition-all"
             >
               <ArrowLeft
@@ -391,18 +465,43 @@ const VersionDetailsPage = () => {
               </span>
             </Link>
 
-            {isOwner && (
-              <a
-                href={version.signed_file_path}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary btn-sm rounded-xl border-none hover:scale-105 transition-all h-10 px-6 flex items-center gap-2"
-              >
-                <Download size={16} />
-                <span className="font-bold text-[10px] uppercase tracking-widest">
-                  Download v.{version.version_number} File
-                </span>
-              </a>
+            {(isOwner || isCoAuthor || isReviewer || isReader) && (
+              <div className="flex items-center gap-2">
+                {/* Download original file */}
+                <a
+                  href={version.signed_file_path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary btn-sm rounded-xl border-none hover:scale-105 transition-all h-10 px-4 flex items-center gap-2"
+                >
+                  <Download size={16} />
+                  <span className="font-bold text-[10px] uppercase tracking-widest">
+                    File
+                  </span>
+                </a>
+
+                {/* Export TXT */}
+                <button
+                  onClick={() => handleExport("txt")}
+                  className="btn btn-outline btn-sm rounded-xl h-10 px-4 flex items-center gap-2"
+                >
+                  <FileText size={14} />
+                  <span className="text-[10px] uppercase tracking-widest font-bold">
+                    TXT
+                  </span>
+                </button>
+
+                {/* Export PDF */}
+                <button
+                  onClick={() => handleExport("pdf")}
+                  className="btn btn-outline btn-sm rounded-xl h-10 px-4 flex items-center gap-2"
+                >
+                  <FileCode size={14} />
+                  <span className="text-[10px] uppercase tracking-widest font-bold">
+                    PDF
+                  </span>
+                </button>
+              </div>
             )}
           </div>
         </Animate>
@@ -419,7 +518,7 @@ const VersionDetailsPage = () => {
                 <span className="text-primary">№ {version.version_number}</span>
               </h1>
               <p className="text-base-content/50 font-bold uppercase tracking-widest text-xs">
-                {document?.title}
+                {documentData?.title}
               </p>
             </div>
 
@@ -528,7 +627,7 @@ const VersionDetailsPage = () => {
                       </span>
                     </div>
                     <span className="text-xs font-mono font-bold">
-                      {(version.file_size / 1024).toFixed(2)} KB
+                      {(version.file_size / 1000).toFixed(2)} KB
                     </span>
                   </div>
 
@@ -736,7 +835,7 @@ const VersionDetailsPage = () => {
         <Animate delay={0.1}>
           <div className="w-full mt-8">
             {(isOwner || isCoAuthor) &&
-              version.status !== "pending_approval" ? (
+              version.status !== "pending" ? (
               <GlassCard className="w-full p-10 border-primary/5 shadow-2xl overflow-visible relative">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-warning/5 rounded-full blur-[120px] -mr-32 -mt-32 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-24 -mb-24 pointer-events-none" />
@@ -864,7 +963,8 @@ const VersionDetailsPage = () => {
                       className={`btn h-14 px-8 rounded-2xl border-none transition-all duration-300 w-full font-black uppercase text-[12px] tracking-widest relative z-10
                 ${selectedReviewers.length === 0 ||
                           submitting ||
-                          documentReviewers.length === 0
+                          documentReviewers.length === 0 ||
+                          hasPendingReviewForVersion
                           ? "bg-base-300/50 text-base-content/30 cursor-not-allowed"
                           : "bg-warning text-warning-content hover:shadow-[0_0_40px_-10px_rgba(251,191,36,0.5)] shadow-xl shadow-warning/20 hover:scale-[1.01]"
                         }`}
@@ -875,7 +975,8 @@ const VersionDetailsPage = () => {
                       disabled={
                         selectedReviewers.length === 0 ||
                         submitting ||
-                        isDeleted
+                        isDeleted ||
+                        hasPendingReviewForVersion
                       }
                     >
                       {submitting ? (
@@ -986,6 +1087,49 @@ const VersionDetailsPage = () => {
         {/* PREVIEW SECTION */}
         <Animate delay={0.2}>
           <div className="mt-16 space-y-8">
+            {canCompareVersions && (
+              <div className="rounded-[2rem] border border-base-300/20 bg-base-200/10 backdrop-blur-xl p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <GitCompare className="text-primary" size={18} />
+                  <h2 className="text-lg font-black uppercase tracking-[0.2em]">
+                    Compare Versions
+                  </h2>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-3">
+                  <select
+                    className="select select-bordered w-full"
+                    value={compareVersionId}
+                    onChange={(e) => setCompareVersionId(e.target.value)}
+                  >
+                    <option value="">Select version to compare</option>
+                    {comparableVersions.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        v{v.version_number}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="btn btn-primary"
+                    onClick={loadDiff}
+                    disabled={!compareVersionId || diffLoading}
+                  >
+                    {diffLoading ? "Comparing..." : "Show Difference"}
+                  </button>
+                </div>
+
+                {diffError && (
+                  <div className="text-error text-sm font-semibold">{diffError}</div>
+                )}
+
+                {diffData && (
+                  <div className="rounded-xl border border-base-300/20 bg-base-100/50 p-4 h-[420px] overflow-hidden">
+                    <DiffViewer diffData={diffData} />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
               <Eye className="text-primary" size={18} />
               <h2 className="text-xl font-black uppercase tracking-[0.2em]">

@@ -26,11 +26,6 @@ const XIcon = ({ size = 18, className }) => (
   </svg>
 );
 
-const SOCIALS = [
-  { icon: Github, label: "GitHub", url: "https://github.com", brandColor: "#24292f" },
-  { icon: Linkedin, label: "LinkedIn", url: "https://linkedin.com", brandColor: "#0077b5" },
-  { icon: XIcon, label: "X", url: "https://x.com", brandColor: "#000000" },
-];
 
 const TEAM = [
   { name: "Jewel Shahi", url: "https://github.com/JewelShahi" },
@@ -62,37 +57,6 @@ const Footer = () => {
             <p className="text-sm text-base-content/60 leading-relaxed max-w-[240px]">
               The professional standard for document lifecycle management and secure versioning.
             </p>
-
-            {/* Social Icons */}
-            <div className="flex items-center gap-4 group/container p-2">
-              {SOCIALS.map(({ icon: Icon, label, url, brandColor }) => (
-                <a
-                  key={label}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={label}
-                  className="relative flex h-11 w-11 items-center justify-center rounded-full border border-base-300 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:shadow-2xl hover:-translate-y-1.5 overflow-hidden isolate text-center md:text-left"
-                  style={{
-                    backgroundColor: `${brandColor}4D`,
-                    '--hover-bg': brandColor
-                  }}
-                >
-                  <div
-                    className="absolute inset-0 opacity-0 transition-opacity duration-500 -z-10"
-                    style={{ backgroundColor: 'var(--hover-bg)' }}
-                    inner-hover-target="true"
-                  />
-                  <style>{`
-                    a:hover div[inner-hover-target] { opacity: 1; }
-                  `}</style>
-                  <Icon
-                    size={20}
-                    className="text-white z-10 transition-transform duration-500 group-hover:scale-110 will-change-transform"
-                  />
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* 2. Resources */}
